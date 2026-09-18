@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <persistence version="3.0" xmlns="https://jakarta.ee/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
   <!-- Define Persistence Unit -->
-  <persistence-unit name="my_persistence_unit">
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.ProcedimientoPaso</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.ProcedimientoPasoExamen</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.Persona</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.TipoDocumento</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.ProcedimientoPasoSecuencia</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.ConsultaProcedimiento</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.ConsultaProcedimientoPaso</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.Consulta</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.Documento</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.TipoExamen</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.PersonaRol</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.MedioContacto</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.Examen</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.Procedimiento</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.Clinica</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.TipoMedioContacto</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.Rol</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.OrdenExamen</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.ExamenTipoExamen</class>
-    <class>sv.edu.ues_occ_ingenieria_pp115_2026_salud.galenosv.entity.ExamenResultado</class>
+  <persistence-unit name="clinica_ppi">
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoExamen</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimiento</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Consulta</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimientoPaso</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Procedimiento</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Clinica</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoMedioContacto</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoDocumento</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPaso</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Examen</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPasoSecuencia</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Persona</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ExamenTipoExamen</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.OrdenExamen</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPasoExamen</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Rol</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ExamenResultado</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.MedioContacto</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.PersonaRol</class>
+    <class>sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Documento</class>
   </persistence-unit>
 </persistence>
