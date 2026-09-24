@@ -5,6 +5,9 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity;
 
 import jakarta.persistence.Basic;
+import jakarta.persistence.Convert;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.conversores.UUIDConverter;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -38,6 +41,7 @@ public class TipoMedioContacto implements Serializable {
     @NotNull
     
     @Column(name = "id_tipo_medio_contacto")
+    @Convert(converter = UUIDConverter.class)
     private UUID idTipoMedioContacto;
     @Size(max = 155)
     @Column(name = "nombre")

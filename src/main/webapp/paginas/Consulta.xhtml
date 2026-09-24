@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:f="jakarta.faces.core"
+                xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:g="jakarta.faces.composite/crud"
+                template="../WEB-INF/plantillas/general.xhtml">
+    <ui:define name="titulo">#{msg['consulta.titulo']} - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">#{msg['consulta.titulo']}</ui:define>
+    <ui:define name="contenido">
+        <h:panelGrid columns="1">
+            <h:panelGroup id="pnlTabla" layout="block" rendered="#{consultaModel.estado eq 'NADA'}">
+                <h:form id="frmTabla">
+                    <h:panelGrid columns="1">
+                        <g:botonesTop modelo="#{consultaModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                        <p:dataTable id="tabla" value="#{consultaModel.modelo}" var="r" lazy="true"
+                                     paginator="true" rows="#{consultaModel.cantidadRegistros}"
+                                     paginatorPosition="both" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                     selectionMode="single" selection="#{consultaModel.registro}" rowKey="#{r.idConsulta}">
+                            <p:ajax event="rowSelect" listener="#{consultaModel.selectionHandler}"
+                                    update=":pnlTabla :pnlDetalle :mensajes"/>
+                            <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idConsulta}"/></p:column>
+                            <p:column headerText="#{msg['consulta.tabla.paciente']}"><h:outputText value="#{r.idPersonaRol.idPersona.nombres} #{r.idPersonaRol.idPersona.apellidos}"/></p:column>
+                            <p:column headerText="#{msg['consulta.tabla.fechaInicio']}"><h:outputText value="#{r.fechaInicio}"/></p:column>
+                            <p:column headerText="#{msg['consulta.tabla.estado']}"><h:outputText value="#{empty r.fechaFin ? msg['consulta.estado.activa'] : msg['consulta.estado.finalizada']}"/></p:column>
+                            <p:column headerText="#{msg['tabla.observaciones']}"><h:outputText value="#{r.observaciones}"/></p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </h:form>
+            </h:panelGroup>
+            <h:panelGroup id="pnlDetalle" layout="block">
+                <h:form id="frmDetalle" rendered="#{consultaModel.estado ne 'NADA'}">
+                    <h:panelGrid columns="1">
+                        <g:botonesTop modelo="#{consultaModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                        <h:panelGrid columns="2" cellpadding="5">
+                            <p:outputLabel for="txtId" value="#{msg['consulta.form.id']}"/>
+                            <p:inputText id="txtId" value="#{consultaModel.registro.idConsulta}" size="50" disabled="true"/>
+                            <p:outputLabel for="cmbPaciente" value="#{msg['consulta.form.paciente']}"/>
+                            <p:selectOneMenu id="cmbPaciente" value="#{consultaModel.idPersonaRolSeleccionado}" required="true"
+                                             requiredMessage="#{msg['consulta.paciente.requerido']}">
+                                <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                                <f:selectItems value="#{consultaModel.pacientes}" var="pr"
+                                               itemLabel="#{pr.idPersona.nombres} #{pr.idPersona.apellidos} - #{pr.idRol.nombre}"
+                                               itemValue="#{pr.idPersonaRol}"/>
+                            </p:selectOneMenu>
+                            <p:outputLabel for="txtFechaInicio" value="#{msg['consulta.form.fechaInicio']}"/>
+                            <p:inputText id="txtFechaInicio" value="#{consultaModel.registro.fechaInicio}" size="50" disabled="true"/>
+                            <p:outputLabel for="txtReferencia" value="#{msg['consulta.form.referenciaExterna']}"/>
+                            <p:inputTextarea id="txtReferencia" value="#{consultaModel.registro.referenciaExterna}" rows="2" cols="50"/>
+                            <p:outputLabel for="txtObservaciones" value="#{msg['consulta.form.observaciones']}"/>
+                            <p:inputTextarea id="txtObservaciones" value="#{consultaModel.registro.observaciones}" rows="4" cols="50"/>
+                        </h:panelGrid>
+                        <h:panelGrid columns="#{consultaModel.estado eq 'CREAR' ? 1 : 2}">
+                            <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}" actionListener="#{consultaModel.btnGuardarHandler}" rendered="#{consultaModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                            <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}" actionListener="#{consultaModel.btnModificarHandler}" rendered="#{consultaModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                            <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}" actionListener="#{consultaModel.btnEliminarHandler}" rendered="#{consultaModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                </h:form>
+            </h:panelGroup>
+        </h:panelGrid>
+    </ui:define>
+</ui:composition>

@@ -25,7 +25,6 @@
             <artifactId>primefaces</artifactId>
             <version>15.0.17</version>
             <classifier>jakarta</classifier>
-            <scope>provided</scope>
         </dependency>
         
         <dependency>
@@ -66,9 +65,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.4.0</version>
+            </plugin>
+            <plugin>
+                <groupId>io.openliberty.tools</groupId>
+                <artifactId>liberty-maven-plugin</artifactId>
+                <version>3.10.2</version>
                 <configuration>
-                    <installDirectory>/home/duran/wlp</installDirectory>
-                    <serverName>GalenoSv</serverName>
+                    <installDirectory>/home/mrxto/openliberty/wlp</installDirectory>
+                    <serverName>miServidor</serverName>
                 </configuration>
             </plugin>
             

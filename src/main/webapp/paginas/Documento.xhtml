@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:f="jakarta.faces.core"
+                xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:g="jakarta.faces.composite/crud"
+                template="../WEB-INF/plantillas/general.xhtml">
+    <ui:define name="titulo">#{msg['documento.titulo']} - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">#{msg['documento.titulo']}</ui:define>
+    <ui:define name="contenido">
+        <h:panelGrid columns="1">
+            <h:panelGroup id="pnlTabla" layout="block" rendered="#{documentoModel.estado eq 'NADA'}">
+                <h:form id="frmTabla">
+                    <g:botonesTop modelo="#{documentoModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                    <p:dataTable id="tabla" value="#{documentoModel.modelo}" var="r" lazy="true"
+                                 paginator="true" rows="#{documentoModel.cantidadRegistros}" paginatorPosition="both"
+                                 emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
+                                 selection="#{documentoModel.registro}" rowKey="#{r.idDocumento}">
+                        <p:ajax event="rowSelect" listener="#{documentoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                        <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idDocumento}"/></p:column>
+                        <p:column headerText="#{msg['documento.tabla.persona']}"><h:outputText value="#{r.idPersona.nombres} #{r.idPersona.apellidos}"/></p:column>
+                        <p:column headerText="#{msg['documento.tabla.tipoDocumento']}"><h:outputText value="#{r.idTipoDocumento.nombre}"/></p:column>
+                        <p:column headerText="#{msg['documento.tabla.valor']}"><h:outputText value="#{r.valor}"/></p:column>
+                        <p:column headerText="#{msg['documento.tabla.rutaFisica']}"><h:outputText value="#{r.rutaFisica}"/></p:column>
+                    </p:dataTable>
+                </h:form>
+            </h:panelGroup>
+            <h:panelGroup id="pnlDetalle" layout="block">
+                <h:form id="frmDetalle" rendered="#{documentoModel.estado ne 'NADA'}">
+                    <g:botonesTop modelo="#{documentoModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                    <h:panelGrid columns="2" cellpadding="5">
+                        <p:outputLabel for="txtId" value="#{msg['documento.form.id']}"/>
+                        <p:inputText id="txtId" value="#{documentoModel.registro.idDocumento}" size="50" disabled="true"/>
+                        <p:outputLabel for="cmbPersona" value="#{msg['documento.form.persona']}"/>
+                        <p:selectOneMenu id="cmbPersona" value="#{documentoModel.idPersonaSeleccionada}" required="true">
+                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                            <f:selectItems value="#{documentoModel.personas}" var="p" itemLabel="#{p.nombres} #{p.apellidos}" itemValue="#{p.idPersona}"/>
+                        </p:selectOneMenu>
+                        <p:outputLabel for="cmbTipo" value="#{msg['documento.form.tipoDocumento']}"/>
+                        <p:selectOneMenu id="cmbTipo" value="#{documentoModel.idTipoDocumentoSeleccionado}" required="true">
+                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                            <f:selectItems value="#{documentoModel.tiposDocumento}" var="t" itemLabel="#{t.nombre}" itemValue="#{t.idTipoDocumento}"/>
+                        </p:selectOneMenu>
+                        <p:outputLabel for="txtValor" value="#{msg['documento.form.valor']}"/>
+                        <p:inputText id="txtValor" value="#{documentoModel.registro.valor}" size="50"/>
+                        <p:outputLabel for="txtRuta" value="#{msg['documento.form.rutaFisica']}"/>
+                        <p:inputText id="txtRuta" value="#{documentoModel.registro.rutaFisica}" size="50"/>
+                    </h:panelGrid>
+                    <h:panelGrid columns="#{documentoModel.estado eq 'CREAR' ? 1 : 2}">
+                        <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}" actionListener="#{documentoModel.btnGuardarHandler}" rendered="#{documentoModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                        <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}" actionListener="#{documentoModel.btnModificarHandler}" rendered="#{documentoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                        <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}" actionListener="#{documentoModel.btnEliminarHandler}" rendered="#{documentoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                    </h:panelGrid>
+                </h:form>
+            </h:panelGroup>
+        </h:panelGrid>
+    </ui:define>
+</ui:composition>
