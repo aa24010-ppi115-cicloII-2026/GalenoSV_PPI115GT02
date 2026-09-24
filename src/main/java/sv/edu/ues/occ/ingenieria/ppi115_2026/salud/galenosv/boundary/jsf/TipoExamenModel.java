@@ -1,6 +1,7 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.jsf;
 
 import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
@@ -10,8 +11,11 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TipoExamenDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoExamen;
 
-@Named("TipoExamenModel")
-public class TipoExamenModel extends AbstractModel<TipoExamen> implements Serializable{
+@Named("tipoExamenModel")
+@ViewScoped
+public class TipoExamenModel extends AbstractModel<TipoExamen> implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Inject
     FacesContext facesContext;
@@ -23,7 +27,7 @@ public class TipoExamenModel extends AbstractModel<TipoExamen> implements Serial
         this.nombreBean = "TipoExamen";
     }
     
-  @Override
+    @Override
     protected FacesContext getFacesContext() {
         return facesContext;
     }
@@ -67,7 +71,7 @@ public class TipoExamenModel extends AbstractModel<TipoExamen> implements Serial
             try {
                 UUID buscado = UUID.fromString(id);
                 return this.modelo.getWrappedData().stream()
-                        .filter(x -> x.getIdTipoExamen()!=null && x.getIdTipoExamen().equals(buscado))
+                        .filter(x -> x.getIdTipoExamen() != null && x.getIdTipoExamen().equals(buscado))
                         .findFirst()
                         .orElse(null);
             } catch (IllegalArgumentException e) {
@@ -76,5 +80,4 @@ public class TipoExamenModel extends AbstractModel<TipoExamen> implements Serial
         }
         return null;
     }
-    
 }

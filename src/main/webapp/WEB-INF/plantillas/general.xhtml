@@ -27,7 +27,8 @@
                         <f:selectItem itemLabel="#{msg['idioma.espanol']}" itemValue="es"/>
                         <f:selectItem itemLabel="#{msg['idioma.ingles']}" itemValue="en"/>
                         <f:selectItem itemLabel="#{msg['idioma.frances']}" itemValue="fr"/>
-                        <p:ajax listener="#{idiomaBean.cambiarIdioma(idiomaBean.idioma)}" update="@all"/>
+                        <f:selectItem itemLabel="#{msg['idioma.chino']}" itemValue="zh"/>
+                        <p:ajax listener="#{idiomaBean.cambiarIdioma}" update="@all"/>
                     </p:selectOneMenu>
                 </h:form>
             </div>
