@@ -8,6 +8,8 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import org.primefaces.event.SelectEvent;
@@ -16,6 +18,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ESTADO_CRUD
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ExamenResultadoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.OrdenExamenDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimientoPaso;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ExamenResultado;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.OrdenExamen;
 
@@ -24,6 +27,8 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.OrdenExamen;
 public class ExamenResultadoModel extends AbstractModel<ExamenResultado> implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private static final ZoneId ZONA_LOCAL = ZoneId.of("America/El_Salvador");
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @Inject
     FacesContext facesContext;
@@ -32,6 +37,7 @@ public class ExamenResultadoModel extends AbstractModel<ExamenResultado> impleme
     @Inject
     OrdenExamenDAO ordenExamenDAO;
 
+    // Para el selector de Orden de Examen
     private String idOrdenExamenSeleccionada;
 
     public ExamenResultadoModel() {
@@ -95,39 +101,46 @@ public class ExamenResultadoModel extends AbstractModel<ExamenResultado> impleme
 
     @Override
     public void btnGuardarHandler(ActionEvent actionEvent) {
-        guardar(false);
+        if (this.registro != null) {
+            try {
+                prepararRelaciones();
+                dao.crear(this.registro);
+                limpiar("Resultado de examen guardado exitosamente");
+            } catch (Exception e) {
+                getFacesContext().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", e.getMessage()));
+            }
+        }
     }
 
     @Override
     public void btnModificarHandler(ActionEvent actionEvent) {
-        guardar(true);
-    }
-
-    private void guardar(boolean modificar) {
-        try {
-            prepararRelaciones();
-            if (modificar) {
-                dao.modificar(registro);
-                limpiar("Registro modificado");
-            } else {
-                dao.crear(registro);
-                limpiar("Registro guardado");
+        if (this.registro != null) {
+            try {
+                prepararRelaciones();
+                dao.modificar(this.registro);
+                limpiar("Resultado de examen modificado exitosamente");
+            } catch (Exception e) {
+                getFacesContext().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", e.getMessage()));
             }
-        } catch (Exception e) {
-            getFacesContext().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, modificar ? "Error al modificar" : "Error al guardar", e.getMessage()));
         }
     }
 
     private void prepararRelaciones() {
         if (idOrdenExamenSeleccionada == null || idOrdenExamenSeleccionada.isBlank()) {
-            throw new IllegalArgumentException("Debe seleccionar una orden de examen");
+            throw new IllegalArgumentException("Debe seleccionar una Orden de Examen");
         }
-        registro.setIdOrdenExamen(ordenExamenDAO.find(UUID.fromString(idOrdenExamenSeleccionada)));
+        OrdenExamen orden = ordenExamenDAO.find(UUID.fromString(idOrdenExamenSeleccionada));
+        registro.setIdOrdenExamen(orden);
     }
 
     private void sincronizarSeleccion() {
-        idOrdenExamenSeleccionada = registro != null && registro.getIdOrdenExamen() != null ? registro.getIdOrdenExamen().getIdOrdenExamen().toString() : null;
+        if (registro != null && registro.getIdOrdenExamen() != null) {
+            idOrdenExamenSeleccionada = registro.getIdOrdenExamen().getIdOrdenExamen().toString();
+        } else {
+            idOrdenExamenSeleccionada = null;
+        }
     }
 
     private void limpiar(String mensaje) {
@@ -135,18 +148,57 @@ public class ExamenResultadoModel extends AbstractModel<ExamenResultado> impleme
         estado = ESTADO_CRUD.NADA;
         idOrdenExamenSeleccionada = null;
         inicializarRegistros();
-        getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito", mensaje));
+        getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", mensaje));
     }
 
+    // ─── Métodos de utilidad para mostrar info legible ──────────────────────────
+
+    /**
+     * Devuelve una descripción amigable para la orden de examen:
+     * "Paciente: Juan Pérez | Procedimiento: Limpieza Dental | Fecha: dd/MM/yyyy"
+     */
+    public String descripcionOrden(OrdenExamen orden) {
+        if (orden == null) return "N/A";
+        try {
+            StringBuilder sb = new StringBuilder();
+            ConsultaProcedimientoPaso paso = orden.getIdConsultaProcedimientoPaso();
+            if (paso != null) {
+                // Paciente
+                if (paso.getIdConsultaProcedimiento() != null
+                        && paso.getIdConsultaProcedimiento().getIdConsulta() != null
+                        && paso.getIdConsultaProcedimiento().getIdConsulta().getIdPersonaRol() != null
+                        && paso.getIdConsultaProcedimiento().getIdConsulta().getIdPersonaRol().getIdPersona() != null) {
+                    var persona = paso.getIdConsultaProcedimiento().getIdConsulta().getIdPersonaRol().getIdPersona();
+                    sb.append(persona.getNombres()).append(" ").append(persona.getApellidos());
+                } else {
+                    sb.append("Paciente desconocido");
+                }
+                sb.append(" | Estado: ").append(paso.getEstado() != null ? paso.getEstado() : "N/A");
+            }
+            if (orden.getFechaCreacion() != null) {
+                sb.append(" | ").append(orden.getFechaCreacion().atZoneSameInstant(ZONA_LOCAL).format(FORMATO_FECHA));
+            }
+            if (orden.getIndicaciones() != null && !orden.getIndicaciones().isBlank()) {
+                sb.append(" | ").append(orden.getIndicaciones().length() > 40
+                        ? orden.getIndicaciones().substring(0, 40) + "..."
+                        : orden.getIndicaciones());
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return orden.getIdOrdenExamen() != null ? orden.getIdOrdenExamen().toString() : "N/A";
+        }
+    }
+
+    public String formatearFecha(OffsetDateTime fecha) {
+        return fecha == null ? "" : fecha.atZoneSameInstant(ZONA_LOCAL).format(FORMATO_FECHA);
+    }
+
+    // ─── Lista de órdenes disponibles ───────────────────────────────────────────
     public List<OrdenExamen> getOrdenesExamen() {
         return ordenExamenDAO.findAll();
     }
 
-    public String getIdOrdenExamenSeleccionada() {
-        return idOrdenExamenSeleccionada;
-    }
-
-    public void setIdOrdenExamenSeleccionada(String idOrdenExamenSeleccionada) {
-        this.idOrdenExamenSeleccionada = idOrdenExamenSeleccionada;
-    }
+    // ─── Getters y Setters ───────────────────────────────────────────────────────
+    public String getIdOrdenExamenSeleccionada() { return idOrdenExamenSeleccionada; }
+    public void setIdOrdenExamenSeleccionada(String idOrdenExamenSeleccionada) { this.idOrdenExamenSeleccionada = idOrdenExamenSeleccionada; }
 }

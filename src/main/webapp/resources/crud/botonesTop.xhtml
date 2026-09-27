@@ -26,6 +26,7 @@
                              value="#{msg['boton.cancelar']}"
                              actionListener="#{cc.attrs.modelo.btnCancelarHandler}"
                              rendered="#{cc.attrs.modelo.estado ne 'NADA'}"
+                             immediate="true"
                              update="#{cc.attrs.actualizar}"/>
         </h:panelGrid>
     </cc:implementation>

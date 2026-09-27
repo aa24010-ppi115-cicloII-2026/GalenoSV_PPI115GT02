@@ -6,62 +6,117 @@
                 xmlns:ui="jakarta.faces.facelets"
                 xmlns:g="jakarta.faces.composite/crud"
                 template="../WEB-INF/plantillas/general.xhtml">
-    <ui:define name="titulo">#{msg['personaRol.titulo']} - #{msg['sistema.titulo']}</ui:define>
-    <ui:define name="encabezado">#{msg['personaRol.titulo']}</ui:define>
+    <ui:define name="titulo">Asignación de Roles - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">Asignación de Roles a Personas</ui:define>
+
     <ui:define name="contenido">
-        <h:panelGrid columns="1">
+        <h:form id="frmPersonaRol">
+            <p:messages id="mensajes" showDetail="true" closable="true"/>
+
+            <!-- ===== TABLA PRINCIPAL (estado NADA) ===== -->
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{personaRolModel.estado eq 'NADA'}">
-                <h:form id="frmTabla">
-                    <h:panelGrid columns="1">
-                        <g:botonesTop modelo="#{personaRolModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:dataTable id="tabla" value="#{personaRolModel.modelo}" var="r" lazy="true"
-                                     paginator="true" rows="#{personaRolModel.cantidadRegistros}"
-                                     paginatorPosition="both" emptyMessage="#{msg['tabla.sinRegistros']}"
-                                     selectionMode="single" selection="#{personaRolModel.registro}" rowKey="#{r.idPersonaRol}">
-                            <p:ajax event="rowSelect" listener="#{personaRolModel.selectionHandler}"
-                                    update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idPersonaRol}"/></p:column>
-                            <p:column headerText="#{msg['personaRol.tabla.persona']}"><h:outputText value="#{r.idPersona.nombres} #{r.idPersona.apellidos}"/></p:column>
-                            <p:column headerText="#{msg['personaRol.tabla.rol']}"><h:outputText value="#{r.idRol.nombre}"/></p:column>
-                            <p:column headerText="#{msg['personaRol.tabla.clinica']}"><h:outputText value="#{r.idClinica.nombre}"/></p:column>
-                            <p:column headerText="#{msg['personaRol.tabla.fechaCreacion']}"><h:outputText value="#{r.fechaCreacion}"/></p:column>
-                        </p:dataTable>
-                    </h:panelGrid>
-                </h:form>
+                <h:panelGrid columns="1" style="width:100%">
+                    <g:botonesTop modelo="#{personaRolModel}" actualizar=":frmPersonaRol"/>
+                    <p:dataTable id="tabla" value="#{personaRolModel.modelo}" var="r" lazy="true"
+                                 paginator="true" rows="#{personaRolModel.cantidadRegistros}"
+                                 paginatorPosition="both" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                 selectionMode="single" selection="#{personaRolModel.registro}"
+                                 rowKey="#{r.idPersonaRol}">
+                        <p:ajax event="rowSelect" listener="#{personaRolModel.selectionHandler}" update=":frmPersonaRol"/>
+
+                        <p:column headerText="Persona">
+                            <h:outputText value="#{r.idPersona.nombres} #{r.idPersona.apellidos}"/>
+                        </p:column>
+                        <p:column headerText="Rol Asignado">
+                            <h:outputText value="#{r.idRol.nombre}"/>
+                        </p:column>
+                        <p:column headerText="Clínica">
+                            <h:outputText value="#{r.idClinica.nombre}"/>
+                        </p:column>
+                        <p:column headerText="Fecha de Asignación">
+                            <h:outputText value="#{r.fechaCreacion}"/>
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
             </h:panelGroup>
-            <h:panelGroup id="pnlDetalle" layout="block">
-                <h:form id="frmDetalle" rendered="#{personaRolModel.estado ne 'NADA'}">
-                    <h:panelGrid columns="1">
-                        <g:botonesTop modelo="#{personaRolModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
-                        <h:panelGrid columns="2" cellpadding="5">
-                            <p:outputLabel for="txtId" value="#{msg['personaRol.form.id']}"/>
-                            <p:inputText id="txtId" value="#{personaRolModel.registro.idPersonaRol}" size="50" disabled="true"/>
-                            <p:outputLabel for="cmbPersona" value="#{msg['personaRol.form.persona']}"/>
-                            <p:selectOneMenu id="cmbPersona" value="#{personaRolModel.idPersonaSeleccionada}" required="true">
-                                <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
-                                <f:selectItems value="#{personaRolModel.personas}" var="p" itemLabel="#{p.nombres} #{p.apellidos}" itemValue="#{p.idPersona}"/>
-                            </p:selectOneMenu>
-                            <p:outputLabel for="cmbRol" value="#{msg['personaRol.form.rol']}"/>
-                            <p:selectOneMenu id="cmbRol" value="#{personaRolModel.idRolSeleccionado}" required="true">
-                                <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
-                                <f:selectItems value="#{personaRolModel.roles}" var="r" itemLabel="#{r.nombre}" itemValue="#{r.idRol}"/>
-                            </p:selectOneMenu>
-                            <p:outputLabel for="cmbClinica" value="#{msg['personaRol.form.clinica']}"/>
-                            <p:selectOneMenu id="cmbClinica" value="#{personaRolModel.idClinicaSeleccionada}" required="true">
-                                <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
-                                <f:selectItems value="#{personaRolModel.clinicas}" var="c" itemLabel="#{c.nombre}" itemValue="#{c.idClinica}"/>
-                            </p:selectOneMenu>
-                            <p:outputLabel for="txtFechaCreacion" value="#{msg['personaRol.form.fechaCreacion']}"/>
-                            <p:inputText id="txtFechaCreacion" value="#{personaRolModel.registro.fechaCreacion}" size="50" disabled="true"/>
-                        </h:panelGrid>
-                        <h:panelGrid columns="#{personaRolModel.estado eq 'CREAR' ? 1 : 2}">
-                            <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}" actionListener="#{personaRolModel.btnGuardarHandler}" rendered="#{personaRolModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}" actionListener="#{personaRolModel.btnModificarHandler}" rendered="#{personaRolModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}" actionListener="#{personaRolModel.btnEliminarHandler}" rendered="#{personaRolModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        </h:panelGrid>
+
+            <!-- ===== PANEL DE DETALLE (CREAR / MODIFICAR) ===== -->
+            <h:panelGroup id="pnlDetalle" layout="block" rendered="#{personaRolModel.estado ne 'NADA'}">
+                <g:botonesTop modelo="#{personaRolModel}" actualizar=":frmPersonaRol"/>
+
+                <p:panel header="Datos de la Asignación" style="margin-top:10px;">
+                    <h:panelGrid columns="2" cellpadding="8">
+
+                        <p:outputLabel for="txtId" value="ID"/>
+                        <p:inputText id="txtId" value="#{personaRolModel.registro.idPersonaRol}"
+                                     size="50" disabled="true"/>
+
+                        <p:outputLabel for="cmbPersona" value="Persona *"/>
+                        <p:selectOneMenu id="cmbPersona" value="#{personaRolModel.idPersonaSeleccionada}"
+                                         style="width:300px" required="true"
+                                         requiredMessage="Debe seleccionar una persona">
+                            <f:selectItem itemLabel="-- Seleccione una persona --" itemValue=""/>
+                            <f:selectItems value="#{personaRolModel.personas}" var="p"
+                                           itemLabel="#{p.nombres} #{p.apellidos}"
+                                           itemValue="#{p.idPersona}"/>
+                        </p:selectOneMenu>
+
+                        <p:outputLabel for="cmbRol" value="Rol *"/>
+                        <p:selectOneMenu id="cmbRol" value="#{personaRolModel.idRolSeleccionado}"
+                                         style="width:300px" required="true"
+                                         requiredMessage="Debe seleccionar un rol">
+                            <f:selectItem itemLabel="-- Seleccione un rol --" itemValue=""/>
+                            <f:selectItems value="#{personaRolModel.roles}" var="r"
+                                           itemLabel="#{r.nombre}" itemValue="#{r.idRol}"/>
+                        </p:selectOneMenu>
+
+                        <p:outputLabel for="cmbClinica" value="Clínica *"/>
+                        <p:selectOneMenu id="cmbClinica" value="#{personaRolModel.idClinicaSeleccionada}"
+                                         style="width:300px" required="true"
+                                         requiredMessage="Debe seleccionar una clínica">
+                            <f:selectItem itemLabel="-- Seleccione una clínica --" itemValue=""/>
+                            <f:selectItems value="#{personaRolModel.clinicas}" var="c"
+                                           itemLabel="#{c.nombre}" itemValue="#{c.idClinica}"/>
+                        </p:selectOneMenu>
+
+                        <p:outputLabel for="txtFecha" value="Fecha de Asignación"/>
+                        <p:inputText id="txtFecha" value="#{personaRolModel.registro.fechaCreacion}"
+                                     size="30" disabled="true"/>
                     </h:panelGrid>
-                </h:form>
+
+                    <!-- Botones con process explícito -->
+                    <h:panelGrid columns="#{personaRolModel.estado eq 'CREAR' ? 1 : 2}" style="margin-top:10px;">
+                        <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}"
+                                         actionListener="#{personaRolModel.btnGuardarHandler}"
+                                         rendered="#{personaRolModel.estado eq 'CREAR'}"
+                                         update=":frmPersonaRol" styleClass="ui-button-success"
+                                         process="@this txtId cmbPersona cmbRol cmbClinica txtFecha"/>
+
+                        <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}"
+                                         actionListener="#{personaRolModel.btnModificarHandler}"
+                                         rendered="#{personaRolModel.estado eq 'MODIFICAR'}"
+                                         update=":frmPersonaRol" styleClass="ui-button-primary"
+                                         process="@this txtId cmbPersona cmbRol cmbClinica txtFecha"/>
+
+                        <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}"
+                                         actionListener="#{personaRolModel.btnEliminarHandler}"
+                                         rendered="#{personaRolModel.estado eq 'MODIFICAR'}"
+                                         update=":frmPersonaRol" styleClass="ui-button-danger"
+                                         process="@this">
+                            <p:confirm header="Confirmación"
+                                       message="¿Está seguro de eliminar esta asignación de rol?"
+                                       icon="pi pi-info-circle"/>
+                        </p:commandButton>
+                    </h:panelGrid>
+                </p:panel>
             </h:panelGroup>
-        </h:panelGrid>
+
+            <!-- Confirm Dialog global -->
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
+                <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
+                <p:commandButton value="Sí" type="button" styleClass="ui-confirmdialog-yes"/>
+            </p:confirmDialog>
+
+        </h:form>
     </ui:define>
 </ui:composition>
