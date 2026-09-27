@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control;
 
 import jakarta.ejb.Stateless;
@@ -9,12 +5,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
+import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.PersonaRol;
 
-/**
- *
- * @author duran
- */
 @Stateless
 public class PersonaRolDAO extends DefaultDAO<PersonaRol> {
 
@@ -58,4 +51,22 @@ public class PersonaRolDAO extends DefaultDAO<PersonaRol> {
         return em;
     }
 
+    public List<PersonaRol> findByClinica(UUID id, int first, int max) {
+        return getEntityManager().createQuery(
+                "SELECT p FROM PersonaRol p JOIN FETCH p.idPersona JOIN FETCH p.idRol JOIN FETCH p.idClinica WHERE p.idClinica.idClinica = :id ORDER BY p.idPersona.apellidos, p.idPersonaRol",
+                PersonaRol.class).setParameter("id", id)
+                .setFirstResult(first).setMaxResults(max).getResultList();
+    }
+
+    public Long countByClinica(UUID id) {
+        return getEntityManager().createQuery(
+                "SELECT COUNT(p) FROM PersonaRol p WHERE p.idClinica.idClinica = :id", Long.class)
+                .setParameter("id", id).getSingleResult();
+    }
+
+    public List<PersonaRol> findPacientes() {
+        return getEntityManager().createQuery(
+                "SELECT p FROM PersonaRol p JOIN FETCH p.idPersona JOIN FETCH p.idRol JOIN FETCH p.idClinica WHERE LOWER(TRIM(p.idRol.nombre)) = :rol ORDER BY p.idPersona.apellidos",
+                PersonaRol.class).setParameter("rol", "paciente").getResultList();
+    }
 }

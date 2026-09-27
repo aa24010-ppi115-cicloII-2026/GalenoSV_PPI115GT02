@@ -1,6 +1,5 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.jsf;
 
-
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.event.ActionEvent;
@@ -23,7 +22,6 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Clinica;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Persona;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.PersonaRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Rol;
-
 
 @Named("personaRolModel")
 @ViewScoped
@@ -49,6 +47,51 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
     private String idPersonaSeleccionada;
     private String idRolSeleccionado;
     private String idClinicaSeleccionada;
+    private UUID idClinicaMaestro;
+
+    public void establecerClinicaMaestro(UUID id) {
+        if (java.util.Objects.equals(idClinicaMaestro, id)) {
+            return;
+        }
+        idClinicaMaestro = id;
+        registro = null;
+        estado = ESTADO_CRUD.NADA;
+        limpiarSeleccion();
+        inicializarRegistros();
+    }
+
+    @Override
+    public void inicializarRegistros() {
+        if (idClinicaMaestro == null) {
+            super.inicializarRegistros();
+            return;
+        }
+        modelo = new org.primefaces.model.LazyDataModel<PersonaRol>() {
+            @Override
+            public String getRowKey(PersonaRol dato) {
+                return getIdAsText(dato);
+            }
+
+            @Override
+            public PersonaRol getRowData(String id) {
+                PersonaRol dato = getIdByText(id);
+                return dato != null && dato.getIdClinica() != null
+                        && idClinicaMaestro.equals(dato.getIdClinica().getIdClinica()) ? dato : null;
+            }
+
+            @Override
+            public int count(java.util.Map<String, org.primefaces.model.FilterMeta> filtros) {
+                return dao.countByClinica(idClinicaMaestro).intValue();
+            }
+
+            @Override
+            public List<PersonaRol> load(int first, int max,
+                    java.util.Map<String, org.primefaces.model.SortMeta> orden,
+                    java.util.Map<String, org.primefaces.model.FilterMeta> filtros) {
+                return dao.findByClinica(idClinicaMaestro, first, max);
+            }
+        };
+    }
 
     public PersonaRolModel() {
         this.nombreBean = "PersonaRol";
@@ -147,6 +190,9 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
     }
 
     private void prepararRelaciones() {
+        if (idClinicaMaestro != null) {
+            idClinicaSeleccionada = idClinicaMaestro.toString();
+        }
         if (idPersonaSeleccionada == null || idPersonaSeleccionada.isBlank()) {
             throw new IllegalArgumentException("Debe seleccionar una persona");
         }
@@ -185,7 +231,7 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
     private void limpiarSeleccion() {
         idPersonaSeleccionada = null;
         idRolSeleccionado = null;
-        idClinicaSeleccionada = null;
+        idClinicaSeleccionada = idClinicaMaestro == null ? null : idClinicaMaestro.toString();
     }
 
     public List<Persona> getPersonas() {

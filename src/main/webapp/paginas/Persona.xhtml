@@ -1,187 +1,123 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ui:composition xmlns="http://www.w3.org/1999/xhtml"
-                xmlns:f="jakarta.faces.core"
-                xmlns:h="jakarta.faces.html"
-                xmlns:p="http://primefaces.org/ui"
-                xmlns:ui="jakarta.faces.facelets"
-                xmlns:g="jakarta.faces.composite/crud"
+<ui:composition xmlns="http://www.w3.org/1999/xhtml" xmlns:f="jakarta.faces.core"
+                xmlns:h="jakarta.faces.html" xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="jakarta.faces.facelets" xmlns:g="jakarta.faces.composite/crud"
                 template="../WEB-INF/plantillas/general.xhtml">
-    <ui:define name="titulo">Gestión de Personas - #{msg['sistema.titulo']}</ui:define>
-    <ui:define name="encabezado">Gestión de Personas</ui:define>
-
+    <ui:define name="titulo">#{msg['persona.titulo']} - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">#{msg['persona.titulo']}</ui:define>
     <ui:define name="contenido">
-        <h:form id="frmPersona">
-            <p:messages id="mensajes" showDetail="true" closable="true"/>
+        <h:panelGroup id="pnlTabla" layout="block">
+            <h:form id="frmTabla" rendered="#{personaModel.estado eq 'NADA'}">
+                <g:botonesTop modelo="#{personaModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                <p:dataTable id="tabla" value="#{personaModel.modelo}" var="r" lazy="true" paginator="true"
+                             rows="#{personaModel.cantidadRegistros}" paginatorPosition="both"
+                             emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
+                             selection="#{personaModel.registro}" rowKey="#{r.idPersona}">
+                    <p:ajax event="rowSelect" listener="#{personaModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                    <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idPersona}"/></p:column>
+                    <p:column headerText="#{msg['persona.tabla.nombres']}"><h:outputText value="#{r.nombres}"/></p:column>
+                    <p:column headerText="#{msg['persona.tabla.apellidos']}"><h:outputText value="#{r.apellidos}"/></p:column>
+                    <p:column headerText="#{msg['persona.tabla.fechaNacimiento']}"><h:outputText value="#{fechaBean.fecha(r.fechaNacimiento)}"/></p:column>
+                    <p:column headerText="#{msg['persona.tabla.fechaCreacion']}"><h:outputText value="#{fechaBean.fechaHora(r.fechaCreacion)}"/></p:column>
+                </p:dataTable>
+            </h:form>
+        </h:panelGroup>
 
-            <!-- ===== TABLA PRINCIPAL ===== -->
-            <h:panelGroup id="pnlTabla" layout="block" rendered="#{personaModel.estado eq 'NADA'}">
-                <h:panelGrid columns="1" style="width:100%">
-                    <g:botonesTop modelo="#{personaModel}" actualizar=":frmPersona"/>
-                    <p:dataTable id="tabla" value="#{personaModel.modelo}" var="r" lazy="true"
-                                 paginator="true" rows="#{personaModel.cantidadRegistros}"
-                                 paginatorPosition="both" emptyMessage="#{msg['tabla.sinRegistros']}"
-                                 selectionMode="single" selection="#{personaModel.registro}"
-                                 rowKey="#{r.idPersona}">
-                        <p:ajax event="rowSelect" listener="#{personaModel.selectionHandler}" update=":frmPersona"/>
-                        <p:column headerText="ID" width="300"><h:outputText value="#{r.idPersona}"/></p:column>
-                        <p:column headerText="Nombres"><h:outputText value="#{r.nombres}"/></p:column>
-                        <p:column headerText="Apellidos"><h:outputText value="#{r.apellidos}"/></p:column>
-                    </p:dataTable>
-                </h:panelGrid>
-            </h:panelGroup>
-
-            <!-- ===== PANEL DE DETALLES (Maestro) ===== -->
-            <h:panelGroup id="pnlDetalle" layout="block" rendered="#{personaModel.estado ne 'NADA'}">
-                <g:botonesTop modelo="#{personaModel}" actualizar=":frmPersona"/>
-                <p:panel header="Datos Generales de la Persona">
+        <h:panelGroup id="pnlDetalle" layout="block">
+            <p:panel header="#{msg['persona.seccion.maestro']}" rendered="#{personaModel.estado ne 'NADA'}">
+                <h:form id="frmPersona">
+                    <g:botonesTop modelo="#{personaModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
                     <h:panelGrid columns="2" cellpadding="5">
-                        <p:outputLabel for="txtId" value="ID"/>
-                        <p:inputText id="txtId" value="#{personaModel.registro.idPersona}" size="50" disabled="true"/>
-
-                        <p:outputLabel for="txtNombres" value="Nombres *"/>
-                        <p:inputText id="txtNombres" value="#{personaModel.registro.nombres}" size="50" required="true"/>
-
-                        <p:outputLabel for="txtApellidos" value="Apellidos *"/>
-                        <p:inputText id="txtApellidos" value="#{personaModel.registro.apellidos}" size="50" required="true"/>
+                        <p:outputLabel for="idPersona" value="#{msg['persona.form.id']}"/>
+                        <p:inputText id="idPersona" value="#{personaModel.registro.idPersona}" size="50" disabled="true"/>
+                        <p:outputLabel for="nombres" value="#{msg['persona.form.nombres']}"/>
+                        <p:inputText id="nombres" value="#{personaModel.registro.nombres}" required="true"
+                                     requiredMessage="#{msg['persona.nombres.requeridos']}" size="50" maxlength="255"/>
+                        <p:outputLabel for="apellidos" value="#{msg['persona.form.apellidos']}"/>
+                        <p:inputText id="apellidos" value="#{personaModel.registro.apellidos}" required="true"
+                                     requiredMessage="#{msg['persona.apellidos.requeridos']}" size="50" maxlength="255"/>
+                        <p:outputLabel for="fechaNacimiento" value="#{msg['persona.form.fechaNacimiento']}"/>
+                        <p:datePicker id="fechaNacimiento" value="#{personaModel.fechaNacimientoSeleccionada}"
+                                      pattern="dd/MM/yyyy" showIcon="true" monthNavigator="true" yearNavigator="true"/>
+                        <p:outputLabel value="#{msg['persona.form.fechaCreacion']}"/>
+                        <h:outputText value="#{fechaBean.fechaHora(personaModel.registro.fechaCreacion)}"/>
                     </h:panelGrid>
-
-                    <h:panelGrid columns="#{personaModel.estado eq 'CREAR' ? 1 : 2}" style="margin-top:10px;">
+                    <h:panelGrid columns="#{personaModel.estado eq 'CREAR' ? 1 : 2}">
                         <p:commandButton value="#{msg['boton.guardar']}" actionListener="#{personaModel.btnGuardarHandler}"
-                                         rendered="#{personaModel.estado eq 'CREAR'}" update=":frmPersona"
-                                         styleClass="ui-button-success" process="@this txtId txtNombres txtApellidos"/>
+                                         rendered="#{personaModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
                         <p:commandButton value="#{msg['boton.modificar']}" actionListener="#{personaModel.btnModificarHandler}"
-                                         rendered="#{personaModel.estado eq 'MODIFICAR'}" update=":frmPersona"
-                                         styleClass="ui-button-primary" process="@this txtId txtNombres txtApellidos"/>
+                                         rendered="#{personaModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
                         <p:commandButton value="#{msg['boton.eliminar']}" actionListener="#{personaModel.btnEliminarHandler}"
-                                         rendered="#{personaModel.estado eq 'MODIFICAR'}" update=":frmPersona"
-                                         styleClass="ui-button-danger" process="@this">
-                            <p:confirm header="Confirmación" message="¿Eliminar persona?" icon="pi pi-info-circle"/>
-                        </p:commandButton>
+                                         rendered="#{personaModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
                     </h:panelGrid>
-                </p:panel>
+                </h:form>
+            </p:panel>
 
-                <!-- ===== PESTAÑAS (Solo en modo modificar) ===== -->
-                <p:tabView rendered="#{personaModel.estado eq 'MODIFICAR'}" style="margin-top:20px;">
-
-                    <!-- ─── Pestaña 1: Roles ─── -->
-                    <p:tab title="Roles (Médico, Paciente, etc.)">
-                        <h:panelGroup id="panelNuevoRol" style="margin-bottom:15px; display:block;">
-                            <h:panelGrid columns="4" cellpadding="5" styleClass="ui-fluid">
-                                <p:outputLabel value="Seleccione un Rol:"/>
-                                <p:selectOneMenu value="#{personaModel.idRolSeleccionado}" style="width:200px" required="true" requiredMessage="Seleccione un rol">
-                                    <f:selectItem itemLabel="-- Seleccione --" itemValue=""/>
-                                    <f:selectItems value="#{personaModel.rolesDisponibles}" var="rol"
-                                                   itemLabel="#{rol.nombre}" itemValue="#{rol.idRol}"/>
-                                </p:selectOneMenu>
-
-                                <p:outputLabel value="Seleccione Clínica:"/>
-                                <p:selectOneMenu value="#{personaModel.idClinicaSeleccionadaRol}" style="width:200px" required="true" requiredMessage="Seleccione una clínica">
-                                    <f:selectItem itemLabel="-- Seleccione --" itemValue=""/>
-                                    <f:selectItems value="#{personaModel.clinicas}" var="cli"
-                                                   itemLabel="#{cli.nombre}" itemValue="#{cli.idClinica}"/>
-                                </p:selectOneMenu>
-
-                                <p:commandButton value="Asignar Rol" icon="pi pi-plus"
-                                                 actionListener="#{personaModel.agregarRol()}"
-                                                 process="panelNuevoRol" update="panelNuevoRol tablaRoles :frmPersona:mensajes"
-                                                 styleClass="ui-button-info" rendered="#{not personaModel.editandoRol}"/>
-                                                 
-                                <p:commandButton value="Guardar Cambios" icon="pi pi-pencil"
-                                                 actionListener="#{personaModel.modificarRol()}"
-                                                 process="panelNuevoRol" update="panelNuevoRol tablaRoles :frmPersona:mensajes"
-                                                 styleClass="ui-button-warning" rendered="#{personaModel.editandoRol}"/>
-                                                 
-                                <p:commandButton value="Cancelar" icon="pi pi-times"
-                                                 actionListener="#{personaModel.cancelarEdicionRol()}"
-                                                 process="@this" update="panelNuevoRol tablaRoles"
-                                                 styleClass="ui-button-secondary" rendered="#{personaModel.editandoRol}"/>
-                            </h:panelGrid>
-                        </h:panelGroup>
-
-                        <p:dataTable id="tablaRoles" value="#{personaModel.rolesDePersona}" var="pr"
-                                     emptyMessage="Esta persona no tiene roles asignados"
-                                     selectionMode="single" selection="#{personaModel.rolSeleccionado}"
-                                     rowKey="#{pr.idPersonaRol}">
-                                     
-                            <p:ajax event="rowSelect" listener="#{personaModel.onRolSelect}" update="panelNuevoRol"/>
-                            
-                            <p:column headerText="Rol">
-                                <h:outputText value="#{pr.idRol.nombre}"/>
-                            </p:column>
-                            <p:column headerText="Clínica">
-                                <h:outputText value="#{pr.idClinica.nombre}"/>
-                            </p:column>
-                            <p:column headerText="Acción" width="100" style="text-align:center;">
-                                <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
-                                                 actionListener="#{personaModel.eliminarRol(pr)}"
-                                                 process="@this" update="tablaRoles panelNuevoRol :frmPersona:mensajes">
-                                    <p:confirm header="Confirmación" message="¿Eliminar rol?" icon="pi pi-info-circle"/>
-                                </p:commandButton>
-                            </p:column>
+            <p:tabView id="tabDetalles" rendered="#{personaModel.estado eq 'MODIFICAR'}">
+                <p:tab title="#{msg['persona.tab.documentos']}">
+                    <h:form id="frmDocumentos">
+                        <g:botonesTop modelo="#{personaModel.documentoModel}" actualizar=":pnlDetalle :mensajes"/>
+                        <p:dataTable id="documentos" value="#{personaModel.documentoModel.modelo}" var="d" lazy="true"
+                                     paginator="true" rows="#{personaModel.documentoModel.cantidadRegistros}"
+                                     paginatorPosition="both" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                     selectionMode="single" selection="#{personaModel.documentoModel.registro}"
+                                     rowKey="#{d.idDocumento}" rendered="#{personaModel.documentoModel.estado eq 'NADA'}">
+                            <p:ajax event="rowSelect" listener="#{personaModel.documentoModel.selectionHandler}" update=":pnlDetalle :mensajes"/>
+                            <p:column headerText="#{msg['documento.tabla.tipoDocumento']}"><h:outputText value="#{d.idTipoDocumento.nombre}"/></p:column>
+                            <p:column headerText="#{msg['documento.tabla.valor']}"><h:outputText value="#{d.valor}"/></p:column>
+                            <p:column headerText="#{msg['documento.tabla.rutaFisica']}"><h:outputText value="#{d.rutaFisica}"/></p:column>
                         </p:dataTable>
-                    </p:tab>
+                        <h:panelGrid columns="2" cellpadding="5" rendered="#{personaModel.documentoModel.estado ne 'NADA'}">
+                            <p:outputLabel for="tipoDocumento" value="#{msg['documento.form.tipoDocumento']}"/>
+                            <p:selectOneMenu id="tipoDocumento" value="#{personaModel.documentoModel.idTipoDocumentoSeleccionado}" required="true">
+                                <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                                <f:selectItems value="#{personaModel.documentoModel.tiposDocumento}" var="t" itemLabel="#{t.nombre}" itemValue="#{t.idTipoDocumento}"/>
+                            </p:selectOneMenu>
+                            <p:outputLabel for="valorDocumento" value="#{msg['documento.form.valor']}"/>
+                            <p:inputText id="valorDocumento" value="#{personaModel.documentoModel.registro.valor}" required="true" maxlength="255"/>
+                            <p:outputLabel for="rutaDocumento" value="#{msg['documento.form.rutaFisica']}"/>
+                            <p:inputText id="rutaDocumento" value="#{personaModel.documentoModel.registro.rutaFisica}" maxlength="1000"/>
+                        </h:panelGrid>
+                        <h:panelGrid columns="2" rendered="#{personaModel.documentoModel.estado ne 'NADA'}">
+                            <p:commandButton value="#{msg['boton.guardar']}" actionListener="#{personaModel.documentoModel.btnGuardarHandler}" rendered="#{personaModel.documentoModel.estado eq 'CREAR'}" update=":pnlDetalle :mensajes"/>
+                            <p:commandButton value="#{msg['boton.modificar']}" actionListener="#{personaModel.documentoModel.btnModificarHandler}" rendered="#{personaModel.documentoModel.estado eq 'MODIFICAR'}" update=":pnlDetalle :mensajes"/>
+                            <p:commandButton value="#{msg['boton.eliminar']}" actionListener="#{personaModel.documentoModel.btnEliminarHandler}" rendered="#{personaModel.documentoModel.estado eq 'MODIFICAR'}" update=":pnlDetalle :mensajes"/>
+                        </h:panelGrid>
+                    </h:form>
+                </p:tab>
 
-                    <!-- ─── Pestaña 2: Medios de Contacto ─── -->
-                    <p:tab title="Medios de Contacto">
-                        <h:panelGroup id="panelNuevoMedio" style="margin-bottom:15px; display:block;">
-                            <h:panelGrid columns="7" cellpadding="5" styleClass="ui-fluid">
-                                <p:outputLabel value="Tipo de Contacto:"/>
-                                <p:selectOneMenu value="#{personaModel.idTipoMedioContactoSeleccionado}" style="width:200px" required="true" requiredMessage="Seleccione tipo de medio">
-                                    <f:selectItem itemLabel="-- Seleccione --" itemValue=""/>
-                                    <f:selectItems value="#{personaModel.tiposMedioContacto}" var="tmc"
-                                                   itemLabel="#{tmc.nombre}" itemValue="#{tmc.idTipoMedioContacto}"/>
-                                </p:selectOneMenu>
-
-                                <p:outputLabel value="Valor (Ej. Teléfono, Correo):"/>
-                                <p:inputText value="#{personaModel.nuevoMedioContacto.valor}" size="30" required="true" requiredMessage="El valor es requerido"/>
-
-                                <p:commandButton value="Agregar Contacto" icon="pi pi-plus"
-                                                 actionListener="#{personaModel.agregarMedioContacto()}"
-                                                 process="panelNuevoMedio" update="panelNuevoMedio tablaMedios :frmPersona:mensajes"
-                                                 styleClass="ui-button-info" rendered="#{not personaModel.editandoMedio}"/>
-                                                 
-                                <p:commandButton value="Guardar Cambios" icon="pi pi-pencil"
-                                                 actionListener="#{personaModel.modificarMedioContacto()}"
-                                                 process="panelNuevoMedio" update="panelNuevoMedio tablaMedios :frmPersona:mensajes"
-                                                 styleClass="ui-button-warning" rendered="#{personaModel.editandoMedio}"/>
-
-                                <p:commandButton value="Cancelar" icon="pi pi-times"
-                                                 actionListener="#{personaModel.cancelarEdicionMedio()}"
-                                                 process="@this" update="panelNuevoMedio tablaMedios"
-                                                 styleClass="ui-button-secondary" rendered="#{personaModel.editandoMedio}"/>
-                            </h:panelGrid>
-                        </h:panelGroup>
-
-                        <p:dataTable id="tablaMedios" value="#{personaModel.mediosDeContacto}" var="mc"
-                                     emptyMessage="No hay medios de contacto registrados"
-                                     selectionMode="single" selection="#{personaModel.medioSeleccionado}"
-                                     rowKey="#{mc.idMedioContacto}">
-                                     
-                            <p:ajax event="rowSelect" listener="#{personaModel.onMedioSelect}" update="panelNuevoMedio"/>
-                            
-                            <p:column headerText="Tipo">
-                                <h:outputText value="#{mc.idTipoMedioContacto.nombre}"/>
-                            </p:column>
-                            <p:column headerText="Valor">
-                                <h:outputText value="#{mc.valor}"/>
-                            </p:column>
-                            <p:column headerText="Acción" width="100" style="text-align:center;">
-                                <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
-                                                 actionListener="#{personaModel.eliminarMedioContacto(mc)}"
-                                                 process="@this" update="tablaMedios panelNuevoMedio :frmPersona:mensajes">
-                                    <p:confirm header="Confirmación" message="¿Eliminar contacto?" icon="pi pi-info-circle"/>
-                                </p:commandButton>
-                            </p:column>
+                <p:tab title="#{msg['persona.tab.mediosContacto']}">
+                    <h:form id="frmContactos">
+                        <g:botonesTop modelo="#{personaModel.medioContactoModel}" actualizar=":pnlDetalle :mensajes"/>
+                        <p:dataTable id="contactos" value="#{personaModel.medioContactoModel.modelo}" var="c" lazy="true"
+                                     paginator="true" rows="#{personaModel.medioContactoModel.cantidadRegistros}"
+                                     paginatorPosition="both" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                     selectionMode="single" selection="#{personaModel.medioContactoModel.registro}"
+                                     rowKey="#{c.idMedioContacto}" rendered="#{personaModel.medioContactoModel.estado eq 'NADA'}">
+                            <p:ajax event="rowSelect" listener="#{personaModel.medioContactoModel.selectionHandler}" update=":pnlDetalle :mensajes"/>
+                            <p:column headerText="#{msg['medioContacto.tabla.tipoMedioContacto']}"><h:outputText value="#{c.idTipoMedioContacto.nombre}"/></p:column>
+                            <p:column headerText="#{msg['medioContacto.tabla.valor']}"><h:outputText value="#{c.valor}"/></p:column>
+                            <p:column headerText="#{msg['medioContacto.tabla.fechaCreacion']}"><h:outputText value="#{fechaBean.fechaHora(c.fechaCreacion)}"/></p:column>
                         </p:dataTable>
-                    </p:tab>
-
-                </p:tabView>
-            </h:panelGroup>
-
-            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
-                <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
-                <p:commandButton value="Sí" type="button" styleClass="ui-confirmdialog-yes" />
-            </p:confirmDialog>
-        </h:form>
+                        <h:panelGrid columns="2" cellpadding="5" rendered="#{personaModel.medioContactoModel.estado ne 'NADA'}">
+                            <p:outputLabel for="tipoContacto" value="#{msg['medioContacto.form.tipoMedioContacto']}"/>
+                            <p:selectOneMenu id="tipoContacto" value="#{personaModel.medioContactoModel.idTipoMedioContactoSeleccionado}" required="true">
+                                <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                                <f:selectItems value="#{personaModel.medioContactoModel.tiposMedioContacto}" var="t" itemLabel="#{t.nombre}" itemValue="#{t.idTipoMedioContacto}"/>
+                            </p:selectOneMenu>
+                            <p:outputLabel for="valorContacto" value="#{msg['medioContacto.form.valor']}"/>
+                            <p:inputText id="valorContacto" value="#{personaModel.medioContactoModel.registro.valor}" required="true" maxlength="255"/>
+                            <p:outputLabel value="#{msg['medioContacto.form.fechaCreacion']}"/>
+                            <h:outputText value="#{fechaBean.fechaHora(personaModel.medioContactoModel.registro.fechaCreacion)}"/>
+                        </h:panelGrid>
+                        <h:panelGrid columns="2" rendered="#{personaModel.medioContactoModel.estado ne 'NADA'}">
+                            <p:commandButton value="#{msg['boton.guardar']}" actionListener="#{personaModel.medioContactoModel.btnGuardarHandler}" rendered="#{personaModel.medioContactoModel.estado eq 'CREAR'}" update=":pnlDetalle :mensajes"/>
+                            <p:commandButton value="#{msg['boton.modificar']}" actionListener="#{personaModel.medioContactoModel.btnModificarHandler}" rendered="#{personaModel.medioContactoModel.estado eq 'MODIFICAR'}" update=":pnlDetalle :mensajes"/>
+                            <p:commandButton value="#{msg['boton.eliminar']}" actionListener="#{personaModel.medioContactoModel.btnEliminarHandler}" rendered="#{personaModel.medioContactoModel.estado eq 'MODIFICAR'}" update=":pnlDetalle :mensajes"/>
+                        </h:panelGrid>
+                    </h:form>
+                </p:tab>
+            </p:tabView>
+        </h:panelGroup>
     </ui:define>
 </ui:composition>
