@@ -1,85 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:f="jakarta.faces.core"
-      xmlns:h="jakarta.faces.html"
-      xmlns:p="http://primefaces.org/ui"
-      xmlns:ui="jakarta.faces.facelets">
-<f:view locale="#{idiomaBean.locale}">
+<f:view xmlns:f="jakarta.faces.core"
+        xmlns="http://www.w3.org/1999/xhtml"
+        xmlns:h="jakarta.faces.html"
+        xmlns:p="http://primefaces.org/ui"
+        xmlns:ui="jakarta.faces.facelets"
+        locale="#{idiomaBean.locale}">
+<html>
     <h:head>
-        <title>
-            <ui:insert name="titulo">#{msg['sistema.titulo']}</ui:insert>
-        </title>
+        <title><ui:insert name="titulo">#{msg['sistema.titulo']}</ui:insert></title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <h:outputStylesheet library="css" name="galenosv.css"/>
     </h:head>
-    <h:body>
-        <div class="ui-g">
-            <div class="ui-g-12 ui-md-3">
-                <h:outputText value="#{msg['sistema.titulo']}"/>
-            </div>
-            <div class="ui-g-12 ui-md-6">
-                <h1>
+    <h:body styleClass="app-body">
+        <div class="app-shell">
+            <header class="app-header">
+                <h:graphicImage library="images" name="galenosv-logo.png"
+                                alt="#{msg['sistema.titulo']}" styleClass="app-logo"/>
+                <h1 class="app-page-title">
                     <ui:insert name="encabezado">#{msg['sistema.titulo']}</ui:insert>
                 </h1>
-            </div>
-            <div class="ui-g-12 ui-md-3">
-                <h:form id="frmIdioma">
+                <h:form id="frmIdioma" styleClass="app-language">
+                    <p:outputLabel for="cmbIdioma" value="#{msg['idioma.etiqueta']}"/>
                     <p:selectOneMenu id="cmbIdioma" value="#{idiomaBean.idioma}">
                         <f:selectItem itemLabel="#{msg['idioma.espanol']}" itemValue="es"/>
-                        <f:selectItem itemLabel="#{msg['idioma.ingles']}"  itemValue="en"/>
+                        <f:selectItem itemLabel="#{msg['idioma.ingles']}" itemValue="en"/>
                         <f:selectItem itemLabel="#{msg['idioma.frances']}" itemValue="fr"/>
-                        <f:selectItem itemLabel="#{msg['idioma.chino']}"   itemValue="zh"/>
-                        <p:ajax listener="#{idiomaBean.cambiarIdioma()}" update="@all"/>
+                        <f:selectItem itemLabel="#{msg['idioma.chino']}" itemValue="zh"/>
+                        <p:ajax listener="#{idiomaBean.cambiarIdioma(idiomaBean.idioma)}" update="@all"/>
                     </p:selectOneMenu>
                 </h:form>
+            </header>
+
+            <div class="app-workspace">
+                <aside class="app-sidebar">
+                    <nav aria-label="#{msg['menu.principal']}">
+                        <h:form id="frmMenu">
+                            <p:panelMenu id="menuPrincipal" styleClass="app-menu">
+                                <p:submenu label="#{msg['menu.catalogos']}" icon="pi pi-book">
+                                    <p:menuitem value="#{msg['tipoMedioContacto.titulo']}" outcome="/paginas/TipoMedioContacto"/>
+                                    <p:menuitem value="#{msg['tipoDocumento.titulo']}" outcome="/paginas/TipoDocumento"/>
+                                    <p:menuitem value="#{msg['tipoExamen.titulo']}" outcome="/paginas/TipoExamen"/>
+                                    <p:menuitem value="#{msg['examen.titulo']}" outcome="/paginas/Examen"/>
+                                    <p:menuitem value="#{msg['procedimiento.titulo']}" outcome="/paginas/Procedimiento"/>
+                                </p:submenu>
+                                <p:submenu label="#{msg['menu.clinica']}" icon="pi pi-building">
+                                    <p:menuitem value="#{msg['clinica.titulo']}" outcome="/paginas/Clinica"/>
+                                    <p:menuitem value="#{msg['rol.titulo']}" outcome="/paginas/Rol"/>
+                                </p:submenu>
+                                <p:submenu label="#{msg['menu.personas']}" icon="pi pi-users">
+                                    <p:menuitem value="#{msg['persona.titulo']}" outcome="/paginas/Persona"/>
+                                </p:submenu>
+                                <p:submenu label="#{msg['menu.procedimientos']}" icon="pi pi-list-check">
+                                    <p:menuitem value="#{msg['procedimientoPasoSecuencia.titulo']}" outcome="/paginas/ProcedimientoPasoSecuencia"/>
+                                    <p:menuitem value="#{msg['procedimientoPasoExamen.titulo']}" outcome="/paginas/ProcedimientoPasoExamen"/>
+                                </p:submenu>
+                                <p:submenu label="#{msg['menu.atencion']}" icon="pi pi-heart">
+                                    <p:menuitem value="#{msg['consulta.titulo']}" outcome="/paginas/Consulta"/>
+                                    <p:menuitem value="#{msg['consultaProcedimientoPaso.titulo']}" outcome="/paginas/ConsultaProcedimientoPaso"/>
+                                    <p:menuitem value="#{msg['ordenExamen.titulo']}" outcome="/paginas/OrdenExamen"/>
+                                    <p:menuitem value="#{msg['examenResultado.titulo']}" outcome="/paginas/ExamenResultado"/>
+                                </p:submenu>
+                            </p:panelMenu>
+                        </h:form>
+                    </nav>
+                </aside>
+                <main class="app-content">
+                    <p:messages id="mensajes" showDetail="true" closable="true"/>
+                    <ui:insert name="contenido"><h:outputText value="#{msg['layout.sinContenido']}"/></ui:insert>
+                </main>
             </div>
-
-            <div class="ui-g-12 ui-md-2">
-                <nav>
-                    <h:form id="frmMenu">
-                        <p:panelMenu id="menuPrincipal" style="width:100%">
-
-                            <!-- ── 1. Catálogos base ── -->
-                            <p:submenu label="Catalogos">
-                                <p:menuitem value="Tipos de Contacto"    outcome="/paginas/TipoMedioContacto"/>
-                                <p:menuitem value="Tipos de Documento"   outcome="/paginas/TipoDocumento"/>
-                                <p:menuitem value="Tipos de Examen"      outcome="/paginas/TipoExamen"/>
-                                <p:menuitem value="Examenes"             outcome="/paginas/Examen"/>
-                                <p:menuitem value="Clinicas"             outcome="/paginas/Clinica"/>
-                                <p:menuitem value="Roles"                outcome="/paginas/Rol"/>
-                            </p:submenu>
-
-                            <!-- ── 2. Personas ── -->
-                            <p:submenu label="Personas">
-                                <p:menuitem value="Personas"             outcome="/paginas/Persona"/>
-                                <p:menuitem value="Asignacion de Roles"  outcome="/paginas/PersonaRol"/>
-                            </p:submenu>
-
-                            <!-- ── 3. Procedimientos ── -->
-                            <p:menuitem value="Procedimientos"       outcome="/paginas/Procedimiento" icon="pi pi-fw pi-sitemap"/>
-
-                            <!-- ── 4. Atención Clínica ── -->
-                            <p:submenu label="Atencion">
-                                <p:menuitem value="Consultas"            outcome="/paginas/Consulta"/>
-                                <p:menuitem value="Resultados de Examen" outcome="/paginas/ExamenResultado"/>
-                            </p:submenu>
-
-                        </p:panelMenu>
-                    </h:form>
-                </nav>
-            </div>
-            <main class="ui-g-12 ui-md-10">
-                <p:messages id="mensajes" showDetail="true" closable="true"/>
-                <ui:insert name="contenido">
-                    <h:outputText value="#{msg['layout.sinContenido']}"/>
-                </ui:insert>
-            </main>
-
-            <footer class="ui-g-12">
-                <h:outputText value="#{msg['layout.footer']}"/>
-            </footer>
+            <footer class="app-footer"><h:outputText value="#{msg['layout.footer']}"/></footer>
         </div>
-
         <ui:insert name="extras"/>
     </h:body>
-</f:view>
 </html>
+</f:view>
