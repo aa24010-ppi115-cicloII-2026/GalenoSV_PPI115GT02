@@ -11,7 +11,6 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ClinicaDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Clinica;
 
-
 @Named("clinicaModel")
 @ViewScoped
 public class ClinicaModel extends AbstractModel<Clinica> implements Serializable {
@@ -23,6 +22,16 @@ public class ClinicaModel extends AbstractModel<Clinica> implements Serializable
 
     @Inject
     ClinicaDAO dao;
+
+    @Inject
+    PersonaRolModel personaRolModel;
+
+    public PersonaRolModel getPersonaRolModel() {
+        personaRolModel.establecerClinicaMaestro(
+                estado == sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ESTADO_CRUD.MODIFICAR
+                        && registro != null ? registro.getIdClinica() : null);
+        return personaRolModel;
+    }
 
     public ClinicaModel() {
         this.nombreBean = "Clinica";

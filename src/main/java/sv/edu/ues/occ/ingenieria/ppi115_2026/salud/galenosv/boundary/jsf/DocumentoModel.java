@@ -8,7 +8,11 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import org.primefaces.model.FilterMeta;
+import org.primefaces.model.LazyDataModel;
+import org.primefaces.model.SortMeta;
 import org.primefaces.event.SelectEvent;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ESTADO_CRUD;
@@ -19,7 +23,6 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TipoDocument
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Documento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Persona;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoDocumento;
-
 
 @Named("documentoModel")
 @ViewScoped
@@ -38,6 +41,7 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
 
     private String idPersonaSeleccionada;
     private String idTipoDocumentoSeleccionado;
+    private UUID idPersonaMaestro;
 
     public DocumentoModel() {
         this.nombreBean = "Documento";
@@ -57,7 +61,40 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
     protected Documento nuevoRegistro() {
         Documento r = new Documento();
         r.setIdDocumento(UUID.randomUUID());
+        if (idPersonaMaestro != null) {
+            r.setIdPersona(personaDAO.find(idPersonaMaestro));
+        }
         return r;
+    }
+
+    @Override
+    public void inicializarRegistros() {
+        if (idPersonaMaestro == null) {
+            super.inicializarRegistros();
+            return;
+        }
+        this.modelo = new LazyDataModel<Documento>() {
+            @Override
+            public String getRowKey(Documento documento) {
+                return getIdAsText(documento);
+            }
+
+            @Override
+            public Documento getRowData(String rowKey) {
+                return getIdByText(rowKey);
+            }
+
+            @Override
+            public int count(Map<String, FilterMeta> filterBy) {
+                return dao.countByPersona(idPersonaMaestro).intValue();
+            }
+
+            @Override
+            public List<Documento> load(int first, int pageSize, Map<String, SortMeta> sortBy,
+                    Map<String, FilterMeta> filterBy) {
+                return dao.findByPersona(idPersonaMaestro, first, pageSize);
+            }
+        };
     }
 
     @Override
@@ -88,7 +125,8 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
     @Override
     public void btnNuevoHandler(ActionEvent e) {
         super.btnNuevoHandler(e);
-        limpiarSeleccion();
+        idPersonaSeleccionada = idPersonaMaestro == null ? null : idPersonaMaestro.toString();
+        idTipoDocumentoSeleccionado = null;
     }
 
     @Override
@@ -124,6 +162,9 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
     }
 
     private void prepararRelaciones() {
+        if (idPersonaMaestro != null) {
+            idPersonaSeleccionada = idPersonaMaestro.toString();
+        }
         if (idPersonaSeleccionada == null || idPersonaSeleccionada.isBlank()) {
             throw new IllegalArgumentException("Debe seleccionar una persona");
         }
@@ -131,7 +172,13 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
             throw new IllegalArgumentException("Debe seleccionar un tipo de documento");
         }
         registro.setIdPersona(personaDAO.find(UUID.fromString(idPersonaSeleccionada)));
-        registro.setIdTipoDocumento(tipoDocumentoDAO.find(UUID.fromString(idTipoDocumentoSeleccionado)));
+        TipoDocumento tipo = tipoDocumentoDAO.find(UUID.fromString(idTipoDocumentoSeleccionado));
+        if (tipo == null) {
+            throw new IllegalArgumentException("El tipo seleccionado ya no existe");
+        }
+        sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
+                registro.getValor(), tipo.getExpresionRegular());
+        registro.setIdTipoDocumento(tipo);
     }
 
     private void sincronizarSeleccion() {
@@ -148,8 +195,24 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
     }
 
     private void limpiarSeleccion() {
-        idPersonaSeleccionada = null;
+        idPersonaSeleccionada = idPersonaMaestro == null ? null : idPersonaMaestro.toString();
         idTipoDocumentoSeleccionado = null;
+    }
+
+    public void establecerPersonaMaestro(UUID idPersona) {
+        if (java.util.Objects.equals(this.idPersonaMaestro, idPersona)) {
+            return;
+        }
+        this.idPersonaMaestro = idPersona;
+        this.idPersonaSeleccionada = idPersona == null ? null : idPersona.toString();
+        this.idTipoDocumentoSeleccionado = null;
+        this.registro = null;
+        this.estado = ESTADO_CRUD.NADA;
+        inicializarRegistros();
+    }
+
+    public boolean isIntegradoEnPersona() {
+        return idPersonaMaestro != null;
     }
 
     public List<Persona> getPersonas() {

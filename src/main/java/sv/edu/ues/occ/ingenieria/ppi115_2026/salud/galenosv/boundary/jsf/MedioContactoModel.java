@@ -9,7 +9,11 @@ import jakarta.inject.Named;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import org.primefaces.model.FilterMeta;
+import org.primefaces.model.LazyDataModel;
+import org.primefaces.model.SortMeta;
 import org.primefaces.event.SelectEvent;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ESTADO_CRUD;
@@ -20,7 +24,6 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TipoMedioCon
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.MedioContacto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Persona;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoMedioContacto;
-
 
 @Named("medioContactoModel")
 @ViewScoped
@@ -39,6 +42,7 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
 
     private String idPersonaSeleccionada;
     private String idTipoMedioContactoSeleccionado;
+    private UUID idPersonaMaestro;
 
     public MedioContactoModel() {
         this.nombreBean = "MedioContacto";
@@ -59,7 +63,40 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
         MedioContacto r = new MedioContacto();
         r.setIdMedioContacto(UUID.randomUUID());
         r.setFechaCreacion(OffsetDateTime.now());
+        if (idPersonaMaestro != null) {
+            r.setIdPersona(personaDAO.find(idPersonaMaestro));
+        }
         return r;
+    }
+
+    @Override
+    public void inicializarRegistros() {
+        if (idPersonaMaestro == null) {
+            super.inicializarRegistros();
+            return;
+        }
+        this.modelo = new LazyDataModel<MedioContacto>() {
+            @Override
+            public String getRowKey(MedioContacto contacto) {
+                return getIdAsText(contacto);
+            }
+
+            @Override
+            public MedioContacto getRowData(String rowKey) {
+                return getIdByText(rowKey);
+            }
+
+            @Override
+            public int count(Map<String, FilterMeta> filterBy) {
+                return dao.countByPersona(idPersonaMaestro).intValue();
+            }
+
+            @Override
+            public List<MedioContacto> load(int first, int pageSize, Map<String, SortMeta> sortBy,
+                    Map<String, FilterMeta> filterBy) {
+                return dao.findByPersona(idPersonaMaestro, first, pageSize);
+            }
+        };
     }
 
     @Override
@@ -90,7 +127,8 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
     @Override
     public void btnNuevoHandler(ActionEvent e) {
         super.btnNuevoHandler(e);
-        limpiarSeleccion();
+        idPersonaSeleccionada = idPersonaMaestro == null ? null : idPersonaMaestro.toString();
+        idTipoMedioContactoSeleccionado = null;
     }
 
     @Override
@@ -126,6 +164,9 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
     }
 
     private void prepararRelaciones() {
+        if (idPersonaMaestro != null) {
+            idPersonaSeleccionada = idPersonaMaestro.toString();
+        }
         if (idPersonaSeleccionada == null || idPersonaSeleccionada.isBlank()) {
             throw new IllegalArgumentException("Debe seleccionar una persona");
         }
@@ -133,7 +174,13 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
             throw new IllegalArgumentException("Debe seleccionar un tipo de medio de contacto");
         }
         registro.setIdPersona(personaDAO.find(UUID.fromString(idPersonaSeleccionada)));
-        registro.setIdTipoMedioContacto(tipoMedioContactoDAO.find(UUID.fromString(idTipoMedioContactoSeleccionado)));
+        TipoMedioContacto tipo = tipoMedioContactoDAO.find(UUID.fromString(idTipoMedioContactoSeleccionado));
+        if (tipo == null) {
+            throw new IllegalArgumentException("El tipo seleccionado ya no existe");
+        }
+        sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
+                registro.getValor(), tipo.getExpresionRegular());
+        registro.setIdTipoMedioContacto(tipo);
     }
 
     private void sincronizarSeleccion() {
@@ -150,8 +197,24 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
     }
 
     private void limpiarSeleccion() {
-        idPersonaSeleccionada = null;
+        idPersonaSeleccionada = idPersonaMaestro == null ? null : idPersonaMaestro.toString();
         idTipoMedioContactoSeleccionado = null;
+    }
+
+    public void establecerPersonaMaestro(UUID idPersona) {
+        if (java.util.Objects.equals(this.idPersonaMaestro, idPersona)) {
+            return;
+        }
+        this.idPersonaMaestro = idPersona;
+        this.idPersonaSeleccionada = idPersona == null ? null : idPersona.toString();
+        this.idTipoMedioContactoSeleccionado = null;
+        this.registro = null;
+        this.estado = ESTADO_CRUD.NADA;
+        inicializarRegistros();
+    }
+
+    public boolean isIntegradoEnPersona() {
+        return idPersonaMaestro != null;
     }
 
     public List<Persona> getPersonas() {

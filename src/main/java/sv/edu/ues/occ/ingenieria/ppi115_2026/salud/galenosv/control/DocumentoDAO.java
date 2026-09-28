@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control;
 
 import jakarta.ejb.Stateless;
@@ -9,12 +5,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
+import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Documento;
 
-/**
- *
- * @author duran
- */
 @Stateless
 public class DocumentoDAO extends DefaultDAO<Documento> {
 
@@ -41,9 +34,32 @@ public class DocumentoDAO extends DefaultDAO<Documento> {
         }
     }
 
+    public List<Documento> findByPersona(UUID idPersona, int first, int pageSize) {
+        if (idPersona == null) {
+            throw new IllegalArgumentException("La persona es requerida");
+        }
+        TypedQuery<Documento> query = getEntityManager().createQuery(
+                "SELECT d FROM Documento d WHERE d.idPersona.idPersona = :idPersona ORDER BY d.valor",
+                Documento.class);
+        query.setParameter("idPersona", idPersona);
+        query.setFirstResult(first);
+        query.setMaxResults(pageSize);
+        return query.getResultList();
+    }
+
+    public Long countByPersona(UUID idPersona) {
+        if (idPersona == null) {
+            return 0L;
+        }
+        TypedQuery<Long> query = getEntityManager().createQuery(
+                "SELECT COUNT(d) FROM Documento d WHERE d.idPersona.idPersona = :idPersona",
+                Long.class);
+        query.setParameter("idPersona", idPersona);
+        return query.getSingleResult();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;
     }
-
 }
