@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server description="PrimeFaces global library">
+    <library id="global">
+        <fileset dir="${wlp.install.dir}/lib" includes="primefaces-15.0.17-jakarta.jar"/>
+    </library>
+</server>

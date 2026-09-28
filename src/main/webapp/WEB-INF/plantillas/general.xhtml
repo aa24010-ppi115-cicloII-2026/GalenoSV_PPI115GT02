@@ -50,13 +50,18 @@
                                 </p:submenu>
                                 <p:submenu label="#{msg['menu.personas']}" icon="pi pi-users">
                                     <p:menuitem value="#{msg['persona.titulo']}" outcome="/paginas/Persona"/>
+                                    <p:menuitem value="#{msg['personaRol.titulo']}" outcome="/paginas/PersonaRol"/>
+                                    <p:menuitem value="#{msg['documento.titulo']}" outcome="/paginas/Documento"/>
+                                    <p:menuitem value="#{msg['medioContacto.titulo']}" outcome="/paginas/MedioContacto"/>
                                 </p:submenu>
                                 <p:submenu label="#{msg['menu.procedimientos']}" icon="pi pi-list-check">
+                                    <p:menuitem value="#{msg['procedimientoPaso.titulo']}" outcome="/paginas/ProcedimientoPaso"/>
                                     <p:menuitem value="#{msg['procedimientoPasoSecuencia.titulo']}" outcome="/paginas/ProcedimientoPasoSecuencia"/>
                                     <p:menuitem value="#{msg['procedimientoPasoExamen.titulo']}" outcome="/paginas/ProcedimientoPasoExamen"/>
                                 </p:submenu>
                                 <p:submenu label="#{msg['menu.atencion']}" icon="pi pi-heart">
                                     <p:menuitem value="#{msg['consulta.titulo']}" outcome="/paginas/Consulta"/>
+                                    <p:menuitem value="#{msg['consultaProcedimiento.titulo']}" outcome="/paginas/ConsultaProcedimiento"/>
                                     <p:menuitem value="#{msg['consultaProcedimientoPaso.titulo']}" outcome="/paginas/ConsultaProcedimientoPaso"/>
                                     <p:menuitem value="#{msg['ordenExamen.titulo']}" outcome="/paginas/OrdenExamen"/>
                                     <p:menuitem value="#{msg['examenResultado.titulo']}" outcome="/paginas/ExamenResultado"/>

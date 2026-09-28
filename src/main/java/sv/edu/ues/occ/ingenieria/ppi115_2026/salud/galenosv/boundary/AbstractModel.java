@@ -4,29 +4,30 @@ import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.event.ActionEvent;
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.primefaces.event.SelectEvent;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortMeta;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 
-public abstract class AbstractModel<T> implements Serializable{
-    
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public abstract class AbstractModel<T> implements Serializable {
+
     private static final long serialVersionUID = 1L;
-    
+
     protected ESTADO_CRUD estado = ESTADO_CRUD.NADA;
     protected String nombreBean;
     protected LazyDataModel<T> modelo;
     protected T registro;
     protected int cantidadRegistros = 50;
-    
-     protected abstract FacesContext getFacesContext();
+
+    protected abstract FacesContext getFacesContext();
 
     protected abstract DefaultDAO<T> getDao();
 
@@ -37,7 +38,7 @@ public abstract class AbstractModel<T> implements Serializable{
     protected abstract String getIdAsText(T r);
 
     protected abstract T getIdByText(String id);
-    
+
     @PostConstruct
     public void inicializar() {
         inicializarRegistros();
@@ -187,12 +188,17 @@ public abstract class AbstractModel<T> implements Serializable{
     }
 
     protected boolean esNombreVacio(T registro) {
+        if (registro == null) {
+            return true;
+        }
         try {
             java.lang.reflect.Method m = registro.getClass().getMethod("getNombre");
             String nombre = (String) m.invoke(registro);
             return nombre == null || nombre.trim().isEmpty();
-        } catch (Exception e) {
-            return true;
+        } catch (NoSuchMethodException e) {
+            return false;
+        } catch (ReflectiveOperationException | ClassCastException e) {
+            throw new IllegalStateException("No se pudo validar el nombre del registro", e);
         }
     }
 
@@ -200,32 +206,32 @@ public abstract class AbstractModel<T> implements Serializable{
         return estado;
     }
 
-    public void setEstado(ESTADO_CRUD estado) {
-        this.estado = estado;
+    public void setEstado(ESTADO_CRUD e) {
+        this.estado = e;
     }
 
     public String getNombreBean() {
         return nombreBean;
     }
 
-    public void setNombreBean(String nombreBean) {
-        this.nombreBean = nombreBean;
-    }
-
-    public LazyDataModel<T> getModelo() {
-        return modelo;
-    }
-
-    public void setModelo(LazyDataModel<T> modelo) {
-        this.modelo = modelo;
+    public void setNombreBean(String n) {
+        this.nombreBean = n;
     }
 
     public T getRegistro() {
         return registro;
     }
 
-    public void setRegistro(T registro) {
-        this.registro = registro;
+    public void setRegistro(T r) {
+        this.registro = r;
+    }
+
+    public LazyDataModel<T> getModelo() {
+        return modelo;
+    }
+
+    public void setModelo(LazyDataModel<T> m) {
+        this.modelo = m;
     }
 
     public int getCantidadRegistros() {
@@ -235,6 +241,4 @@ public abstract class AbstractModel<T> implements Serializable{
     public void setCantidadRegistros(int cantidadRegistros) {
         this.cantidadRegistros = cantidadRegistros;
     }
-
-    
 }
