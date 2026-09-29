@@ -19,11 +19,13 @@
         <h:panelGrid columns="#{cc.attrs.modelo.estado eq 'NADA' ? 1 : 2}">
             <p:commandButton id="btnNuevo"
                              value="#{msg['boton.nuevo']} #{cc.attrs.modelo.nombreBean}"
+                             icon="pi pi-plus" styleClass="ui-button-primary"
                              actionListener="#{cc.attrs.modelo.btnNuevoHandler}"
                              rendered="#{cc.attrs.modelo.estado eq 'NADA'}"
                              update="#{cc.attrs.actualizar}"/>
             <p:commandButton id="btnCancelar"
-                             value="#{msg['boton.cancelar']}"
+                             value="#{msg['boton.volver']}"
+                             icon="pi pi-times" styleClass="ui-button-secondary"
                              actionListener="#{cc.attrs.modelo.btnCancelarHandler}"
                              rendered="#{cc.attrs.modelo.estado ne 'NADA'}"
                              immediate="true"

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="jakarta.faces.facelets"
+                template="../WEB-INF/plantillas/general.xhtml">
+    <ui:define name="titulo">#{msg['inicio.titulo']} - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">#{msg['inicio.titulo']}</ui:define>
+    <ui:define name="contenido">
+        <div class="welcome-intro">
+            <div>
+                <span class="welcome-kicker">#{msg['inicio.area']} — #{msg['inicio.jornada']}</span>
+                <h2>#{msg['inicio.bienvenida']}</h2>
+                <p>#{msg['inicio.descripcion']}</p>
+            </div>
+        </div>
+
+        <div class="quick-section">
+            <h2>#{msg['inicio.accesos']}</h2>
+            <div class="quick-actions">
+                <p:button value="#{msg['persona.titulo']}" outcome="/paginas/Persona"
+                          icon="pi pi-users" styleClass="quick-action quick-action-patients"
+                          title="#{msg['inicio.acceso.pacientes.desc']}"/>
+                <p:button value="#{msg['consulta.titulo']}" outcome="/paginas/Consulta"
+                          icon="pi pi-heart" styleClass="quick-action quick-action-consultations"
+                          title="#{msg['inicio.acceso.consultas.desc']}"/>
+                <p:button value="#{msg['ordenExamen.titulo']}" outcome="/paginas/OrdenExamen"
+                          icon="pi pi-file" styleClass="quick-action quick-action-orders"
+                          title="#{msg['inicio.acceso.ordenes.desc']}"/>
+                <p:button value="#{msg['examenResultado.titulo']}" outcome="/paginas/ExamenResultado"
+                          icon="pi pi-check-circle" styleClass="quick-action quick-action-results"
+                          title="#{msg['inicio.acceso.resultados.desc']}"/>
+            </div>
+        </div>
+
+        <div class="care-flow">
+            <div class="section-heading">
+                <span class="section-icon"><i class="pi pi-compass"/></span>
+                <div>
+                    <h2>#{msg['inicio.flujo']}</h2>
+                    <p>#{msg['inicio.flujo.descripcion']}</p>
+                </div>
+            </div>
+            <ol class="flow-steps">
+                <li><span>1</span><strong>#{msg['inicio.flujo.admision']}: #{msg['persona.titulo']}</strong></li>
+                <li><span>2</span><strong>#{msg['inicio.flujo.consulta']}: #{msg['consulta.titulo']}</strong></li>
+                <li><span>3</span><strong>#{msg['inicio.flujo.procedimiento']}: #{msg['procedimiento.titulo']}</strong></li>
+                <li><span>4</span><strong>#{msg['inicio.flujo.examen']}</strong></li>
+            </ol>
+            <p style="margin-top:16px">
+                <p:link value="#{msg['persona.titulo']} →" outcome="/paginas/Persona" style="margin-right:16px"/>
+                <p:link value="#{msg['consulta.titulo']} →" outcome="/paginas/Consulta" style="margin-right:16px"/>
+                <p:link value="#{msg['procedimiento.titulo']} →" outcome="/paginas/Procedimiento" style="margin-right:16px"/>
+                <p:link value="#{msg['examenResultado.titulo']} →" outcome="/paginas/ExamenResultado"/>
+            </p>
+        </div>
+    </ui:define>
+</ui:composition>

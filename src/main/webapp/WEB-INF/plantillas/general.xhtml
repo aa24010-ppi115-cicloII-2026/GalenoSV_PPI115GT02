@@ -36,6 +36,8 @@
                 <aside class="app-sidebar">
                     <nav aria-label="#{msg['menu.principal']}">
                         <h:form id="frmMenu">
+                            <p:button value="#{msg['menu.inicio']}" outcome="/paginas/Inicio"
+                                      icon="pi pi-home" styleClass="sidebar-home"/>
                             <p:panelMenu id="menuPrincipal" styleClass="app-menu">
                                 <p:submenu label="#{msg['menu.catalogos']}" icon="pi pi-book">
                                     <p:menuitem value="#{msg['tipoMedioContacto.titulo']}" outcome="/paginas/TipoMedioContacto"/>
@@ -71,7 +73,8 @@
                     </nav>
                 </aside>
                 <main class="app-content">
-                    <p:messages id="mensajes" showDetail="true" closable="true"/>
+                    <p:toast position="top-right" showDetail="true" life="4000"/>
+                    <p:messages id="mensajes" showDetail="true" closable="true" redisplay="false"/>
                     <ui:insert name="contenido"><h:outputText value="#{msg['layout.sinContenido']}"/></ui:insert>
                 </main>
             </div>

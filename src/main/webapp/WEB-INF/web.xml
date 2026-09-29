@@ -29,6 +29,6 @@
     </session-config>
 
     <welcome-file-list>
-        <welcome-file>paginas/Clinica.xhtml</welcome-file>
+        <welcome-file>paginas/Inicio.xhtml</welcome-file>
     </welcome-file-list>
 </web-app>
