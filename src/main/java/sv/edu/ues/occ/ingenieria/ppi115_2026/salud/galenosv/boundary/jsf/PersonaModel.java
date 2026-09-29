@@ -110,8 +110,25 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     @Override
     public void selectionHandler(SelectEvent<Persona> r) {
         super.selectionHandler(r);
+        refrescarListasHijas();
         cancelarEdicionRol();
         cancelarEdicionMedio();
+    }
+
+    private void refrescarListasHijas() {
+        if (this.registro == null || this.registro.getIdPersona() == null) {
+            return;
+        }
+        try {
+            this.registro.setMedioContactoList(
+                    medioContactoDAO.findByPersona(this.registro.getIdPersona(), 0, 1000));
+        } catch (Exception ignored) {
+        }
+        try {
+            this.registro.setPersonaRolList(
+                    personaRolDAO.findByPersona(this.registro.getIdPersona()));
+        } catch (Exception ignored) {
+        }
     }
 
     @Override
@@ -285,6 +302,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     public void prepararNuevoMedioContacto() {
         nuevoMedioContacto = new MedioContacto();
         nuevoMedioContacto.setIdMedioContacto(UUID.randomUUID());
+        nuevoMedioContacto.setFechaCreacion(java.time.OffsetDateTime.now());
         idTipoMedioContactoSeleccionado = null;
     }
 
@@ -320,6 +338,9 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             TipoMedioContacto tipo = tipoMedioContactoDAO.find(UUID.fromString(idTipoMedioContactoSeleccionado));
             sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
                     nuevoMedioContacto.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
+            if (nuevoMedioContacto.getFechaCreacion() == null) {
+                nuevoMedioContacto.setFechaCreacion(java.time.OffsetDateTime.now());
+            }
             nuevoMedioContacto.setIdTipoMedioContacto(tipo);
             nuevoMedioContacto.setIdPersona(this.registro);
 
@@ -352,6 +373,9 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             TipoMedioContacto tipo = tipoMedioContactoDAO.find(UUID.fromString(idTipoMedioContactoSeleccionado));
             sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
                     nuevoMedioContacto.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
+            if (nuevoMedioContacto.getFechaCreacion() == null) {
+                nuevoMedioContacto.setFechaCreacion(java.time.OffsetDateTime.now());
+            }
             nuevoMedioContacto.setIdTipoMedioContacto(tipo);
             nuevoMedioContacto.setIdPersona(this.registro);
 

@@ -51,8 +51,14 @@ public class PersonaRolDAO extends DefaultDAO<PersonaRol> {
         return em;
     }
 
-    public List<PersonaRol> findByClinica(UUID id, int first, int max) {
+    public List<PersonaRol> findByPersona(UUID idPersona) {
         return getEntityManager().createQuery(
+                "SELECT p FROM PersonaRol p JOIN FETCH p.idPersona JOIN FETCH p.idRol JOIN FETCH p.idClinica WHERE p.idPersona.idPersona = :id ORDER BY p.fechaCreacion DESC",
+                PersonaRol.class).setParameter("id", idPersona)
+                .setMaxResults(1000).getResultList();
+    }
+
+    public List<PersonaRol> findByClinica(UUID id, int first, int max) {       return getEntityManager().createQuery(
                 "SELECT p FROM PersonaRol p JOIN FETCH p.idPersona JOIN FETCH p.idRol JOIN FETCH p.idClinica WHERE p.idClinica.idClinica = :id ORDER BY p.idPersona.apellidos, p.idPersonaRol",
                 PersonaRol.class).setParameter("id", id)
                 .setFirstResult(first).setMaxResults(max).getResultList();
