@@ -39,10 +39,12 @@
                         <p:inputText id="txtId" value="#{personaModel.registro.idPersona}" size="50" disabled="true"/>
 
                         <p:outputLabel for="txtNombres" value="Nombres *"/>
-                        <p:inputText id="txtNombres" value="#{personaModel.registro.nombres}" size="50" required="true"/>
+                        <p:inputText id="txtNombres" value="#{personaModel.registro.nombres}" size="50" maxlength="255"
+                                     required="true" requiredMessage="#{msg['persona.nombres.requeridos']}"/>
 
                         <p:outputLabel for="txtApellidos" value="Apellidos *"/>
-                        <p:inputText id="txtApellidos" value="#{personaModel.registro.apellidos}" size="50" required="true"/>
+                        <p:inputText id="txtApellidos" value="#{personaModel.registro.apellidos}" size="50" maxlength="255"
+                                     required="true" requiredMessage="#{msg['persona.apellidos.requeridos']}"/>
                     </h:panelGrid>
 
                     <h:panelGrid columns="#{personaModel.estado eq 'CREAR' ? 1 : 2}" style="margin-top:10px;">

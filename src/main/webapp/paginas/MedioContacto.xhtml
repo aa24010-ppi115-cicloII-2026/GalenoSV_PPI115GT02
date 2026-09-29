@@ -48,14 +48,16 @@
                             <f:selectItems value="#{medioContactoModel.tiposMedioContacto}" var="t" itemLabel="#{t.nombre}" itemValue="#{t.idTipoMedioContacto}"/>
                         </p:selectOneMenu>
                         <p:outputLabel for="txtValor" value="#{msg['medioContacto.form.valor']}"/>
-                        <p:inputText id="txtValor" value="#{medioContactoModel.registro.valor}" size="50"/>
+                        <p:inputText id="txtValor" value="#{medioContactoModel.registro.valor}" size="50" maxlength="50"
+                                     required="true" requiredMessage="#{msg['medioContacto.valor.requerido']}"
+                                     placeholder="Ej. 12345678" title="#{msg['validacion.minimo8']}"/>
                         <p:outputLabel for="txtFecha" value="#{msg['medioContacto.form.fechaCreacion']}"/>
                         <p:inputText id="txtFecha" value="#{medioContactoModel.registro.fechaCreacion}" size="50" disabled="true"/>
                     </h:panelGrid>
                     <h:panelGrid columns="#{medioContactoModel.estado eq 'CREAR' ? 1 : 2}">
-                        <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}" actionListener="#{medioContactoModel.btnGuardarHandler}" rendered="#{medioContactoModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}" actionListener="#{medioContactoModel.btnModificarHandler}" rendered="#{medioContactoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}" actionListener="#{medioContactoModel.btnEliminarHandler}" rendered="#{medioContactoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                        <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}" icon="pi pi-check" styleClass="ui-button-success" actionListener="#{medioContactoModel.btnGuardarHandler}" rendered="#{medioContactoModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
+                        <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}" icon="pi pi-pencil" styleClass="ui-button-warning" actionListener="#{medioContactoModel.btnModificarHandler}" rendered="#{medioContactoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
+                        <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}" icon="pi pi-trash" styleClass="ui-button-danger" actionListener="#{medioContactoModel.btnEliminarHandler}" rendered="#{medioContactoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
                     </h:panelGrid>
                 </h:form>
             </h:panelGroup>

@@ -48,7 +48,9 @@
                             <f:selectItems value="#{documentoModel.tiposDocumento}" var="t" itemLabel="#{t.nombre}" itemValue="#{t.idTipoDocumento}"/>
                         </p:selectOneMenu>
                         <p:outputLabel for="txtValor" value="#{msg['documento.form.valor']}"/>
-                        <p:inputText id="txtValor" value="#{documentoModel.registro.valor}" size="50"/>
+                        <p:inputText id="txtValor" value="#{documentoModel.registro.valor}" size="50" maxlength="50"
+                                     required="true" requiredMessage="#{msg['documento.valor.requerido']}"
+                                     placeholder="Ej. 12345678-9" title="#{msg['documento.valor.requerido']}"/>
                         <p:outputLabel for="txtRuta" value="#{msg['documento.form.rutaFisica']}"/>
                         <p:inputText id="txtRuta" value="#{documentoModel.registro.rutaFisica}" size="50"/>
                     </h:panelGrid>

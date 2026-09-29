@@ -179,7 +179,7 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
             throw new IllegalArgumentException("El tipo seleccionado ya no existe");
         }
         sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
-                registro.getValor(), tipo.getExpresionRegular());
+                registro.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
         registro.setIdTipoMedioContacto(tipo);
     }
 

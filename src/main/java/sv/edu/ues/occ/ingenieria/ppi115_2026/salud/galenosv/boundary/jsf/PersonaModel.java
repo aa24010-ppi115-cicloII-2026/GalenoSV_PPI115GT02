@@ -118,6 +118,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     public void btnGuardarHandler(ActionEvent actionEvent) {
         if (this.registro != null) {
             try {
+                validarPersona();
                 dao.crear(this.registro);
                 limpiar("Persona guardada exitosamente");
             } catch (Exception e) {
@@ -130,11 +131,29 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     public void btnModificarHandler(ActionEvent actionEvent) {
         if (this.registro != null) {
             try {
+                validarPersona();
                 dao.modificar(this.registro);
                 limpiar("Persona modificada exitosamente");
             } catch (Exception e) {
                 getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
             }
+        }
+    }
+
+    private void validarPersona() {
+        if (registro.getNombres() == null || registro.getNombres().isBlank()) {
+            throw new IllegalArgumentException("Los nombres son requeridos");
+        }
+        if (registro.getApellidos() == null || registro.getApellidos().isBlank()) {
+            throw new IllegalArgumentException("Los apellidos son requeridos");
+        }
+        registro.setNombres(registro.getNombres().trim());
+        registro.setApellidos(registro.getApellidos().trim());
+        if (registro.getNombres().length() < 2) {
+            throw new IllegalArgumentException("Los nombres deben tener al menos 2 caracteres");
+        }
+        if (registro.getApellidos().length() < 2) {
+            throw new IllegalArgumentException("Los apellidos deben tener al menos 2 caracteres");
         }
     }
 
@@ -299,6 +318,8 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
                 throw new IllegalArgumentException("El valor es requerido");
             }
             TipoMedioContacto tipo = tipoMedioContactoDAO.find(UUID.fromString(idTipoMedioContactoSeleccionado));
+            sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
+                    nuevoMedioContacto.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
             nuevoMedioContacto.setIdTipoMedioContacto(tipo);
             nuevoMedioContacto.setIdPersona(this.registro);
 
@@ -329,6 +350,8 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
                 throw new IllegalArgumentException("El valor es requerido");
             }
             TipoMedioContacto tipo = tipoMedioContactoDAO.find(UUID.fromString(idTipoMedioContactoSeleccionado));
+            sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
+                    nuevoMedioContacto.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
             nuevoMedioContacto.setIdTipoMedioContacto(tipo);
             nuevoMedioContacto.setIdPersona(this.registro);
 
