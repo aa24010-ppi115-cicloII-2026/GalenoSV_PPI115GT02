@@ -73,8 +73,12 @@
                     </nav>
                 </aside>
                 <main class="app-content">
-                    <p:growl showDetail="true" life="4000"/>
+                    <p:growl id="avisos" showDetail="true" life="4000" autoUpdate="true"/>
                     <p:messages id="mensajes" showDetail="true" closable="true" redisplay="false"/>
+                    <p:breadCrumb style="margin-bottom:12px">
+                        <p:menuitem value="#{msg['menu.inicio']}" outcome="/paginas/Inicio"/>
+                        <p:menuitem value="#{msg['sistema.titulo']}" disabled="true"/>
+                    </p:breadCrumb>
                     <ui:insert name="contenido"><h:outputText value="#{msg['layout.sinContenido']}"/></ui:insert>
                 </main>
             </div>

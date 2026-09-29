@@ -6,10 +6,16 @@
                 xmlns:ui="jakarta.faces.facelets"
                 xmlns:g="jakarta.faces.composite/crud"
                 template="../WEB-INF/plantillas/general.xhtml">
-    <ui:define name="titulo">Asignación de Roles - #{msg['sistema.titulo']}</ui:define>
-    <ui:define name="encabezado">Asignación de Roles a Personas</ui:define>
+    <ui:define name="titulo">#{msg['personaRol.titulo']} - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">#{msg['personaRol.titulo']}</ui:define>
 
     <ui:define name="contenido">
+        <p:toolbar style="margin-bottom:12px">
+            <f:facet name="left">
+                <p:link value="← #{msg['detalle.volver']}: #{msg['persona.titulo']}" outcome="/paginas/Persona" style="margin-right:16px"/>
+                <p:link value="← #{msg['detalle.volver']}: #{msg['clinica.titulo']}" outcome="/paginas/Clinica"/>
+            </f:facet>
+        </p:toolbar>
         <h:form id="frmPersonaRol">
             <p:messages id="mensajes" showDetail="true" closable="true"/>
 
@@ -24,16 +30,16 @@
                                  rowKey="#{r.idPersonaRol}">
                         <p:ajax event="rowSelect" listener="#{personaRolModel.selectionHandler}" update=":frmPersonaRol"/>
 
-                        <p:column headerText="Persona">
+                        <p:column headerText="#{msg['personaRol.tabla.persona']}">
                             <h:outputText value="#{r.idPersona.nombres} #{r.idPersona.apellidos}"/>
                         </p:column>
-                        <p:column headerText="Rol Asignado">
+                        <p:column headerText="#{msg['personaRol.tabla.rol']}">
                             <h:outputText value="#{r.idRol.nombre}"/>
                         </p:column>
-                        <p:column headerText="Clínica">
+                        <p:column headerText="#{msg['personaRol.tabla.clinica']}">
                             <h:outputText value="#{r.idClinica.nombre}"/>
                         </p:column>
-                        <p:column headerText="Fecha de Asignación">
+                        <p:column headerText="#{msg['personaRol.tabla.fechaCreacion']}">
                             <h:outputText value="#{r.fechaCreacion}"/>
                         </p:column>
                     </p:dataTable>
@@ -103,8 +109,8 @@
                                          rendered="#{personaRolModel.estado eq 'MODIFICAR'}"
                                          update=":frmPersonaRol" styleClass="ui-button-danger"
                                          process="@this">
-                            <p:confirm header="Confirmación"
-                                       message="¿Está seguro de eliminar esta asignación de rol?"
+                            <p:confirm header="#{msg['confirm.titulo']}"
+                                       message="#{msg['personaRol.form.persona']}: #{msg['boton.eliminar']}?"
                                        icon="pi pi-info-circle"/>
                         </p:commandButton>
                     </h:panelGrid>
@@ -113,8 +119,8 @@
 
             <!-- Confirm Dialog global -->
             <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
-                <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
-                <p:commandButton value="Sí" type="button" styleClass="ui-confirmdialog-yes"/>
+                <p:commandButton value="#{msg['confirm.no']}" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
+                <p:commandButton value="#{msg['confirm.si']}" type="button" styleClass="ui-confirmdialog-yes"/>
             </p:confirmDialog>
 
         </h:form>

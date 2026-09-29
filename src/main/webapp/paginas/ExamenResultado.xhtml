@@ -10,6 +10,11 @@
     <ui:define name="encabezado">Resultados de Examen</ui:define>
 
     <ui:define name="contenido">
+        <p:toolbar style="margin-bottom:12px">
+            <f:facet name="left">
+                <p:link value="← #{msg['detalle.volver']}: #{msg['ordenExamen.titulo']}" outcome="/paginas/OrdenExamen"/>
+            </f:facet>
+        </p:toolbar>
         <h:form id="frmExamenResultado">
             <p:messages id="mensajes" showDetail="true" closable="true"/>
 

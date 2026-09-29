@@ -9,6 +9,11 @@
     <ui:define name="titulo">#{msg['medioContacto.titulo']} - #{msg['sistema.titulo']}</ui:define>
     <ui:define name="encabezado">#{msg['medioContacto.titulo']}</ui:define>
     <ui:define name="contenido">
+        <p:toolbar style="margin-bottom:12px">
+            <f:facet name="left">
+                <p:link value="← #{msg['detalle.volver']}: #{msg['persona.titulo']}" outcome="/paginas/Persona"/>
+            </f:facet>
+        </p:toolbar>
         <h:panelGrid columns="1">
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{medioContactoModel.estado eq 'NADA'}">
                 <h:form id="frmTabla">

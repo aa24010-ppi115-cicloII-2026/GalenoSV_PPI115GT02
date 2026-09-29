@@ -9,6 +9,11 @@
     <ui:define name="titulo">#{msg['ordenExamen.titulo']} - #{msg['sistema.titulo']}</ui:define>
     <ui:define name="encabezado">#{msg['ordenExamen.titulo']}</ui:define>
     <ui:define name="contenido">
+        <p:toolbar style="margin-bottom:12px">
+            <f:facet name="left">
+                <p:link value="← #{msg['detalle.volver']}: #{msg['consultaProcedimientoPaso.titulo']}" outcome="/paginas/ConsultaProcedimientoPaso"/>
+            </f:facet>
+        </p:toolbar>
         <h:panelGrid columns="1">
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{ordenExamenModel.estado eq 'NADA'}">
                 <h:form id="frmTabla">

@@ -31,4 +31,17 @@
     <welcome-file-list>
         <welcome-file>paginas/Inicio.xhtml</welcome-file>
     </welcome-file-list>
+
+    <error-page>
+        <error-code>404</error-code>
+        <location>/paginas/Error404.jsf</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/paginas/Error500.jsf</location>
+    </error-page>
+    <error-page>
+        <exception-type>jakarta.faces.application.ViewExpiredException</exception-type>
+        <location>/paginas/Error500.jsf</location>
+    </error-page>
 </web-app>

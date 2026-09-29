@@ -9,6 +9,12 @@
     <ui:define name="titulo">#{msg['consultaProcedimientoPaso.titulo']} - #{msg['sistema.titulo']}</ui:define>
     <ui:define name="encabezado">#{msg['consultaProcedimientoPaso.titulo']}</ui:define>
     <ui:define name="contenido">
+        <p:toolbar style="margin-bottom:12px">
+            <f:facet name="left">
+                <p:link value="← #{msg['detalle.volver']}: #{msg['consultaProcedimiento.titulo']}" outcome="/paginas/ConsultaProcedimiento" style="margin-right:16px"/>
+                <p:link value="← #{msg['detalle.volver']}: #{msg['consulta.titulo']}" outcome="/paginas/Consulta"/>
+            </f:facet>
+        </p:toolbar>
         <h:panelGrid columns="1">
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{consultaProcedimientoPasoModel.estado eq 'NADA'}">
                 <h:form id="frmTabla">

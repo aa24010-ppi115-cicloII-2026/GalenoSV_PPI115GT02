@@ -13,24 +13,36 @@
                 <h2>#{msg['inicio.bienvenida']}</h2>
                 <p>#{msg['inicio.descripcion']}</p>
             </div>
+            <div>
+                <p:button value="#{msg['inicio.accion.nuevoPaciente']}" outcome="/paginas/Persona"
+                          icon="pi pi-user-plus" style="margin-right:8px"/>
+                <p:button value="#{msg['inicio.accion.nuevaConsulta']}" outcome="/paginas/Consulta"
+                          icon="pi pi-plus"/>
+            </div>
         </div>
 
         <div class="quick-section">
             <h2>#{msg['inicio.accesos']}</h2>
             <div class="quick-actions">
-                <p:button value="#{msg['persona.titulo']}" outcome="/paginas/Persona"
+                <p:button value="#{msg['persona.titulo']} (#{inicioBean.totalPacientes})" outcome="/paginas/Persona"
                           icon="pi pi-users" styleClass="quick-action quick-action-patients"
                           title="#{msg['inicio.acceso.pacientes.desc']}"/>
-                <p:button value="#{msg['consulta.titulo']}" outcome="/paginas/Consulta"
+                <p:button value="#{msg['consulta.titulo']} (#{inicioBean.totalConsultas})" outcome="/paginas/Consulta"
                           icon="pi pi-heart" styleClass="quick-action quick-action-consultations"
                           title="#{msg['inicio.acceso.consultas.desc']}"/>
-                <p:button value="#{msg['ordenExamen.titulo']}" outcome="/paginas/OrdenExamen"
+                <p:button value="#{msg['ordenExamen.titulo']} (#{inicioBean.totalOrdenes})" outcome="/paginas/OrdenExamen"
                           icon="pi pi-file" styleClass="quick-action quick-action-orders"
                           title="#{msg['inicio.acceso.ordenes.desc']}"/>
-                <p:button value="#{msg['examenResultado.titulo']}" outcome="/paginas/ExamenResultado"
+                <p:button value="#{msg['examenResultado.titulo']} (#{inicioBean.totalResultados})" outcome="/paginas/ExamenResultado"
                           icon="pi pi-check-circle" styleClass="quick-action quick-action-results"
                           title="#{msg['inicio.acceso.resultados.desc']}"/>
             </div>
+            <p style="color:var(--gs-muted);font-size:.85rem">
+                #{msg['inicio.stats.pacientes']}: <strong>#{inicioBean.totalPacientes}</strong> ·
+                #{msg['inicio.stats.consultas']}: <strong>#{inicioBean.totalConsultas}</strong> ·
+                #{msg['inicio.stats.ordenes']}: <strong>#{inicioBean.totalOrdenes}</strong> ·
+                #{msg['inicio.stats.resultados']}: <strong>#{inicioBean.totalResultados}</strong>
+            </p>
         </div>
 
         <div class="care-flow">
@@ -53,6 +65,27 @@
                 <p:link value="#{msg['procedimiento.titulo']} →" outcome="/paginas/Procedimiento" style="margin-right:16px"/>
                 <p:link value="#{msg['examenResultado.titulo']} →" outcome="/paginas/ExamenResultado"/>
             </p>
+        </div>
+
+        <div class="care-flow" style="margin-top:24px">
+            <div class="section-heading">
+                <span class="section-icon"><i class="pi pi-clock"/></span>
+                <div>
+                    <h2>#{msg['inicio.recientes']}</h2>
+                </div>
+            </div>
+            <p:dataTable value="#{inicioBean.ultimasConsultas}" var="c" rows="5"
+                         emptyMessage="#{msg['tabla.sinRegistros']}" style="margin-top:12px">
+                <p:column headerText="#{msg['consulta.tabla.paciente']}">
+                    <h:outputText value="#{c.idPersonaRol.idPersona.nombres} #{c.idPersonaRol.idPersona.apellidos}"/>
+                </p:column>
+                <p:column headerText="#{msg['consulta.tabla.fechaInicio']}">
+                    <h:outputText value="#{c.fechaInicio}"/>
+                </p:column>
+                <p:column headerText="#{msg['consulta.form.referenciaExterna']}">
+                    <h:outputText value="#{c.referenciaExterna}"/>
+                </p:column>
+            </p:dataTable>
         </div>
     </ui:define>
 </ui:composition>
