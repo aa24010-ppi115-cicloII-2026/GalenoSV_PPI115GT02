@@ -62,6 +62,25 @@ public class PersonaRolDAO extends DefaultDAO<PersonaRol> {
         return q.getSingleResult() > 0;
     }
 
+
+    public Long countByPersona(java.util.UUID idPersona) {
+        if (idPersona == null) {
+            return 0L;
+        }
+        return getEntityManager().createQuery(
+                "SELECT COUNT(p) FROM PersonaRol p WHERE p.idPersona.idPersona = :id", Long.class)
+                .setParameter("id", idPersona).getSingleResult();
+    }
+
+    public Long countByRol(java.util.UUID idRol) {
+        if (idRol == null) {
+            return 0L;
+        }
+        return getEntityManager().createQuery(
+                "SELECT COUNT(p) FROM PersonaRol p WHERE p.idRol.idRol = :id", Long.class)
+                .setParameter("id", idRol).getSingleResult();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;
@@ -88,7 +107,7 @@ public class PersonaRolDAO extends DefaultDAO<PersonaRol> {
 
     public List<PersonaRol> findPacientes() {
         return getEntityManager().createQuery(
-                "SELECT p FROM PersonaRol p JOIN FETCH p.idPersona JOIN FETCH p.idRol JOIN FETCH p.idClinica WHERE LOWER(TRIM(p.idRol.nombre)) = :rol ORDER BY p.idPersona.apellidos",
-                PersonaRol.class).setParameter("rol", "paciente").getResultList();
+                "SELECT p FROM PersonaRol p JOIN FETCH p.idPersona JOIN FETCH p.idRol JOIN FETCH p.idClinica WHERE LOWER(p.idRol.nombre) LIKE :rol OR LOWER(p.idRol.nombre) LIKE :cli ORDER BY p.idPersona.apellidos",
+                PersonaRol.class).setParameter("rol", "%paciente%").setParameter("cli", "%cliente%").getResultList();
     }
 }

@@ -51,10 +51,12 @@ public class PersonaRolDAOTest {
 
     @Test void testFindPacientes_ok(){
         PersonaRol pr = new PersonaRol();
-        when(em.createQuery(contains("LOWER(TRIM"), eq(PersonaRol.class))).thenReturn(query);
-        when(query.setParameter(eq("rol"), eq("paciente"))).thenReturn(query);
+        when(em.createQuery(contains("LOWER(p.idRol.nombre)"), eq(PersonaRol.class))).thenReturn(query);
+        when(query.setParameter(eq("rol"), eq("%paciente%"))).thenReturn(query);
+        when(query.setParameter(eq("cli"), eq("%cliente%"))).thenReturn(query);
         when(query.getResultList()).thenReturn(List.of(pr));
         assertEquals(1, dao.findPacientes().size());
-        verify(query).setParameter("rol", "paciente");
+        verify(query).setParameter("rol", "%paciente%");
+        verify(query).setParameter("cli", "%cliente%");
     }
 }

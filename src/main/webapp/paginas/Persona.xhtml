@@ -84,12 +84,12 @@
 
                                 <p:commandButton value="#{msg['boton.asignarRol']}" icon="pi pi-plus"
                                                  actionListener="#{personaModel.agregarRol()}"
-                                                 process="panelNuevoRol" update="panelNuevoRol tablaRoles :frmPersona:mensajes"
+                                                 process="panelNuevoRol" update="panelNuevoRol tablaRoles :frmPersona:mensajes :avisos"
                                                  styleClass="ui-button-info" rendered="#{not personaModel.editandoRol}"/>
                                                  
                                 <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
                                                  actionListener="#{personaModel.modificarRol()}"
-                                                 process="panelNuevoRol" update="panelNuevoRol tablaRoles :frmPersona:mensajes"
+                                                 process="panelNuevoRol" update="panelNuevoRol tablaRoles :frmPersona:mensajes :avisos"
                                                  styleClass="ui-button-warning" rendered="#{personaModel.editandoRol}"/>
                                                  
                                 <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
@@ -115,7 +115,7 @@
                             <p:column headerText="#{msg['tabla.accion']}" width="100" style="text-align:center;">
                                 <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
                                                  actionListener="#{personaModel.eliminarRol(pr)}"
-                                                 process="@this" update="tablaRoles panelNuevoRol :frmPersona:mensajes">
+                                                 process="@this" update="tablaRoles panelNuevoRol :frmPersona:mensajes :avisos">
                                     <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                 </p:commandButton>
                             </p:column>
@@ -134,16 +134,16 @@
                                 </p:selectOneMenu>
 
                                 <p:outputLabel value="#{msg['medioContacto.form.valor']}:"/>
-                                <p:inputText value="#{personaModel.nuevoMedioContacto.valor}" size="30" required="true" requiredMessage="#{msg['medioContacto.valor.requerido']}"/>
+                                <p:inputText value="#{personaModel.nuevoMedioContacto.valor}" size="30" required="true" requiredMessage="#{msg['medioContacto.valor.requerido']}" maxlength="255"/>
 
                                 <p:commandButton value="#{msg['boton.agregarContacto']}" icon="pi pi-plus"
                                                  actionListener="#{personaModel.agregarMedioContacto()}"
-                                                 process="panelNuevoMedio" update="panelNuevoMedio tablaMedios :frmPersona:mensajes"
+                                                 process="panelNuevoMedio" update="panelNuevoMedio tablaMedios :frmPersona:mensajes :avisos"
                                                  styleClass="ui-button-info" rendered="#{not personaModel.editandoMedio}"/>
                                                  
                                 <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
                                                  actionListener="#{personaModel.modificarMedioContacto()}"
-                                                 process="panelNuevoMedio" update="panelNuevoMedio tablaMedios :frmPersona:mensajes"
+                                                 process="panelNuevoMedio" update="panelNuevoMedio tablaMedios :frmPersona:mensajes :avisos"
                                                  styleClass="ui-button-warning" rendered="#{personaModel.editandoMedio}"/>
 
                                 <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
@@ -169,7 +169,7 @@
                             <p:column headerText="#{msg['tabla.accion']}" width="100" style="text-align:center;">
                                 <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
                                                  actionListener="#{personaModel.eliminarMedioContacto(mc)}"
-                                                 process="@this" update="tablaMedios panelNuevoMedio :frmPersona:mensajes">
+                                                 process="@this" update="tablaMedios panelNuevoMedio :frmPersona:mensajes :avisos">
                                     <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                 </p:commandButton>
                             </p:column>

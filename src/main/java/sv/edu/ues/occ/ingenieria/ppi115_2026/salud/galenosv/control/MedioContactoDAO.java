@@ -57,6 +57,16 @@ public class MedioContactoDAO extends DefaultDAO<MedioContacto> {
         return q.getSingleResult() > 0;
     }
 
+
+    public Long countByTipo(java.util.UUID idTipo) {
+        if (idTipo == null) {
+            return 0L;
+        }
+        return getEntityManager().createQuery(
+                "SELECT COUNT(m) FROM MedioContacto m WHERE m.idTipoMedioContacto.idTipoMedioContacto = :id", Long.class)
+                .setParameter("id", idTipo).getSingleResult();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

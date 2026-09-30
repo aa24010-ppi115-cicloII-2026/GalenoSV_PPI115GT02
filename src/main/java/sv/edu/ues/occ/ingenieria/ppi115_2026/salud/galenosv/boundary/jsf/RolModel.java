@@ -9,6 +9,8 @@ import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.RolDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.PersonaRolDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ProcedimientoPasoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Rol;
 
 @Named("rolModel")
@@ -22,6 +24,21 @@ public class RolModel extends AbstractModel<Rol> implements Serializable {
 
     @Inject
     RolDAO dao;
+
+    @Inject
+    PersonaRolDAO personaRolDAO;
+
+    @Inject
+    ProcedimientoPasoDAO pasoDAO;
+
+    @Override
+    protected void validarEliminacion(Rol r) {
+        long n = r.getIdRol() == null ? 0 : personaRolDAO.countByRol(r.getIdRol());
+        long pasos = r.getIdRol() == null ? 0 : pasoDAO.countByRol(r.getIdRol());
+        if (n + pasos > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el rol porque está asignado a " + n + " persona(s) y usado en " + pasos + " paso(s)");
+        }
+    }
 
     public RolModel() {
         this.nombreBean = "Rol";

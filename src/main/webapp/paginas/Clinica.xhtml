@@ -19,7 +19,7 @@
                                      selectionMode="single" selection="#{clinicaModel.registro}"
                                      rowKey="#{r.idClinica}">
                             <p:ajax event="rowSelect" listener="#{clinicaModel.selectionHandler}"
-                                    update=":pnlTabla :pnlDetalle :mensajes"/>
+                                    update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
                             <p:column headerText="#{msg['tabla.nombre']}"><h:outputText value="#{r.nombre}"/></p:column>
                             <p:column headerText="#{msg['tabla.activo']}"><h:outputText value="#{r.activo ? msg['tabla.activo'] : msg['tabla.inactivo']}"/></p:column>
                             <p:column headerText="#{msg['clinica.tabla.tipo']}"><h:outputText value="#{r.tipo}"/></p:column>
@@ -43,21 +43,21 @@
                             <p:outputLabel for="txtTipo" value="#{msg['clinica.form.tipo']}"/>
                             <p:inputText id="txtTipo" value="#{clinicaModel.registro.tipo}" size="30" maxlength="20"/>
                             <p:outputLabel for="txtComentarios" value="#{msg['clinica.form.comentarios']}"/>
-                            <p:inputTextarea id="txtComentarios" value="#{clinicaModel.registro.comentarios}" rows="3" cols="50"/>
+                            <p:inputTextarea id="txtComentarios" value="#{clinicaModel.registro.comentarios}" rows="3" cols="50" maxlength="1000"/>
                         </h:panelGrid>
                         <h:panelGrid columns="#{clinicaModel.estado eq 'CREAR' ? 1 : 2}">
-                            <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}"
+                            <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}"
                                              actionListener="#{clinicaModel.btnGuardarHandler}"
                                              rendered="#{clinicaModel.estado eq 'CREAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}"
+                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
+                            <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}"
                                              actionListener="#{clinicaModel.btnModificarHandler}"
                                              rendered="#{clinicaModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}"
+                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
+                            <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}"
                                              actionListener="#{clinicaModel.btnEliminarHandler}"
                                              rendered="#{clinicaModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes"/>
+                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
                         </h:panelGrid>
                     </h:panelGrid>
                 </h:form>
@@ -71,7 +71,7 @@
                                          selection="#{clinicaModel.personaRolModel.registro}"
                                          rendered="#{clinicaModel.personaRolModel.estado eq 'NADA'}"
                                          emptyMessage="#{msg['tabla.sinRegistros']}">
-                                <p:ajax event="rowSelect" listener="#{clinicaModel.personaRolModel.selectionHandler}" update="@form :mensajes"/>
+                                <p:ajax event="rowSelect" listener="#{clinicaModel.personaRolModel.selectionHandler}" update="@form :mensajes :avisos"/>
                                 <p:column headerText="#{msg['personaRol.form.persona']}">
                                     <h:outputText value="#{asignacion.idPersona.nombres} #{asignacion.idPersona.apellidos}"/>
                                 </p:column>
@@ -81,13 +81,13 @@
                             </p:dataTable>
                             <h:panelGrid columns="2" rendered="#{clinicaModel.personaRolModel.estado ne 'NADA'}">
                                 <p:outputLabel for="persona" value="#{msg['personaRol.form.persona']}"/>
-                                <p:selectOneMenu id="persona" value="#{clinicaModel.personaRolModel.idPersonaSeleccionada}" required="true">
+                                <p:selectOneMenu id="persona" value="#{clinicaModel.personaRolModel.idPersonaSeleccionada}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
                                     <f:selectItem xmlns:f="jakarta.faces.core" itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                                     <f:selectItems xmlns:f="jakarta.faces.core" value="#{clinicaModel.personaRolModel.personas}" var="persona"
                                                    itemLabel="#{persona.nombres} #{persona.apellidos}" itemValue="#{persona.idPersona}"/>
                                 </p:selectOneMenu>
                                 <p:outputLabel for="rol" value="#{msg['personaRol.form.rol']}"/>
-                                <p:selectOneMenu id="rol" value="#{clinicaModel.personaRolModel.idRolSeleccionado}" required="true">
+                                <p:selectOneMenu id="rol" value="#{clinicaModel.personaRolModel.idRolSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
                                     <f:selectItem xmlns:f="jakarta.faces.core" itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                                     <f:selectItems xmlns:f="jakarta.faces.core" value="#{clinicaModel.personaRolModel.roles}" var="rol"
                                                    itemLabel="#{rol.nombre}" itemValue="#{rol.idRol}"/>
@@ -95,13 +95,13 @@
                             </h:panelGrid>
                             <p:commandButton value="#{msg['boton.guardar']}" process="@form"
                                              actionListener="#{clinicaModel.personaRolModel.btnGuardarHandler}"
-                                             rendered="#{clinicaModel.personaRolModel.estado eq 'CREAR'}" update="@form :mensajes"/>
+                                             rendered="#{clinicaModel.personaRolModel.estado eq 'CREAR'}" update="@form :mensajes :avisos"/>
                             <p:commandButton value="#{msg['boton.modificar']}" process="@form"
                                              actionListener="#{clinicaModel.personaRolModel.btnModificarHandler}"
-                                             rendered="#{clinicaModel.personaRolModel.estado eq 'MODIFICAR'}" update="@form :mensajes"/>
+                                             rendered="#{clinicaModel.personaRolModel.estado eq 'MODIFICAR'}" update="@form :mensajes :avisos"/>
                             <p:commandButton value="#{msg['boton.eliminar']}" process="@this" resetValues="true"
                                              actionListener="#{clinicaModel.personaRolModel.btnEliminarHandler}"
-                                             rendered="#{clinicaModel.personaRolModel.estado eq 'MODIFICAR'}" update="@form :mensajes"/>
+                                             rendered="#{clinicaModel.personaRolModel.estado eq 'MODIFICAR'}" update="@form :mensajes :avisos"/>
                         </h:form>
                     </p:tab>
                 </p:tabView>

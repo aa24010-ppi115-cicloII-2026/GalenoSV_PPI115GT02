@@ -28,7 +28,7 @@
                                      rowKey="#{r.idTipoExamen}">
                             <p:ajax event="rowSelect"
                                     listener="#{tipoExamenModel.selectionHandler}"
-                                    update=":pnlTabla :pnlDetalle :mensajes"/>
+                                    update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
 
                             <p:column headerText="#{msg['tabla.nombre']}">
                                 <h:outputText value="#{r.nombre}"/>
@@ -62,7 +62,7 @@
                                          value="#{tipoExamenModel.registro.nombre}"
                                          required="true"
                                          requiredMessage="#{msg['tipoExamen.nombre.requerido']}"
-                                         size="50"/>
+                                         size="50" maxlength="255"/>
 
                             <p:outputLabel for="swActivo" value="#{msg['tipoExamen.form.activo']}"/>
                             <p:toggleSwitch id="swActivo"
@@ -72,25 +72,25 @@
                             <p:inputTextarea id="txtObservaciones"
                                              value="#{tipoExamenModel.registro.observaciones}"
                                              rows="3"
-                                             cols="50"/>
+                                             cols="50" maxlength="1000"/>
                         </h:panelGrid>
 
                         <h:panelGrid columns="#{tipoExamenModel.estado eq 'CREAR' ? 1 : 2}">
-                            <p:commandButton id="btnGuardar"
+                            <p:commandButton id="btnGuardar" icon="pi pi-check"
                                              value="#{msg['boton.guardar']}"
                                              actionListener="#{tipoExamenModel.btnGuardarHandler}"
                                              rendered="#{tipoExamenModel.estado eq 'CREAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:commandButton id="btnModificar"
+                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
+                            <p:commandButton id="btnModificar" icon="pi pi-pencil"
                                              value="#{msg['boton.modificar']}"
                                              actionListener="#{tipoExamenModel.btnModificarHandler}"
                                              rendered="#{tipoExamenModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:commandButton id="btnEliminar"
+                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
+                            <p:commandButton id="btnEliminar" icon="pi pi-trash"
                                              value="#{msg['boton.eliminar']}"
                                              actionListener="#{tipoExamenModel.btnEliminarHandler}"
                                              rendered="#{tipoExamenModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes"/>
+                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
                         </h:panelGrid>
                     </h:panelGrid>
                 </h:form>

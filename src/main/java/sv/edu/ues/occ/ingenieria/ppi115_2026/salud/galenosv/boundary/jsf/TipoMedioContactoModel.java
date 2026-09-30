@@ -9,6 +9,7 @@ import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TipoMedioContactoDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.MedioContactoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoMedioContacto;
 
 @Named("tipoMedioContactoModel")
@@ -22,6 +23,17 @@ public class TipoMedioContactoModel extends AbstractModel<TipoMedioContacto> imp
 
     @Inject
     TipoMedioContactoDAO dao;
+
+    @Inject
+    MedioContactoDAO medioContactoDAO;
+
+    @Override
+    protected void validarEliminacion(TipoMedioContacto r) {
+        long n = r.getIdTipoMedioContacto() == null ? 0 : medioContactoDAO.countByTipo(r.getIdTipoMedioContacto());
+        if (n > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el tipo de medio porque tiene " + n + " contacto(s) registrado(s)");
+        }
+    }
 
     public TipoMedioContactoModel() {
         this.nombreBean = "TipoMedioContacto";

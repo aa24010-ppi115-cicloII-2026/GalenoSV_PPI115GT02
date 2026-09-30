@@ -23,6 +23,25 @@ public class ExamenResultadoDAO extends DefaultDAO<ExamenResultado> {
         super(ExamenResultado.class);
     }
 
+
+    public java.util.List<ExamenResultado> findByOrden(java.util.UUID id) {
+        if (id == null) {
+            return java.util.Collections.emptyList();
+        }
+        return getEntityManager().createQuery(
+                "SELECT e FROM ExamenResultado e WHERE e.idOrdenExamen.idOrdenExamen = :id ORDER BY e.idExamenResultado", ExamenResultado.class)
+                .setParameter("id", id).setMaxResults(1000).getResultList();
+    }
+
+    public Long countByOrden(java.util.UUID id) {
+        if (id == null) {
+            return 0L;
+        }
+        return getEntityManager().createQuery(
+                "SELECT COUNT(e) FROM ExamenResultado e WHERE e.idOrdenExamen.idOrdenExamen = :id", Long.class)
+                .setParameter("id", id).getSingleResult();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

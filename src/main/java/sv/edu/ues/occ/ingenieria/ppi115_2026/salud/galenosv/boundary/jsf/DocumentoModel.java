@@ -195,8 +195,8 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
     }
 
     private void sincronizarSeleccion() {
-        idPersonaSeleccionada = registro != null && registro.getIdPersona() != null ? registro.getIdPersona().getIdPersona().toString() : null;
-        idTipoDocumentoSeleccionado = registro != null && registro.getIdTipoDocumento() != null ? registro.getIdTipoDocumento().getIdTipoDocumento().toString() : null;
+        idPersonaSeleccionada = registro != null && registro.getIdPersona() != null && registro.getIdPersona().getIdPersona() != null ? registro.getIdPersona().getIdPersona().toString() : null;
+        idTipoDocumentoSeleccionado = registro != null && registro.getIdTipoDocumento() != null && registro.getIdTipoDocumento().getIdTipoDocumento() != null ? registro.getIdTipoDocumento().getIdTipoDocumento().toString() : null;
     }
 
     private void limpiar(String mensaje) {

@@ -18,7 +18,7 @@
                                      paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
                                      selectionMode="single" selection="#{rolModel.registro}" rowKey="#{r.idRol}">
                             <p:ajax event="rowSelect" listener="#{rolModel.selectionHandler}"
-                                    update=":pnlTabla :pnlDetalle :mensajes"/>
+                                    update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
                             <p:column headerText="#{msg['tabla.nombre']}"><h:outputText value="#{r.nombre}"/></p:column>
                             <p:column headerText="#{msg['tabla.activo']}"><h:outputText value="#{r.activo ? msg['tabla.activo'] : msg['tabla.inactivo']}"/></p:column>
                             <p:column headerText="#{msg['tabla.observaciones']}"><h:outputText value="#{r.observaciones}"/></p:column>
@@ -39,12 +39,12 @@
                             <p:outputLabel for="swActivo" value="#{msg['rol.form.activo']}"/>
                             <p:toggleSwitch id="swActivo" value="#{rolModel.registro.activo}"/>
                             <p:outputLabel for="txtObservaciones" value="#{msg['rol.form.observaciones']}"/>
-                            <p:inputTextarea id="txtObservaciones" value="#{rolModel.registro.observaciones}" rows="3" cols="50"/>
+                            <p:inputTextarea id="txtObservaciones" value="#{rolModel.registro.observaciones}" rows="3" cols="50" maxlength="1000"/>
                         </h:panelGrid>
                         <h:panelGrid columns="#{rolModel.estado eq 'CREAR' ? 1 : 2}">
-                            <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}" actionListener="#{rolModel.btnGuardarHandler}" rendered="#{rolModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}" actionListener="#{rolModel.btnModificarHandler}" rendered="#{rolModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}" actionListener="#{rolModel.btnEliminarHandler}" rendered="#{rolModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                            <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{rolModel.btnGuardarHandler}" rendered="#{rolModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
+                            <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{rolModel.btnModificarHandler}" rendered="#{rolModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
+                            <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{rolModel.btnEliminarHandler}" rendered="#{rolModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
                         </h:panelGrid>
                     </h:panelGrid>
                 </h:form>

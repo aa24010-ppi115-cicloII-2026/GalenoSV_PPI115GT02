@@ -9,6 +9,7 @@ import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TipoExamenDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ExamenTipoExamenDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoExamen;
 
 @Named("tipoExamenModel")
@@ -22,6 +23,17 @@ public class TipoExamenModel extends AbstractModel<TipoExamen> implements Serial
 
     @Inject
     TipoExamenDAO dao;
+
+    @Inject
+    ExamenTipoExamenDAO examenTipoExamenDAO;
+
+    @Override
+    protected void validarEliminacion(TipoExamen r) {
+        long n = r.getIdTipoExamen() == null ? 0 : examenTipoExamenDAO.countByTipo(r.getIdTipoExamen());
+        if (n > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el tipo de examen porque está vinculado a " + n + " examen(es)");
+        }
+    }
 
     public TipoExamenModel() {
         this.nombreBean = "TipoExamen";

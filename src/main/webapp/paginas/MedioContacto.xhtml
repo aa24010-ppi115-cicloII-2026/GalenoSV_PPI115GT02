@@ -22,7 +22,7 @@
                                  paginator="true" rows="#{medioContactoModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{medioContactoModel.registro}" rowKey="#{r.idMedioContacto}">
-                        <p:ajax event="rowSelect" listener="#{medioContactoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                        <p:ajax event="rowSelect" listener="#{medioContactoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
                         <p:column headerText="#{msg['medioContacto.tabla.persona']}"><h:outputText value="#{r.idPersona.nombres} #{r.idPersona.apellidos}"/></p:column>
                         <p:column headerText="#{msg['medioContacto.tabla.tipoMedioContacto']}"><h:outputText value="#{r.idTipoMedioContacto.nombre}"/></p:column>
                         <p:column headerText="#{msg['medioContacto.tabla.valor']}"><h:outputText value="#{r.valor}"/></p:column>
@@ -37,12 +37,12 @@
                         <p:outputLabel for="txtId" value="#{msg['medioContacto.form.id']}"/>
                         <p:inputText id="txtId" value="#{medioContactoModel.registro.idMedioContacto}" size="50" disabled="true"/>
                         <p:outputLabel for="cmbPersona" value="#{msg['medioContacto.form.persona']}"/>
-                        <p:selectOneMenu id="cmbPersona" value="#{medioContactoModel.idPersonaSeleccionada}" required="true">
+                        <p:selectOneMenu id="cmbPersona" value="#{medioContactoModel.idPersonaSeleccionada}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{medioContactoModel.personas}" var="p" itemLabel="#{p.nombres} #{p.apellidos}" itemValue="#{p.idPersona}"/>
                         </p:selectOneMenu>
                         <p:outputLabel for="cmbTipo" value="#{msg['medioContacto.form.tipoMedioContacto']}"/>
-                        <p:selectOneMenu id="cmbTipo" value="#{medioContactoModel.idTipoMedioContactoSeleccionado}" required="true">
+                        <p:selectOneMenu id="cmbTipo" value="#{medioContactoModel.idTipoMedioContactoSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{medioContactoModel.tiposMedioContacto}" var="t" itemLabel="#{t.nombre}" itemValue="#{t.idTipoMedioContacto}"/>
                         </p:selectOneMenu>

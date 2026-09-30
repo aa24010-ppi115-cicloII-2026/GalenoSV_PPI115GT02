@@ -14,6 +14,8 @@ import org.primefaces.event.SelectEvent;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ESTADO_CRUD;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ClinicaDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ConsultaDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ConsultaProcedimientoPasoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.PersonaDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.PersonaRolDAO;
@@ -43,6 +45,12 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
 
     @Inject
     ClinicaDAO clinicaDAO;
+
+    @Inject
+    ConsultaDAO consultaDAO;
+
+    @Inject
+    ConsultaProcedimientoPasoDAO consultaProcedimientoPasoDAO;
 
     private String idPersonaSeleccionada;
     private String idRolSeleccionado;
@@ -102,6 +110,26 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
         if (dao.existeAsignacion(r.getIdPersona().getIdPersona(), r.getIdRol().getIdRol(),
                 r.getIdClinica().getIdClinica(), excluir)) {
             throw new IllegalArgumentException("Esa asignación de rol ya existe para esa persona en esa clínica");
+        }
+    }
+
+    @Override
+    protected void validarEliminacion(PersonaRol r) {
+        if (r.getIdPersonaRol() == null) {
+            return;
+        }
+        long cons = 0;
+        long pasos = 0;
+        try {
+            cons = consultaDAO.countByPersonaRol(r.getIdPersonaRol());
+        } catch (Exception ignored) {
+        }
+        try {
+            pasos = consultaProcedimientoPasoDAO.countByPersonaRol(r.getIdPersonaRol());
+        } catch (Exception ignored) {
+        }
+        if (cons + pasos > 0) {
+            throw new IllegalArgumentException("No se puede eliminar la asignación porque tiene " + cons + " consulta(s) y " + pasos + " paso(s) asociados");
         }
     }
 
@@ -222,14 +250,20 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
     }
 
     private void sincronizarSeleccion() {
-        if (registro != null && registro.getIdPersona() != null) {
+        if (registro != null && registro.getIdPersona() != null && registro.getIdPersona().getIdPersona() != null) {
             idPersonaSeleccionada = registro.getIdPersona().getIdPersona().toString();
+        } else {
+            idPersonaSeleccionada = null;
         }
-        if (registro != null && registro.getIdRol() != null) {
+        if (registro != null && registro.getIdRol() != null && registro.getIdRol().getIdRol() != null) {
             idRolSeleccionado = registro.getIdRol().getIdRol().toString();
+        } else {
+            idRolSeleccionado = null;
         }
-        if (registro != null && registro.getIdClinica() != null) {
+        if (registro != null && registro.getIdClinica() != null && registro.getIdClinica().getIdClinica() != null) {
             idClinicaSeleccionada = registro.getIdClinica().getIdClinica().toString();
+        } else {
+            idClinicaSeleccionada = null;
         }
     }
 

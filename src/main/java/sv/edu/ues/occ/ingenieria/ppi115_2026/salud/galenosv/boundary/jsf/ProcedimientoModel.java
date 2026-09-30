@@ -38,6 +38,9 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     FacesContext facesContext;
     @Inject
     ProcedimientoDAO dao;
+
+    @Inject
+    sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ConsultaProcedimientoDAO consultaProcedimientoDAO;
     @Inject
     ProcedimientoPasoDAO pasoDAO;
     @Inject
@@ -68,6 +71,39 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     private String idPasoSeleccionadoExamen;
     private String idExamenSeleccionado;
     private boolean editandoExamen = false;
+
+    private void refrescarListasHijas() {
+        if (this.registro == null || this.registro.getIdProcedimiento() == null) {
+            return;
+        }
+        try {
+            java.util.List<ProcedimientoPaso> pasos =
+                    pasoDAO.findByProcedimiento(this.registro.getIdProcedimiento());
+            this.registro.setProcedimientoPasoList(pasos);
+            for (ProcedimientoPaso paso : pasos) {
+                if (paso.getIdProcedimientoPaso() == null) {
+                    continue;
+                }
+                paso.setProcedimientoPasoSecuenciaList(
+                        secuenciaDAO.findByPaso(paso.getIdProcedimientoPaso()));
+                paso.setProcedimientoPasoExamenList(
+                        pasoExamenDAO.findByPaso(paso.getIdProcedimientoPaso()));
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    @Override
+    protected void validarEliminacion(Procedimiento r) {
+        if (r.getIdProcedimiento() == null) {
+            return;
+        }
+        long pasos = pasoDAO.countByProcedimiento(r.getIdProcedimiento());
+        long cons = consultaProcedimientoDAO.countByProcedimiento(r.getIdProcedimiento());
+        if (pasos + cons > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el procedimiento porque tiene " + pasos + " paso(s) y " + cons + " consulta(s) asociadas");
+        }
+    }
 
     public ProcedimientoModel() {
         this.nombreBean = "Procedimiento";
@@ -125,6 +161,7 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     @Override
     public void selectionHandler(SelectEvent<Procedimiento> r) {
         super.selectionHandler(r);
+        refrescarListasHijas();
         cancelarEdicionPaso();
         cancelarEdicionSecuencia();
         cancelarEdicionExamen();

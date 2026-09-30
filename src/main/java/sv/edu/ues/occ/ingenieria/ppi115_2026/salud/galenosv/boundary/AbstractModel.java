@@ -152,6 +152,7 @@ public abstract class AbstractModel<T> implements Serializable {
     public void btnEliminarHandler(ActionEvent actionEvent) {
         if (this.registro != null) {
             try {
+                validarEliminacion(this.registro);
                 getDao().eliminar(this.registro);
                 this.registro = null;
                 this.estado = ESTADO_CRUD.NADA;
@@ -197,6 +198,15 @@ public abstract class AbstractModel<T> implements Serializable {
      * Debe lanzar IllegalArgumentException si hay duplicado.
      */
     protected void validarUnicidad(T registro, boolean esModificacion) {
+    }
+
+    /**
+     * Verifica que el registro se puede eliminar (sin hijos que lo referencien).
+     * Por defecto no hace nada; cada modelo la sobrescribe para contar hijos
+     * y lanzar IllegalArgumentException con mensaje claro. Como red de
+     * seguridad, DefaultDAO.eliminar traduce la violacion de FK a mensaje amable.
+     */
+    protected void validarEliminacion(T registro) {
     }
 
     protected boolean esNombreVacio(T registro) {        if (registro == null) {

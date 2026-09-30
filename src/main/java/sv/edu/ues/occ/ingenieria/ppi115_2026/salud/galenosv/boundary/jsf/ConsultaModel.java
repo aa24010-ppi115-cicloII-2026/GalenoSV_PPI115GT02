@@ -81,6 +81,41 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     private String idConsultaProcedimientoPasoSeleccionado;
     private boolean editandoOrden = false;
 
+    private void refrescarListasHijas() {
+        if (this.registro == null || this.registro.getIdConsulta() == null) {
+            return;
+        }
+        try {
+            java.util.List<ConsultaProcedimiento> cps =
+                    consultaProcedimientoDAO.findByConsulta(this.registro.getIdConsulta());
+            this.registro.setConsultaProcedimientoList(cps);
+            for (ConsultaProcedimiento cp : cps) {
+                if (cp.getIdConsultaProcedimiento() == null) {
+                    continue;
+                }
+                java.util.List<ConsultaProcedimientoPaso> pasos =
+                        consultaProcedimientoPasoDAO.findByProcedimiento(cp.getIdConsultaProcedimiento());
+                cp.setConsultaProcedimientoPasoList(pasos);
+                for (ConsultaProcedimientoPaso paso : pasos) {
+                    if (paso.getIdConsultaProcedimientoPaso() == null) {
+                        continue;
+                    }
+                    paso.setOrdenExamenList(
+                            ordenExamenDAO.findByPaso(paso.getIdConsultaProcedimientoPaso()));
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    @Override
+    protected void validarEliminacion(Consulta r) {
+        long n = r.getIdConsulta() == null ? 0 : consultaProcedimientoDAO.countByConsulta(r.getIdConsulta());
+        if (n > 0) {
+            throw new IllegalArgumentException("No se puede eliminar la consulta porque tiene " + n + " procedimiento(s) asociado(s)");
+        }
+    }
+
     public ConsultaModel() {
         this.nombreBean = "Consulta";
     }
@@ -134,6 +169,7 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     @Override
     public void selectionHandler(SelectEvent<Consulta> r) {
         super.selectionHandler(r);
+        refrescarListasHijas();
         sincronizarSeleccion();
         cancelarEdicionProc();
         cancelarEdicionPaso();

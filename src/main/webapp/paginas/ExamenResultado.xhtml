@@ -79,36 +79,36 @@
                         <p:inputTextarea id="txtResultado" value="#{examenResultadoModel.registro.resultado}"
                                          rows="5" cols="60" required="true"
                                          requiredMessage="#{msg['examenResultado.resultado.requerido']}"
-                                         placeholder="#{msg['examenResultado.placeholder.resultado']}"/>
+                                         placeholder="#{msg['examenResultado.placeholder.resultado']}" maxlength="1000"/>
 
                         <!-- Interpretación -->
                         <p:outputLabel for="txtInterpretacion" value="#{msg['examenResultado.form.interpretacionMedico']}"/>
                         <p:inputTextarea id="txtInterpretacion" value="#{examenResultadoModel.registro.interpretacion}"
                                          rows="4" cols="60"
-                                         placeholder="#{msg['examenResultado.placeholder.interpretacion']}"/>
+                                         placeholder="#{msg['examenResultado.placeholder.interpretacion']}" maxlength="1000"/>
 
                         <!-- Ruta del atestado (archivo físico) -->
                         <p:outputLabel for="txtRuta" value="#{msg['examenResultado.form.rutaAtestado']}"/>
                         <p:inputText id="txtRuta" value="#{examenResultadoModel.registro.rutaAtestado}"
                                      size="60"
-                                     placeholder="#{msg['examenResultado.ejemplo.ruta']}"/>
+                                     placeholder="#{msg['examenResultado.ejemplo.ruta']}" maxlength="255"/>
                     </h:panelGrid>
 
                     <!-- Botones de acción con process explícito para evitar validación cruzada -->
                     <h:panelGrid columns="#{examenResultadoModel.estado eq 'CREAR' ? 1 : 2}" style="margin-top:10px;">
-                        <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}"
+                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}"
                                          actionListener="#{examenResultadoModel.btnGuardarHandler}"
                                          rendered="#{examenResultadoModel.estado eq 'CREAR'}"
                                          update=":frmExamenResultado" styleClass="ui-button-success"
                                          process="@this txtId cmbOrden txtFecha txtResultado txtInterpretacion txtRuta"/>
 
-                        <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}"
+                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}"
                                          actionListener="#{examenResultadoModel.btnModificarHandler}"
                                          rendered="#{examenResultadoModel.estado eq 'MODIFICAR'}"
                                          update=":frmExamenResultado" styleClass="ui-button-primary"
                                          process="@this txtId cmbOrden txtFecha txtResultado txtInterpretacion txtRuta"/>
 
-                        <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}"
+                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}"
                                          actionListener="#{examenResultadoModel.btnEliminarHandler}"
                                          rendered="#{examenResultadoModel.estado eq 'MODIFICAR'}"
                                          update=":frmExamenResultado" styleClass="ui-button-danger"

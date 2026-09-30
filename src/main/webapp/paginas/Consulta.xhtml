@@ -71,26 +71,26 @@
 
                             <p:outputLabel for="txtReferencia" value="#{msg['consulta.form.referenciaExterna']}"/>
                             <p:inputTextarea id="txtReferencia" value="#{consultaModel.registro.referenciaExterna}"
-                                             rows="2" cols="50"/>
+                                             rows="2" cols="50" maxlength="1000"/>
 
                             <p:outputLabel for="txtObservaciones" value="#{msg['consulta.form.observaciones']}"/>
                             <p:inputTextarea id="txtObservaciones" value="#{consultaModel.registro.observaciones}"
-                                             rows="4" cols="50"/>
+                                             rows="4" cols="50" maxlength="1000"/>
                         </h:panelGrid>
 
                         <h:panelGrid columns="#{consultaModel.estado eq 'CREAR' ? 1 : 2}">
-                            <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}"
+                            <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}"
                                              actionListener="#{consultaModel.btnGuardarHandler}"
                                              rendered="#{consultaModel.estado eq 'CREAR'}"
-                                             update=":frmConsulta"/>
-                            <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}"
+                                             update=":frmConsulta" styleClass="ui-button-success"/>
+                            <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}"
                                              actionListener="#{consultaModel.btnModificarHandler}"
                                              rendered="#{consultaModel.estado eq 'MODIFICAR'}"
-                                             update=":frmConsulta"/>
-                            <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}"
+                                             update=":frmConsulta" styleClass="ui-button-warning"/>
+                            <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}"
                                              actionListener="#{consultaModel.btnEliminarHandler}"
                                              rendered="#{consultaModel.estado eq 'MODIFICAR'}"
-                                             update=":frmConsulta"/>
+                                             update=":frmConsulta" styleClass="ui-button-danger"/>
                         </h:panelGrid>
                     </h:panelGrid>
                 </p:panel>
@@ -110,17 +110,17 @@
                                 </p:selectOneMenu>
 
                                 <p:outputLabel value="#{msg['tabla.observaciones']}:"/>
-                                <p:inputTextarea value="#{consultaModel.nuevoConsultaProcedimiento.observaciones}" rows="1" cols="30"/>
+                                <p:inputTextarea value="#{consultaModel.nuevoConsultaProcedimiento.observaciones}" rows="1" cols="30" maxlength="1000"/>
 
                                 <p:commandButton value="#{msg['boton.agregar']}" icon="pi pi-plus"
                                                  actionListener="#{consultaModel.agregarConsultaProcedimiento()}"
                                                  process="panelNuevoProc"
-                                                 update="panelNuevoProc tablaProcs :frmConsulta:mensajes @([id$=idConsultaProcedimientoSeleccionado])"
+                                                 update="panelNuevoProc tablaProcs :frmConsulta:mensajes @([id$=idConsultaProcedimientoSeleccionado]) :avisos"
                                                  rendered="#{not consultaModel.editandoProc}"/>
                                 <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
                                                  actionListener="#{consultaModel.modificarConsultaProcedimiento()}"
                                                  process="panelNuevoProc"
-                                                 update="panelNuevoProc tablaProcs :frmConsulta:mensajes @([id$=idConsultaProcedimientoSeleccionado])"
+                                                 update="panelNuevoProc tablaProcs :frmConsulta:mensajes @([id$=idConsultaProcedimientoSeleccionado]) :avisos"
                                                  styleClass="ui-button-warning" rendered="#{consultaModel.editandoProc}"/>
                                 <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
                                                  actionListener="#{consultaModel.cancelarEdicionProc()}"
@@ -147,7 +147,7 @@
                             <p:column headerText="#{msg['tabla.accion']}" style="width:80px;text-align:center">
                                 <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger"
                                                  actionListener="#{consultaModel.eliminarConsultaProcedimiento(cp)}"
-                                                 process="@this" update="tablaProcs panelNuevoProc :frmConsulta:mensajes @([id$=idConsultaProcedimientoSeleccionado])">
+                                                 process="@this" update="tablaProcs panelNuevoProc :frmConsulta:mensajes @([id$=idConsultaProcedimientoSeleccionado]) :avisos">
                                     <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                 </p:commandButton>
                             </p:column>
@@ -184,12 +184,12 @@
                                 <p:commandButton value="#{msg['boton.agregar']}" icon="pi pi-plus"
                                                  actionListener="#{consultaModel.agregarConsultaProcedimientoPaso()}"
                                                  process="panelNuevoPaso"
-                                                 update="panelNuevoPaso tablaPasos :frmConsulta:mensajes @([id$=cmbPasoParaOrden])"
+                                                 update="panelNuevoPaso tablaPasos :frmConsulta:mensajes @([id$=cmbPasoParaOrden]) :avisos"
                                                  rendered="#{not consultaModel.editandoPaso}"/>
                                 <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
                                                  actionListener="#{consultaModel.modificarConsultaProcedimientoPaso()}"
                                                  process="panelNuevoPaso"
-                                                 update="panelNuevoPaso tablaPasos :frmConsulta:mensajes @([id$=cmbPasoParaOrden])"
+                                                 update="panelNuevoPaso tablaPasos :frmConsulta:mensajes @([id$=cmbPasoParaOrden]) :avisos"
                                                  styleClass="ui-button-warning" rendered="#{consultaModel.editandoPaso}"/>
                                 <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
                                                  actionListener="#{consultaModel.cancelarEdicionPaso()}"
@@ -219,7 +219,7 @@
                             <p:column headerText="#{msg['tabla.accion']}" style="width:80px;text-align:center">
                                 <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger"
                                                  actionListener="#{consultaModel.eliminarConsultaProcedimientoPaso(paso)}"
-                                                 process="@this" update="tablaPasos panelNuevoPaso :frmConsulta:mensajes @([id$=cmbPasoParaOrden])">
+                                                 process="@this" update="tablaPasos panelNuevoPaso :frmConsulta:mensajes @([id$=cmbPasoParaOrden]) :avisos">
                                     <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                 </p:commandButton>
                             </p:column>
@@ -240,17 +240,17 @@
                                 </p:selectOneMenu>
 
                                 <p:outputLabel value="#{msg['ordenExamen.form.indicaciones']}:"/>
-                                <p:inputTextarea value="#{consultaModel.nuevoOrdenExamen.indicaciones}" rows="1" cols="30"/>
+                                <p:inputTextarea value="#{consultaModel.nuevoOrdenExamen.indicaciones}" rows="1" cols="30" maxlength="1000"/>
 
                                 <p:commandButton value="#{msg['consulta.boton.agregarOrden']}" icon="pi pi-plus"
                                                  actionListener="#{consultaModel.agregarOrdenExamen()}"
                                                  process="panelNuevaOrden"
-                                                 update="panelNuevaOrden tablaOrdenes :frmConsulta:mensajes"
+                                                 update="panelNuevaOrden tablaOrdenes :frmConsulta:mensajes :avisos"
                                                  rendered="#{not consultaModel.editandoOrden}"/>
                                 <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
                                                  actionListener="#{consultaModel.modificarOrdenExamen()}"
                                                  process="panelNuevaOrden"
-                                                 update="panelNuevaOrden tablaOrdenes :frmConsulta:mensajes"
+                                                 update="panelNuevaOrden tablaOrdenes :frmConsulta:mensajes :avisos"
                                                  styleClass="ui-button-warning" rendered="#{consultaModel.editandoOrden}"/>
                                 <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
                                                  actionListener="#{consultaModel.cancelarEdicionOrden()}"
@@ -277,7 +277,7 @@
                             <p:column headerText="#{msg['tabla.accion']}" style="width:80px;text-align:center">
                                 <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger"
                                                  actionListener="#{consultaModel.eliminarOrdenExamen(oe)}"
-                                                 process="@this" update="tablaOrdenes panelNuevaOrden :frmConsulta:mensajes">
+                                                 process="@this" update="tablaOrdenes panelNuevaOrden :frmConsulta:mensajes :avisos">
                                     <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                 </p:commandButton>
                             </p:column>

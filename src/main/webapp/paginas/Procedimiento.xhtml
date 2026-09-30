@@ -34,11 +34,11 @@
                             <p:outputLabel for="txtId" value="#{msg['tabla.id']}"/>
                             <p:inputText id="txtId" value="#{procedimientoModel.registro.idProcedimiento}" size="50" disabled="true"/>
                             <p:outputLabel for="txtNombre" value="#{msg['procedimiento.form.nombre']} *"/>
-                            <p:inputText id="txtNombre" value="#{procedimientoModel.registro.nombre}" size="50" required="true"/>
+                            <p:inputText id="txtNombre" value="#{procedimientoModel.registro.nombre}" size="50" required="true" maxlength="255"/>
                             <p:outputLabel for="chkActivo" value="#{msg['procedimiento.form.activo']}"/>
                             <p:selectBooleanCheckbox id="chkActivo" value="#{procedimientoModel.registro.activo}"/>
                             <p:outputLabel for="txtObservaciones" value="#{msg['procedimiento.form.observaciones']}"/>
-                            <p:inputTextarea id="txtObservaciones" value="#{procedimientoModel.registro.observaciones}" rows="3" cols="50"/>
+                            <p:inputTextarea id="txtObservaciones" value="#{procedimientoModel.registro.observaciones}" rows="3" cols="50" maxlength="1000"/>
                         </h:panelGrid>
                         
                         <h:panelGrid columns="#{procedimientoModel.estado eq 'CREAR' ? 1 : 2}">
@@ -64,7 +64,7 @@
                                 <h:panelGroup id="panelNuevoPaso" style="margin-bottom:15px; display:block;">
                                     <h:panelGrid columns="9" cellpadding="5" styleClass="ui-fluid">
                                         <p:outputLabel value="#{msg['procedimientoPaso.form.nombre']}:"/>
-                                        <p:inputText value="#{procedimientoModel.nuevoPaso.nombre}" size="20" required="true"/>
+                                        <p:inputText value="#{procedimientoModel.nuevoPaso.nombre}" size="20" required="true" maxlength="255"/>
 
                                         <p:outputLabel value="#{msg['procedimientoPaso.form.rol']}:"/>
                                         <p:selectOneMenu value="#{procedimientoModel.idRolSeleccionadoPaso}" style="width:150px">
@@ -79,13 +79,13 @@
                                         <p:commandButton value="#{msg['boton.agregar']}" icon="pi pi-plus"
                                                          actionListener="#{procedimientoModel.agregarPaso()}"
                                                          process="panelNuevoPaso"
-                                                         update="panelNuevoPaso tablaPasos :frmProcedimiento:mensajes @([id$=cmbPasoSecuenciaPrincipal]) @([id$=cmbPasoSecuenciaAnterior]) @([id$=cmbPasoExamenPrincipal])"
+                                                         update="panelNuevoPaso tablaPasos :frmProcedimiento:mensajes @([id$=cmbPasoSecuenciaPrincipal]) @([id$=cmbPasoSecuenciaAnterior]) @([id$=cmbPasoExamenPrincipal]) :avisos"
                                                          styleClass="ui-button-info" rendered="#{not procedimientoModel.editandoPaso}"/>
                                                          
                                         <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
                                                          actionListener="#{procedimientoModel.modificarPaso()}"
                                                          process="panelNuevoPaso"
-                                                         update="panelNuevoPaso tablaPasos :frmProcedimiento:mensajes @([id$=cmbPasoSecuenciaPrincipal]) @([id$=cmbPasoSecuenciaAnterior]) @([id$=cmbPasoExamenPrincipal])"
+                                                         update="panelNuevoPaso tablaPasos :frmProcedimiento:mensajes @([id$=cmbPasoSecuenciaPrincipal]) @([id$=cmbPasoSecuenciaAnterior]) @([id$=cmbPasoExamenPrincipal]) :avisos"
                                                          styleClass="ui-button-warning" rendered="#{procedimientoModel.editandoPaso}"/>
 
                                         <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
@@ -116,7 +116,7 @@
                                         <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
                                                          actionListener="#{procedimientoModel.eliminarPaso(paso)}"
                                                          process="@this"
-                                                         update="tablaPasos panelNuevoPaso :frmProcedimiento:mensajes @([id$=cmbPasoSecuenciaPrincipal]) @([id$=cmbPasoSecuenciaAnterior]) @([id$=cmbPasoExamenPrincipal])">
+                                                         update="tablaPasos panelNuevoPaso :frmProcedimiento:mensajes @([id$=cmbPasoSecuenciaPrincipal]) @([id$=cmbPasoSecuenciaAnterior]) @([id$=cmbPasoExamenPrincipal]) :avisos">
                                             <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                         </p:commandButton>
                                     </p:column>
@@ -144,13 +144,13 @@
                                         <p:commandButton value="#{msg['boton.enlazar']}" icon="pi pi-link"
                                                          actionListener="#{procedimientoModel.agregarSecuencia()}"
                                                          process="panelNuevaSecuencia"
-                                                         update="panelNuevaSecuencia tablaSecuencias :frmProcedimiento:mensajes"
+                                                         update="panelNuevaSecuencia tablaSecuencias :frmProcedimiento:mensajes :avisos"
                                                          styleClass="ui-button-info" rendered="#{not procedimientoModel.editandoSecuencia}"/>
 
                                         <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
                                                          actionListener="#{procedimientoModel.modificarSecuencia()}"
                                                          process="panelNuevaSecuencia"
-                                                         update="panelNuevaSecuencia tablaSecuencias :frmProcedimiento:mensajes"
+                                                         update="panelNuevaSecuencia tablaSecuencias :frmProcedimiento:mensajes :avisos"
                                                          styleClass="ui-button-warning" rendered="#{procedimientoModel.editandoSecuencia}"/>
 
                                         <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
@@ -181,7 +181,7 @@
                                         <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
                                                          actionListener="#{procedimientoModel.eliminarSecuencia(sec)}"
                                                          process="@this"
-                                                         update="tablaSecuencias panelNuevaSecuencia :frmProcedimiento:mensajes">
+                                                         update="tablaSecuencias panelNuevaSecuencia :frmProcedimiento:mensajes :avisos">
                                             <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                         </p:commandButton>
                                     </p:column>
@@ -209,13 +209,13 @@
                                         <p:commandButton value="#{msg['boton.vincularExamen']}" icon="pi pi-check-square"
                                                          actionListener="#{procedimientoModel.agregarPasoExamen()}"
                                                          process="panelNuevoExamen"
-                                                         update="panelNuevoExamen tablaExamenes :frmProcedimiento:mensajes"
+                                                         update="panelNuevoExamen tablaExamenes :frmProcedimiento:mensajes :avisos"
                                                          styleClass="ui-button-info" rendered="#{not procedimientoModel.editandoExamen}"/>
 
                                         <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
                                                          actionListener="#{procedimientoModel.modificarPasoExamen()}"
                                                          process="panelNuevoExamen"
-                                                         update="panelNuevoExamen tablaExamenes :frmProcedimiento:mensajes"
+                                                         update="panelNuevoExamen tablaExamenes :frmProcedimiento:mensajes :avisos"
                                                          styleClass="ui-button-warning" rendered="#{procedimientoModel.editandoExamen}"/>
 
                                         <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
@@ -246,7 +246,7 @@
                                         <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
                                                          actionListener="#{procedimientoModel.eliminarPasoExamen(ppe)}"
                                                          process="@this"
-                                                         update="tablaExamenes panelNuevoExamen :frmProcedimiento:mensajes">
+                                                         update="tablaExamenes panelNuevoExamen :frmProcedimiento:mensajes :avisos">
                                             <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                         </p:commandButton>
                                     </p:column>

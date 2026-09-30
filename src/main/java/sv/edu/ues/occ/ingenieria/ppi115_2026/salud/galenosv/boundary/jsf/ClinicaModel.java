@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ClinicaDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.PersonaRolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Clinica;
 
@@ -24,6 +25,9 @@ public class ClinicaModel extends AbstractModel<Clinica> implements Serializable
     ClinicaDAO dao;
 
     @Inject
+    PersonaRolDAO personaRolDAO;
+
+    @Inject
     PersonaRolModel personaRolModel;
 
     public PersonaRolModel getPersonaRolModel() {
@@ -31,6 +35,14 @@ public class ClinicaModel extends AbstractModel<Clinica> implements Serializable
                 estado == sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ESTADO_CRUD.MODIFICAR
                         && registro != null ? registro.getIdClinica() : null);
         return personaRolModel;
+    }
+
+    @Override
+    protected void validarEliminacion(Clinica r) {
+        long n = r.getIdClinica() == null ? 0 : personaRolDAO.countByClinica(r.getIdClinica());
+        if (n > 0) {
+            throw new IllegalArgumentException("No se puede eliminar la clínica porque tiene " + n + " asignacion(es) de personal");
+        }
     }
 
     public ClinicaModel() {

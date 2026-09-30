@@ -16,6 +16,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ESTADO_CRUD
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ConsultaProcedimientoPasoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.OrdenExamenDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ExamenResultadoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimientoPaso;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.OrdenExamen;
 
@@ -30,10 +31,21 @@ public class OrdenExamenModel extends AbstractModel<OrdenExamen> implements Seri
     FacesContext facesContext;
     @Inject
     OrdenExamenDAO dao;
+
+    @Inject
+    ExamenResultadoDAO examenResultadoDAO;
     @Inject
     ConsultaProcedimientoPasoDAO consultaProcedimientoPasoDAO;
 
     private String idConsultaProcedimientoPasoSeleccionado;
+
+    @Override
+    protected void validarEliminacion(OrdenExamen r) {
+        long n = r.getIdOrdenExamen() == null ? 0 : examenResultadoDAO.countByOrden(r.getIdOrdenExamen());
+        if (n > 0) {
+            throw new IllegalArgumentException("No se puede eliminar la orden porque tiene " + n + " resultado(s) registrado(s)");
+        }
+    }
 
     public OrdenExamenModel() {
         this.nombreBean = "OrdenExamen";

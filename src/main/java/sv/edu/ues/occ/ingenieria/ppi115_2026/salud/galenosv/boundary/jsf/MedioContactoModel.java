@@ -198,8 +198,8 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
     }
 
     private void sincronizarSeleccion() {
-        idPersonaSeleccionada = registro != null && registro.getIdPersona() != null ? registro.getIdPersona().getIdPersona().toString() : null;
-        idTipoMedioContactoSeleccionado = registro != null && registro.getIdTipoMedioContacto() != null ? registro.getIdTipoMedioContacto().getIdTipoMedioContacto().toString() : null;
+        idPersonaSeleccionada = registro != null && registro.getIdPersona() != null && registro.getIdPersona().getIdPersona() != null ? registro.getIdPersona().getIdPersona().toString() : null;
+        idTipoMedioContactoSeleccionado = registro != null && registro.getIdTipoMedioContacto() != null && registro.getIdTipoMedioContacto().getIdTipoMedioContacto() != null ? registro.getIdTipoMedioContacto().getIdTipoMedioContacto().toString() : null;
     }
 
     private void limpiar(String mensaje) {

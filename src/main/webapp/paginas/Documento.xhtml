@@ -22,7 +22,7 @@
                                  paginator="true" rows="#{documentoModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{documentoModel.registro}" rowKey="#{r.idDocumento}">
-                        <p:ajax event="rowSelect" listener="#{documentoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                        <p:ajax event="rowSelect" listener="#{documentoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
                         <p:column headerText="#{msg['documento.tabla.persona']}"><h:outputText value="#{r.idPersona.nombres} #{r.idPersona.apellidos}"/></p:column>
                         <p:column headerText="#{msg['documento.tabla.tipoDocumento']}"><h:outputText value="#{r.idTipoDocumento.nombre}"/></p:column>
                         <p:column headerText="#{msg['documento.tabla.valor']}"><h:outputText value="#{r.valor}"/></p:column>
@@ -37,12 +37,12 @@
                         <p:outputLabel for="txtId" value="#{msg['documento.form.id']}"/>
                         <p:inputText id="txtId" value="#{documentoModel.registro.idDocumento}" size="50" disabled="true"/>
                         <p:outputLabel for="cmbPersona" value="#{msg['documento.form.persona']}"/>
-                        <p:selectOneMenu id="cmbPersona" value="#{documentoModel.idPersonaSeleccionada}" required="true">
+                        <p:selectOneMenu id="cmbPersona" value="#{documentoModel.idPersonaSeleccionada}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{documentoModel.personas}" var="p" itemLabel="#{p.nombres} #{p.apellidos}" itemValue="#{p.idPersona}"/>
                         </p:selectOneMenu>
                         <p:outputLabel for="cmbTipo" value="#{msg['documento.form.tipoDocumento']}"/>
-                        <p:selectOneMenu id="cmbTipo" value="#{documentoModel.idTipoDocumentoSeleccionado}" required="true">
+                        <p:selectOneMenu id="cmbTipo" value="#{documentoModel.idTipoDocumentoSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{documentoModel.tiposDocumento}" var="t" itemLabel="#{t.nombre}" itemValue="#{t.idTipoDocumento}"/>
                         </p:selectOneMenu>
@@ -51,7 +51,7 @@
                                      required="true" requiredMessage="#{msg['documento.valor.requerido']}"
                                      placeholder="#{msg['documento.ejemplo.valor']}" title="#{msg['documento.valor.requerido']}"/>
                         <p:outputLabel for="txtRuta" value="#{msg['documento.form.rutaFisica']}"/>
-                        <p:inputText id="txtRuta" value="#{documentoModel.registro.rutaFisica}" size="50"/>
+                        <p:inputText id="txtRuta" value="#{documentoModel.registro.rutaFisica}" size="50" maxlength="255"/>
                     </h:panelGrid>
                     <h:panelGrid columns="#{documentoModel.estado eq 'CREAR' ? 1 : 2}">
                         <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}" icon="pi pi-check" styleClass="ui-button-success" actionListener="#{documentoModel.btnGuardarHandler}" rendered="#{documentoModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>

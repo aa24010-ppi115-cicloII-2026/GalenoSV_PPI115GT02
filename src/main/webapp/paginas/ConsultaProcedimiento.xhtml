@@ -22,7 +22,7 @@
                                  paginator="true" rows="#{consultaProcedimientoModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{consultaProcedimientoModel.registro}" rowKey="#{r.idConsultaProcedimiento}">
-                        <p:ajax event="rowSelect" listener="#{consultaProcedimientoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                        <p:ajax event="rowSelect" listener="#{consultaProcedimientoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
                         <p:column headerText="#{msg['consultaProcedimiento.tabla.consulta']}"><h:outputText value="#{r.idConsulta.idConsulta}"/></p:column>
                         <p:column headerText="#{msg['consultaProcedimiento.tabla.procedimiento']}"><h:outputText value="#{r.idProcedimiento}"/></p:column>
                         <p:column headerText="#{msg['consultaProcedimiento.tabla.fechaInicio']}"><h:outputText value="#{r.fechaInicio}"/></p:column>
@@ -37,19 +37,19 @@
                         <p:outputLabel for="txtId" value="#{msg['consultaProcedimiento.form.id']}"/>
                         <p:inputText id="txtId" value="#{consultaProcedimientoModel.registro.idConsultaProcedimiento}" size="50" disabled="true"/>
                         <p:outputLabel for="cmbConsulta" value="#{msg['consultaProcedimiento.form.consulta']}"/>
-                        <p:selectOneMenu id="cmbConsulta" value="#{consultaProcedimientoModel.idConsultaSeleccionada}" required="true">
+                        <p:selectOneMenu id="cmbConsulta" value="#{consultaProcedimientoModel.idConsultaSeleccionada}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{consultaProcedimientoModel.consultas}" var="c" itemLabel="#{c.idPersonaRol.idPersona.nombres} #{c.idPersonaRol.idPersona.apellidos} - #{c.fechaInicio}" itemValue="#{c.idConsulta}"/>
                         </p:selectOneMenu>
                         <p:outputLabel for="cmbProcedimiento" value="#{msg['consultaProcedimiento.form.procedimiento']}"/>
-                        <p:selectOneMenu id="cmbProcedimiento" value="#{consultaProcedimientoModel.idProcedimientoSeleccionado}" required="true">
+                        <p:selectOneMenu id="cmbProcedimiento" value="#{consultaProcedimientoModel.idProcedimientoSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{consultaProcedimientoModel.procedimientos}" var="p" itemLabel="#{p.nombre}" itemValue="#{p.idProcedimiento}"/>
                         </p:selectOneMenu>
                         <p:outputLabel for="txtFechaInicio" value="#{msg['consultaProcedimiento.form.fechaInicio']}"/>
                         <p:inputText id="txtFechaInicio" value="#{consultaProcedimientoModel.registro.fechaInicio}" size="50" disabled="true"/>
                         <p:outputLabel for="txtObservaciones" value="#{msg['consultaProcedimiento.form.observaciones']}"/>
-                        <p:inputTextarea id="txtObservaciones" value="#{consultaProcedimientoModel.registro.observaciones}" rows="4" cols="50"/>
+                        <p:inputTextarea id="txtObservaciones" value="#{consultaProcedimientoModel.registro.observaciones}" rows="4" cols="50" maxlength="1000"/>
                     </h:panelGrid>
                     <h:panelGrid columns="#{consultaProcedimientoModel.estado eq 'CREAR' ? 1 : 2}">
                         <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}" icon="pi pi-check" styleClass="ui-button-success" actionListener="#{consultaProcedimientoModel.btnGuardarHandler}" rendered="#{consultaProcedimientoModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>

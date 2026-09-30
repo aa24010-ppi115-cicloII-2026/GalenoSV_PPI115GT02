@@ -20,6 +20,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.PersonaRolDA
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.RolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TipoMedioContactoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ClinicaDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DocumentoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.MedioContacto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Persona;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.PersonaRol;
@@ -54,6 +55,9 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     @Inject
     ClinicaDAO clinicaDAO;
 
+    @Inject
+    DocumentoDAO documentoDAO;
+
     // Para la pestaña 1 (Roles)
     private PersonaRol nuevoRol;
     private PersonaRol rolSeleccionado;
@@ -66,6 +70,20 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     private MedioContacto medioSeleccionado;
     private String idTipoMedioContactoSeleccionado;
     private boolean editandoMedio = false;
+
+    @Override
+    protected void validarEliminacion(Persona r) {
+        if (r.getIdPersona() == null) {
+            return;
+        }
+        long docs = documentoDAO.countByPersona(r.getIdPersona());
+        long medios = medioContactoDAO.countByPersona(r.getIdPersona());
+        long roles = personaRolDAO.countByPersona(r.getIdPersona());
+        if (docs + medios + roles > 0) {
+            throw new IllegalArgumentException("No se puede eliminar la persona porque tiene "
+                    + docs + " documento(s), " + medios + " medio(s) de contacto y " + roles + " rol(es) asignados");
+        }
+    }
 
     public PersonaModel() {
         this.nombreBean = "Persona";
@@ -227,6 +245,9 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             }
             Rol rol = rolDAO.find(UUID.fromString(idRolSeleccionado));
             Clinica clinica = clinicaDAO.find(UUID.fromString(idClinicaSeleccionadaRol));
+            if (rol == null || clinica == null) {
+                throw new IllegalArgumentException("El rol o la clínica seleccionada ya no existe");
+            }
             nuevoRol.setIdRol(rol);
             nuevoRol.setIdClinica(clinica);
             nuevoRol.setIdPersona(this.registro);
@@ -259,6 +280,9 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             }
             Rol rol = rolDAO.find(UUID.fromString(idRolSeleccionado));
             Clinica clinica = clinicaDAO.find(UUID.fromString(idClinicaSeleccionadaRol));
+            if (rol == null || clinica == null) {
+                throw new IllegalArgumentException("El rol o la clínica seleccionada ya no existe");
+            }
             nuevoRol.setIdRol(rol);
             nuevoRol.setIdClinica(clinica);
             nuevoRol.setIdPersona(this.registro);
@@ -339,6 +363,9 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
                 throw new IllegalArgumentException("El valor es requerido");
             }
             TipoMedioContacto tipo = tipoMedioContactoDAO.find(UUID.fromString(idTipoMedioContactoSeleccionado));
+            if (tipo == null) {
+                throw new IllegalArgumentException("El tipo de medio seleccionado ya no existe");
+            }
             sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
                     nuevoMedioContacto.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
             if (nuevoMedioContacto.getFechaCreacion() == null) {
@@ -380,6 +407,9 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
                 throw new IllegalArgumentException("El valor es requerido");
             }
             TipoMedioContacto tipo = tipoMedioContactoDAO.find(UUID.fromString(idTipoMedioContactoSeleccionado));
+            if (tipo == null) {
+                throw new IllegalArgumentException("El tipo de medio seleccionado ya no existe");
+            }
             sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
                     nuevoMedioContacto.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
             if (nuevoMedioContacto.getFechaCreacion() == null) {

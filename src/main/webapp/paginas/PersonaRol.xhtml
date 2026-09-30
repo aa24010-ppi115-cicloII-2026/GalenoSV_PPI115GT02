@@ -92,25 +92,25 @@
 
                     <!-- Botones con process explícito -->
                     <h:panelGrid columns="#{personaRolModel.estado eq 'CREAR' ? 1 : 2}" style="margin-top:10px;">
-                        <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}"
+                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}"
                                          actionListener="#{personaRolModel.btnGuardarHandler}"
                                          rendered="#{personaRolModel.estado eq 'CREAR'}"
                                          update=":frmPersonaRol" styleClass="ui-button-success"
                                          process="@this txtId cmbPersona cmbRol cmbClinica txtFecha"/>
 
-                        <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}"
+                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}"
                                          actionListener="#{personaRolModel.btnModificarHandler}"
                                          rendered="#{personaRolModel.estado eq 'MODIFICAR'}"
                                          update=":frmPersonaRol" styleClass="ui-button-primary"
                                          process="@this txtId cmbPersona cmbRol cmbClinica txtFecha"/>
 
-                        <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}"
+                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}"
                                          actionListener="#{personaRolModel.btnEliminarHandler}"
                                          rendered="#{personaRolModel.estado eq 'MODIFICAR'}"
                                          update=":frmPersonaRol" styleClass="ui-button-danger"
                                          process="@this">
                             <p:confirm header="#{msg['confirm.titulo']}"
-                                       message="#{msg['personaRol.form.persona']}: #{msg['boton.eliminar']}?"
+                                       message="#{msg['confirm.eliminar']}"
                                        icon="pi pi-info-circle"/>
                         </p:commandButton>
                     </h:panelGrid>

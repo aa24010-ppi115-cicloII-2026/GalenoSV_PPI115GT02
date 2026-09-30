@@ -9,6 +9,7 @@ import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TipoDocumentoDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DocumentoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoDocumento;
 
 @Named("tipoDocumentoModel")
@@ -22,6 +23,17 @@ public class TipoDocumentoModel extends AbstractModel<TipoDocumento> implements 
 
     @Inject
     TipoDocumentoDAO dao;
+
+    @Inject
+    DocumentoDAO documentoDAO;
+
+    @Override
+    protected void validarEliminacion(TipoDocumento r) {
+        long n = r.getIdTipoDocumento() == null ? 0 : documentoDAO.countByTipo(r.getIdTipoDocumento());
+        if (n > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el tipo de documento porque tiene " + n + " documento(s) registrado(s)");
+        }
+    }
 
     public TipoDocumentoModel() {
         this.nombreBean = "TipoDocumento";

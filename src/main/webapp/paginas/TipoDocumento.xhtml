@@ -28,7 +28,7 @@
                                      rowKey="#{r.idTipoDocumento}">
                             <p:ajax event="rowSelect"
                                     listener="#{tipoDocumentoModel.selectionHandler}"
-                                    update=":pnlTabla :pnlDetalle :mensajes"/>
+                                    update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
 
                             <p:column headerText="#{msg['tabla.nombre']}">
                                 <h:outputText value="#{r.nombre}"/>
@@ -77,7 +77,7 @@
                                          value="#{tipoDocumentoModel.registro.expresionRegular}"
                                          required="true"
                                          requiredMessage="#{msg['tipoDocumento.expresionRegular.requerida']}"
-                                         size="50"/>
+                                         size="50" maxlength="255"/>
                             <p:tooltip for="txtExpresionRegular"
                                        value="#{msg['tipoDocumento.tooltip.expresionRegular']}"/>
 
@@ -85,25 +85,25 @@
                             <p:inputTextarea id="txtIndicaciones"
                                              value="#{tipoDocumentoModel.registro.indicaciones}"
                                              rows="3"
-                                             cols="50"/>
+                                             cols="50" maxlength="1000"/>
                         </h:panelGrid>
 
                         <h:panelGrid columns="#{tipoDocumentoModel.estado eq 'CREAR' ? 1 : 2}">
-                            <p:commandButton id="btnGuardar"
+                            <p:commandButton id="btnGuardar" icon="pi pi-check"
                                              value="#{msg['boton.guardar']}"
                                              actionListener="#{tipoDocumentoModel.btnGuardarHandler}"
                                              rendered="#{tipoDocumentoModel.estado eq 'CREAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:commandButton id="btnModificar"
+                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
+                            <p:commandButton id="btnModificar" icon="pi pi-pencil"
                                              value="#{msg['boton.modificar']}"
                                              actionListener="#{tipoDocumentoModel.btnModificarHandler}"
                                              rendered="#{tipoDocumentoModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:commandButton id="btnEliminar"
+                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
+                            <p:commandButton id="btnEliminar" icon="pi pi-trash"
                                              value="#{msg['boton.eliminar']}"
                                              actionListener="#{tipoDocumentoModel.btnEliminarHandler}"
                                              rendered="#{tipoDocumentoModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes"/>
+                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
                         </h:panelGrid>
                     </h:panelGrid>
                 </h:form>

@@ -55,7 +55,7 @@
                                 <p:toggleSwitch id="swActivo" value="#{examenModel.registro.activo}"/>
 
                                 <p:outputLabel for="txtObservaciones" value="#{msg['examen.form.observaciones']}"/>
-                                <p:inputTextarea id="txtObservaciones" value="#{examenModel.registro.observaciones}" rows="3" cols="50"/>
+                                <p:inputTextarea id="txtObservaciones" value="#{examenModel.registro.observaciones}" rows="3" cols="50" maxlength="1000"/>
                             </h:panelGrid>
 
                             <h:panelGrid columns="#{examenModel.estado eq 'CREAR' ? 1 : 2}" style="margin-top:10px;">
@@ -92,7 +92,7 @@
                                 </h:panelGroup>
 
                                 <p:outputLabel for="txtObservacionesTipo" value="#{msg['examenTipoExamen.form.observaciones']}"/>
-                                <p:inputTextarea id="txtObservacionesTipo" value="#{examenModel.examenTipoExamenModel.registro.observaciones}" rows="3" cols="50"/>
+                                <p:inputTextarea id="txtObservacionesTipo" value="#{examenModel.examenTipoExamenModel.registro.observaciones}" rows="3" cols="50" maxlength="1000"/>
                             </h:panelGrid>
 
                             <h:panelGrid columns="#{examenModel.examenTipoExamenModel.estado eq 'CREAR' ? 2 : 3}" style="margin-top:10px;">

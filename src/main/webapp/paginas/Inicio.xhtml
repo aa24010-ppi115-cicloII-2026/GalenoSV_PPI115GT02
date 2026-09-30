@@ -58,7 +58,7 @@
                     <h:outputText value="#{c.idPersonaRol.idPersona.nombres} #{c.idPersonaRol.idPersona.apellidos}"/>
                 </p:column>
                 <p:column headerText="#{msg['consulta.tabla.fechaInicio']}">
-                    <h:outputText value="#{c.fechaInicio}"/>
+                    <h:outputText value="#{fechaBean.fechaHora(c.fechaInicio)}"/>
                 </p:column>
                 <p:column headerText="#{msg['consulta.form.referenciaExterna']}">
                     <h:outputText value="#{c.referenciaExterna}"/>

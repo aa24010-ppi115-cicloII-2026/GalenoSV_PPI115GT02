@@ -72,6 +72,16 @@ public class DocumentoDAO extends DefaultDAO<Documento> {
         return q.getSingleResult() > 0;
     }
 
+
+    public Long countByTipo(java.util.UUID idTipo) {
+        if (idTipo == null) {
+            return 0L;
+        }
+        return getEntityManager().createQuery(
+                "SELECT COUNT(d) FROM Documento d WHERE d.idTipoDocumento.idTipoDocumento = :id", Long.class)
+                .setParameter("id", idTipo).getSingleResult();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

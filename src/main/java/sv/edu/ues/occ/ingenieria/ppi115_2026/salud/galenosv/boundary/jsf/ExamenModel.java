@@ -11,6 +11,8 @@ import org.primefaces.event.SelectEvent;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ExamenDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ExamenTipoExamenDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ProcedimientoPasoExamenDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Examen;
 
 
@@ -27,7 +29,25 @@ public class ExamenModel extends AbstractModel<Examen> implements Serializable {
     ExamenDAO dao;
 
     @Inject
+    ExamenTipoExamenDAO examenTipoExamenDAO;
+
+    @Inject
+    ProcedimientoPasoExamenDAO pasoExamenDAO;
+
+    @Inject
     ExamenTipoExamenModel examenTipoExamenModel;
+
+    @Override
+    protected void validarEliminacion(Examen r) {
+        if (r.getIdExamen() == null) {
+            return;
+        }
+        long vinc = examenTipoExamenDAO.countByIdExamen(r.getIdExamen());
+        long pasos = pasoExamenDAO.countByExamen(r.getIdExamen());
+        if (vinc + pasos > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el examen porque tiene " + vinc + " tipo(s) vinculado(s) y " + pasos + " paso(s) que lo requieren");
+        }
+    }
 
     public ExamenModel() {
         this.nombreBean = "Examen";

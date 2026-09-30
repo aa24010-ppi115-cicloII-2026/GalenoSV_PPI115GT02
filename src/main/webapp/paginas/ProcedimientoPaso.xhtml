@@ -17,7 +17,7 @@
                                  paginator="true" rows="#{procedimientoPasoModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{procedimientoPasoModel.registro}" rowKey="#{r.idProcedimientoPaso}">
-                        <p:ajax event="rowSelect" listener="#{procedimientoPasoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                        <p:ajax event="rowSelect" listener="#{procedimientoPasoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
                         <p:column headerText="#{msg['tabla.nombre']}"><h:outputText value="#{r.nombre}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPaso.tabla.procedimiento']}"><h:outputText value="#{r.idProcedimiento.nombre}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPaso.tabla.rol']}"><h:outputText value="#{r.idRol.nombre}"/></p:column>
@@ -34,12 +34,12 @@
                         <p:outputLabel for="txtNombre" value="#{msg['procedimientoPaso.form.nombre']}"/>
                         <p:inputText id="txtNombre" value="#{procedimientoPasoModel.registro.nombre}" size="50" maxlength="155" required="true"/>
                         <p:outputLabel for="cmbProcedimiento" value="#{msg['procedimientoPaso.form.procedimiento']}"/>
-                        <p:selectOneMenu id="cmbProcedimiento" value="#{procedimientoPasoModel.idProcedimientoSeleccionado}" required="true">
+                        <p:selectOneMenu id="cmbProcedimiento" value="#{procedimientoPasoModel.idProcedimientoSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{procedimientoPasoModel.procedimientos}" var="p" itemLabel="#{p.nombre}" itemValue="#{p.idProcedimiento}"/>
                         </p:selectOneMenu>
                         <p:outputLabel for="cmbRol" value="#{msg['procedimientoPaso.form.rol']}"/>
-                        <p:selectOneMenu id="cmbRol" value="#{procedimientoPasoModel.idRolSeleccionado}" required="true">
+                        <p:selectOneMenu id="cmbRol" value="#{procedimientoPasoModel.idRolSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{procedimientoPasoModel.roles}" var="r" itemLabel="#{r.nombre}" itemValue="#{r.idRol}"/>
                         </p:selectOneMenu>
@@ -47,9 +47,9 @@
                         <p:toggleSwitch id="chkFin" value="#{procedimientoPasoModel.registro.indicaFin}"/>
                     </h:panelGrid>
                     <h:panelGrid columns="#{procedimientoPasoModel.estado eq 'CREAR' ? 1 : 2}">
-                        <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}" actionListener="#{procedimientoPasoModel.btnGuardarHandler}" rendered="#{procedimientoPasoModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}" actionListener="#{procedimientoPasoModel.btnModificarHandler}" rendered="#{procedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}" actionListener="#{procedimientoPasoModel.btnEliminarHandler}" rendered="#{procedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes"/>
+                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{procedimientoPasoModel.btnGuardarHandler}" rendered="#{procedimientoPasoModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
+                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{procedimientoPasoModel.btnModificarHandler}" rendered="#{procedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
+                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{procedimientoPasoModel.btnEliminarHandler}" rendered="#{procedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
                     </h:panelGrid>
                 </h:form>
             </h:panelGroup>

@@ -23,6 +23,35 @@ public class ProcedimientoPasoDAO extends DefaultDAO<ProcedimientoPaso> {
         super(ProcedimientoPaso.class);
     }
 
+
+    public java.util.List<ProcedimientoPaso> findByProcedimiento(java.util.UUID id) {
+        if (id == null) {
+            return java.util.Collections.emptyList();
+        }
+        return getEntityManager().createQuery(
+                "SELECT e FROM ProcedimientoPaso e WHERE e.idProcedimiento.idProcedimiento = :id ORDER BY e.idProcedimientoPaso", ProcedimientoPaso.class)
+                .setParameter("id", id).setMaxResults(1000).getResultList();
+    }
+
+    public Long countByProcedimiento(java.util.UUID id) {
+        if (id == null) {
+            return 0L;
+        }
+        return getEntityManager().createQuery(
+                "SELECT COUNT(e) FROM ProcedimientoPaso e WHERE e.idProcedimiento.idProcedimiento = :id", Long.class)
+                .setParameter("id", id).getSingleResult();
+    }
+
+
+    public Long countByRol(java.util.UUID idRol) {
+        if (idRol == null) {
+            return 0L;
+        }
+        return getEntityManager().createQuery(
+                "SELECT COUNT(e) FROM ProcedimientoPaso e WHERE e.idRol.idRol = :id", Long.class)
+                .setParameter("id", idRol).getSingleResult();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

@@ -156,8 +156,30 @@ public abstract class DefaultDAO<T> implements DAOInterface<T>, Serializable {
                 entity = em.merge(entity);
             }
             em.remove(entity);
+            em.flush();
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            throw ex;
         } catch (Exception ex) {
+            if (esViolacionLlaveForanea(ex)) {
+                throw new IllegalStateException(
+                        "No se puede eliminar porque tiene registros relacionados", ex);
+            }
             throw new RuntimeException("Error al eliminar", ex);
         }
+    }
+
+    private boolean esViolacionLlaveForanea(Throwable ex) {
+        while (ex != null) {
+            String nombre = ex.getClass().getSimpleName();
+            String mensaje = String.valueOf(ex.getMessage());
+            if (nombre.contains("ConstraintViolation") || nombre.contains("RollbackException")
+                    || mensaje.contains("violates foreign key") || mensaje.contains("viola la llave foranea")
+                    || mensaje.contains("foreign key") || mensaje.contains("FK_")
+                    || mensaje.contains("fk_")) {
+                return true;
+            }
+            ex = ex.getCause();
+        }
+        return false;
     }
 }
