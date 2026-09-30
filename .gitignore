@@ -3,3 +3,5 @@
 nbactions*.xml
 /nbproject/private/
 anahata.md
+*.LCK*
+*~
