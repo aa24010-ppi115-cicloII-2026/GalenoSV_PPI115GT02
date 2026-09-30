@@ -33,6 +33,18 @@ public class TipoDocumentoModel extends AbstractModel<TipoDocumento> implements 
     }
 
     @Override
+    protected void validarUnicidad(TipoDocumento r, boolean esModificacion) {
+        if (r.getNombre() == null || r.getNombre().isBlank()) {
+            return;
+        }
+        r.setNombre(r.getNombre().trim());
+        java.util.UUID excluir = esModificacion ? r.getIdTipoDocumento() : null;
+        if (dao.existeNombre(r.getNombre(), excluir)) {
+            throw new IllegalArgumentException("Ya existe un tipo de documento con ese nombre");
+        }
+    }
+
+    @Override
     protected DefaultDAO<TipoDocumento> getDao() {
         return dao;
     }

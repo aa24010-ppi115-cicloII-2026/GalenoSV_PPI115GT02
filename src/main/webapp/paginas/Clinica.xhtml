@@ -15,12 +15,11 @@
                         <g:botonesTop modelo="#{clinicaModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
                         <p:dataTable id="tabla" value="#{clinicaModel.modelo}" var="r" lazy="true"
                                      paginator="true" rows="#{clinicaModel.cantidadRegistros}"
-                                     paginatorPosition="both" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                     paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
                                      selectionMode="single" selection="#{clinicaModel.registro}"
                                      rowKey="#{r.idClinica}">
                             <p:ajax event="rowSelect" listener="#{clinicaModel.selectionHandler}"
                                     update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idClinica}"/></p:column>
                             <p:column headerText="#{msg['tabla.nombre']}"><h:outputText value="#{r.nombre}"/></p:column>
                             <p:column headerText="#{msg['tabla.activo']}"><h:outputText value="#{r.activo ? msg['tabla.activo'] : msg['tabla.inactivo']}"/></p:column>
                             <p:column headerText="#{msg['clinica.tabla.tipo']}"><h:outputText value="#{r.tipo}"/></p:column>
@@ -67,7 +66,7 @@
                         <h:form id="frmRoles">
                             <g:botonesTop modelo="#{clinicaModel.personaRolModel}" actualizar="@form :mensajes"/>
                             <p:dataTable value="#{clinicaModel.personaRolModel.modelo}" var="asignacion"
-                                         lazy="true" paginator="true" rows="20" paginatorPosition="both"
+                                         lazy="true" paginator="true" rows="20" paginatorPosition="bottom"
                                          selectionMode="single" rowKey="#{asignacion.idPersonaRol}"
                                          selection="#{clinicaModel.personaRolModel.registro}"
                                          rendered="#{clinicaModel.personaRolModel.estado eq 'NADA'}"

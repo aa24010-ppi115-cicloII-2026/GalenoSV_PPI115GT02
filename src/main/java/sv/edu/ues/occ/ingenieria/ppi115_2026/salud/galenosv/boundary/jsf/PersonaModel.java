@@ -263,6 +263,9 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             nuevoRol.setIdClinica(clinica);
             nuevoRol.setIdPersona(this.registro);
             nuevoRol.setFechaCreacion(java.time.OffsetDateTime.now());
+            if (personaRolDAO.existeAsignacion(this.registro.getIdPersona(), rol.getIdRol(), clinica.getIdClinica(), null)) {
+                throw new IllegalArgumentException("Esa asignación de rol ya existe para esa persona en esa clínica");
+            }
 
             personaRolDAO.crear(nuevoRol);
 
@@ -341,6 +344,12 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             if (nuevoMedioContacto.getFechaCreacion() == null) {
                 nuevoMedioContacto.setFechaCreacion(java.time.OffsetDateTime.now());
             }
+            if (nuevoMedioContacto.getValor() != null) {
+                nuevoMedioContacto.setValor(nuevoMedioContacto.getValor().trim());
+            }
+            if (medioContactoDAO.existePersonaValor(this.registro.getIdPersona(), nuevoMedioContacto.getValor(), nuevoMedioContacto.getIdMedioContacto())) {
+                throw new IllegalArgumentException("Esa persona ya tiene registrado ese medio de contacto");
+            }
             nuevoMedioContacto.setIdTipoMedioContacto(tipo);
             nuevoMedioContacto.setIdPersona(this.registro);
 
@@ -375,6 +384,12 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
                     nuevoMedioContacto.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
             if (nuevoMedioContacto.getFechaCreacion() == null) {
                 nuevoMedioContacto.setFechaCreacion(java.time.OffsetDateTime.now());
+            }
+            if (nuevoMedioContacto.getValor() != null) {
+                nuevoMedioContacto.setValor(nuevoMedioContacto.getValor().trim());
+            }
+            if (medioContactoDAO.existePersonaValor(this.registro.getIdPersona(), nuevoMedioContacto.getValor(), null)) {
+                throw new IllegalArgumentException("Esa persona ya tiene registrado ese medio de contacto");
             }
             nuevoMedioContacto.setIdTipoMedioContacto(tipo);
             nuevoMedioContacto.setIdPersona(this.registro);

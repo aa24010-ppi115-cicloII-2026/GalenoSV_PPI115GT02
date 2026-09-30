@@ -25,7 +25,7 @@
                     <g:botonesTop modelo="#{personaRolModel}" actualizar=":frmPersonaRol"/>
                     <p:dataTable id="tabla" value="#{personaRolModel.modelo}" var="r" lazy="true"
                                  paginator="true" rows="#{personaRolModel.cantidadRegistros}"
-                                 paginatorPosition="both" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                 paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
                                  selectionMode="single" selection="#{personaRolModel.registro}"
                                  rowKey="#{r.idPersonaRol}">
                         <p:ajax event="rowSelect" listener="#{personaRolModel.selectionHandler}" update=":frmPersonaRol"/>
@@ -50,42 +50,42 @@
             <h:panelGroup id="pnlDetalle" layout="block" rendered="#{personaRolModel.estado ne 'NADA'}">
                 <g:botonesTop modelo="#{personaRolModel}" actualizar=":frmPersonaRol"/>
 
-                <p:panel header="Datos de la Asignación" style="margin-top:10px;">
+                <p:panel header="#{msg['personaRol.panel.datos']}" style="margin-top:10px;">
                     <h:panelGrid columns="2" cellpadding="8">
 
-                        <p:outputLabel for="txtId" value="ID"/>
+                        <p:outputLabel for="txtId" value="#{msg['personaRol.form.id']}"/>
                         <p:inputText id="txtId" value="#{personaRolModel.registro.idPersonaRol}"
                                      size="50" disabled="true"/>
 
-                        <p:outputLabel for="cmbPersona" value="Persona *"/>
+                        <p:outputLabel for="cmbPersona" value="#{msg['personaRol.form.persona']} *"/>
                         <p:selectOneMenu id="cmbPersona" value="#{personaRolModel.idPersonaSeleccionada}"
                                          style="width:300px" required="true"
-                                         requiredMessage="Debe seleccionar una persona">
-                            <f:selectItem itemLabel="-- Seleccione una persona --" itemValue=""/>
+                                         requiredMessage="#{msg['personaRol.seleccione.persona']}">
+                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{personaRolModel.personas}" var="p"
                                            itemLabel="#{p.nombres} #{p.apellidos}"
                                            itemValue="#{p.idPersona}"/>
                         </p:selectOneMenu>
 
-                        <p:outputLabel for="cmbRol" value="Rol *"/>
+                        <p:outputLabel for="cmbRol" value="#{msg['personaRol.form.rol']} *"/>
                         <p:selectOneMenu id="cmbRol" value="#{personaRolModel.idRolSeleccionado}"
                                          style="width:300px" required="true"
-                                         requiredMessage="Debe seleccionar un rol">
-                            <f:selectItem itemLabel="-- Seleccione un rol --" itemValue=""/>
+                                         requiredMessage="#{msg['personaRol.seleccione.rol']}">
+                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{personaRolModel.roles}" var="r"
                                            itemLabel="#{r.nombre}" itemValue="#{r.idRol}"/>
                         </p:selectOneMenu>
 
-                        <p:outputLabel for="cmbClinica" value="Clínica *"/>
+                        <p:outputLabel for="cmbClinica" value="#{msg['personaRol.form.clinica']} *"/>
                         <p:selectOneMenu id="cmbClinica" value="#{personaRolModel.idClinicaSeleccionada}"
                                          style="width:300px" required="true"
-                                         requiredMessage="Debe seleccionar una clínica">
-                            <f:selectItem itemLabel="-- Seleccione una clínica --" itemValue=""/>
+                                         requiredMessage="#{msg['personaRol.seleccione.clinica']}">
+                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{personaRolModel.clinicas}" var="c"
                                            itemLabel="#{c.nombre}" itemValue="#{c.idClinica}"/>
                         </p:selectOneMenu>
 
-                        <p:outputLabel for="txtFecha" value="Fecha de Asignación"/>
+                        <p:outputLabel for="txtFecha" value="#{msg['personaRol.form.fechaCreacion']}"/>
                         <p:inputText id="txtFecha" value="#{personaRolModel.registro.fechaCreacion}"
                                      size="30" disabled="true"/>
                     </h:panelGrid>

@@ -21,7 +21,7 @@
                                      lazy="true"
                                      paginator="true"
                                      rows="#{tipoExamenModel.cantidadRegistros}"
-                                     paginatorPosition="both"
+                                     paginatorPosition="bottom"
                                      emptyMessage="#{msg['tabla.sinRegistros']}"
                                      selectionMode="single"
                                      selection="#{tipoExamenModel.registro}"
@@ -30,9 +30,6 @@
                                     listener="#{tipoExamenModel.selectionHandler}"
                                     update=":pnlTabla :pnlDetalle :mensajes"/>
 
-                            <p:column headerText="#{msg['tabla.id']}">
-                                <h:outputText value="#{r.idTipoExamen}"/>
-                            </p:column>
                             <p:column headerText="#{msg['tabla.nombre']}">
                                 <h:outputText value="#{r.nombre}"/>
                             </p:column>

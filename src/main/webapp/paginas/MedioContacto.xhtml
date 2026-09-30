@@ -19,11 +19,10 @@
                 <h:form id="frmTabla">
                     <g:botonesTop modelo="#{medioContactoModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
                     <p:dataTable id="tabla" value="#{medioContactoModel.modelo}" var="r" lazy="true"
-                                 paginator="true" rows="#{medioContactoModel.cantidadRegistros}" paginatorPosition="both"
+                                 paginator="true" rows="#{medioContactoModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{medioContactoModel.registro}" rowKey="#{r.idMedioContacto}">
                         <p:ajax event="rowSelect" listener="#{medioContactoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idMedioContacto}"/></p:column>
                         <p:column headerText="#{msg['medioContacto.tabla.persona']}"><h:outputText value="#{r.idPersona.nombres} #{r.idPersona.apellidos}"/></p:column>
                         <p:column headerText="#{msg['medioContacto.tabla.tipoMedioContacto']}"><h:outputText value="#{r.idTipoMedioContacto.nombre}"/></p:column>
                         <p:column headerText="#{msg['medioContacto.tabla.valor']}"><h:outputText value="#{r.valor}"/></p:column>
@@ -50,7 +49,7 @@
                         <p:outputLabel for="txtValor" value="#{msg['medioContacto.form.valor']}"/>
                         <p:inputText id="txtValor" value="#{medioContactoModel.registro.valor}" size="50" maxlength="50"
                                      required="true" requiredMessage="#{msg['medioContacto.valor.requerido']}"
-                                     placeholder="Ej. 12345678" title="#{msg['validacion.minimo8']}"/>
+                                     placeholder="#{msg['medioContacto.ejemplo.valor']}" title="#{msg['validacion.minimo8']}"/>
                         <p:outputLabel for="txtFecha" value="#{msg['medioContacto.form.fechaCreacion']}"/>
                         <p:inputText id="txtFecha" value="#{medioContactoModel.registro.fechaCreacion}" size="50" disabled="true"/>
                     </h:panelGrid>

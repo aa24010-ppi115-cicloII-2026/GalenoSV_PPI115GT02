@@ -21,7 +21,7 @@
                                      lazy="true"
                                      paginator="true"
                                      rows="#{tipoDocumentoModel.cantidadRegistros}"
-                                     paginatorPosition="both"
+                                     paginatorPosition="bottom"
                                      emptyMessage="#{msg['tabla.sinRegistros']}"
                                      selectionMode="single"
                                      selection="#{tipoDocumentoModel.registro}"
@@ -30,9 +30,6 @@
                                     listener="#{tipoDocumentoModel.selectionHandler}"
                                     update=":pnlTabla :pnlDetalle :mensajes"/>
 
-                            <p:column headerText="#{msg['tabla.id']}">
-                                <h:outputText value="#{r.idTipoDocumento}"/>
-                            </p:column>
                             <p:column headerText="#{msg['tabla.nombre']}">
                                 <h:outputText value="#{r.nombre}"/>
                             </p:column>

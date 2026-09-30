@@ -14,11 +14,10 @@
                 <h:form id="frmTabla">
                     <g:botonesTop modelo="#{procedimientoPasoSecuenciaModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
                     <p:dataTable id="tabla" value="#{procedimientoPasoSecuenciaModel.modelo}" var="r" lazy="true"
-                                 paginator="true" rows="#{procedimientoPasoSecuenciaModel.cantidadRegistros}" paginatorPosition="both"
+                                 paginator="true" rows="#{procedimientoPasoSecuenciaModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{procedimientoPasoSecuenciaModel.registro}" rowKey="#{r.idProcedimientoPasoSecuencia}">
                         <p:ajax event="rowSelect" listener="#{procedimientoPasoSecuenciaModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idProcedimientoPasoSecuencia}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPasoSecuencia.tabla.paso']}"><h:outputText value="#{r.idProcedimientoPaso.nombre}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPasoSecuencia.tabla.referencia']}"><h:outputText value="#{procedimientoPasoSecuenciaModel.nombrePasoReferencia(r.idProcedimientoPasoReferencia)}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPasoSecuencia.tabla.tipoSecuencia']}"><h:outputText value="#{r.tipoSecuencia}"/></p:column>

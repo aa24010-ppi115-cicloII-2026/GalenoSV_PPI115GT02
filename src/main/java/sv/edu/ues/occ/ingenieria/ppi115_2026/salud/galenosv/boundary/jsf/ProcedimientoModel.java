@@ -79,6 +79,18 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     }
 
     @Override
+    protected void validarUnicidad(Procedimiento r, boolean esModificacion) {
+        if (r.getNombre() == null || r.getNombre().isBlank()) {
+            return;
+        }
+        r.setNombre(r.getNombre().trim());
+        java.util.UUID excluir = esModificacion ? r.getIdProcedimiento() : null;
+        if (dao.existeNombre(r.getNombre(), excluir)) {
+            throw new IllegalArgumentException("Ya existe un procedimiento con ese nombre");
+        }
+    }
+
+    @Override
     protected DefaultDAO<Procedimiento> getDao() {
         return dao;
     }
@@ -122,6 +134,7 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     public void btnGuardarHandler(ActionEvent actionEvent) {
         if (this.registro != null) {
             try {
+                validarUnicidad(this.registro, false);
                 dao.crear(this.registro);
                 limpiar("Procedimiento guardado exitosamente");
             } catch (Exception e) {
@@ -134,6 +147,7 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     public void btnModificarHandler(ActionEvent actionEvent) {
         if (this.registro != null) {
             try {
+                validarUnicidad(this.registro, true);
                 dao.modificar(this.registro);
                 limpiar("Procedimiento modificado exitosamente");
             } catch (Exception e) {

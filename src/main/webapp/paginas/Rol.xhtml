@@ -15,11 +15,10 @@
                         <g:botonesTop modelo="#{rolModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
                         <p:dataTable id="tabla" value="#{rolModel.modelo}" var="r" lazy="true"
                                      paginator="true" rows="#{rolModel.cantidadRegistros}"
-                                     paginatorPosition="both" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                     paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
                                      selectionMode="single" selection="#{rolModel.registro}" rowKey="#{r.idRol}">
                             <p:ajax event="rowSelect" listener="#{rolModel.selectionHandler}"
                                     update=":pnlTabla :pnlDetalle :mensajes"/>
-                            <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idRol}"/></p:column>
                             <p:column headerText="#{msg['tabla.nombre']}"><h:outputText value="#{r.nombre}"/></p:column>
                             <p:column headerText="#{msg['tabla.activo']}"><h:outputText value="#{r.activo ? msg['tabla.activo'] : msg['tabla.inactivo']}"/></p:column>
                             <p:column headerText="#{msg['tabla.observaciones']}"><h:outputText value="#{r.observaciones}"/></p:column>

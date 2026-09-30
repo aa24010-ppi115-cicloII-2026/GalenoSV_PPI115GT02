@@ -39,6 +39,18 @@ public class ExamenModel extends AbstractModel<Examen> implements Serializable {
     }
 
     @Override
+    protected void validarUnicidad(Examen r, boolean esModificacion) {
+        if (r.getNombre() == null || r.getNombre().isBlank()) {
+            return;
+        }
+        r.setNombre(r.getNombre().trim());
+        java.util.UUID excluir = esModificacion ? r.getIdExamen() : null;
+        if (dao.existeNombre(r.getNombre(), excluir)) {
+            throw new IllegalArgumentException("Ya existe un examen con ese nombre");
+        }
+    }
+
+    @Override
     protected DefaultDAO<Examen> getDao() {
         return dao;
     }

@@ -40,6 +40,20 @@ public class ExamenDAO extends DefaultDAO<Examen> {
         }
     }
 
+
+    public boolean existeNombre(String nombre, java.util.UUID excluirId) {
+        if (nombre == null || nombre.isBlank()) {
+            return false;
+        }
+        String jpql = "SELECT COUNT(e) FROM Examen e WHERE LOWER(e.nombre) = LOWER(:nom)" + (excluirId == null ? "" : " AND e.idExamen <> :excluir");
+        var q = getEntityManager().createQuery(jpql, Long.class);
+        q.setParameter("nom", nombre.trim());
+        if (excluirId != null) {
+            q.setParameter("excluir", excluirId);
+        }
+        return q.getSingleResult() > 0;
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

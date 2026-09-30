@@ -43,6 +43,17 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
     private String idTipoDocumentoSeleccionado;
     private UUID idPersonaMaestro;
 
+    @Override
+    protected void validarUnicidad(Documento r, boolean esModificacion) {
+        if (r.getValor() == null || r.getValor().isBlank()) {
+            return;
+        }
+        java.util.UUID excluir = esModificacion ? r.getIdDocumento() : null;
+        if (dao.existeValor(r.getValor(), excluir)) {
+            throw new IllegalArgumentException("Ese documento ya está registrado para otra persona");
+        }
+    }
+
     public DocumentoModel() {
         this.nombreBean = "Documento";
     }
@@ -148,6 +159,7 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
     private void guardar(boolean modificar) {
         try {
             prepararRelaciones();
+            validarUnicidad(registro, modificar);
             if (modificar) {
                 dao.modificar(registro);
                 limpiar("Registro modificado");
@@ -178,6 +190,7 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
         }
         sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
                 registro.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
+        registro.setValor(registro.getValor() == null ? null : registro.getValor().trim());
         registro.setIdTipoDocumento(tipo);
     }
 

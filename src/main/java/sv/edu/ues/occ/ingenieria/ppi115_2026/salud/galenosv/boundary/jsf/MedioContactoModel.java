@@ -44,6 +44,18 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
     private String idTipoMedioContactoSeleccionado;
     private UUID idPersonaMaestro;
 
+    @Override
+    protected void validarUnicidad(MedioContacto r, boolean esModificacion) {
+        if (r.getIdPersona() == null || r.getIdPersona().getIdPersona() == null
+                || r.getValor() == null || r.getValor().isBlank()) {
+            return;
+        }
+        java.util.UUID excluir = esModificacion ? r.getIdMedioContacto() : null;
+        if (dao.existePersonaValor(r.getIdPersona().getIdPersona(), r.getValor(), excluir)) {
+            throw new IllegalArgumentException("Esa persona ya tiene registrado ese medio de contacto");
+        }
+    }
+
     public MedioContactoModel() {
         this.nombreBean = "MedioContacto";
     }
@@ -150,6 +162,7 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
     private void guardar(boolean modificar) {
         try {
             prepararRelaciones();
+            validarUnicidad(registro, modificar);
             if (modificar) {
                 dao.modificar(registro);
                 limpiar("Registro modificado");
@@ -180,6 +193,7 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
         }
         sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
                 registro.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
+        registro.setValor(registro.getValor() == null ? null : registro.getValor().trim());
         registro.setIdTipoMedioContacto(tipo);
     }
 

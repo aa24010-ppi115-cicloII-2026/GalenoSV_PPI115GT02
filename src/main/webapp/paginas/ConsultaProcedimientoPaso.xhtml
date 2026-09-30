@@ -20,11 +20,10 @@
                 <h:form id="frmTabla">
                     <g:botonesTop modelo="#{consultaProcedimientoPasoModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
                     <p:dataTable id="tabla" value="#{consultaProcedimientoPasoModel.modelo}" var="r" lazy="true"
-                                 paginator="true" rows="#{consultaProcedimientoPasoModel.cantidadRegistros}" paginatorPosition="both"
+                                 paginator="true" rows="#{consultaProcedimientoPasoModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{consultaProcedimientoPasoModel.registro}" rowKey="#{r.idConsultaProcedimientoPaso}">
                         <p:ajax event="rowSelect" listener="#{consultaProcedimientoPasoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idConsultaProcedimientoPaso}"/></p:column>
                         <p:column headerText="#{msg['consultaProcedimientoPaso.tabla.consultaProcedimiento']}"><h:outputText value="#{r.idConsultaProcedimiento.idConsultaProcedimiento}"/></p:column>
                         <p:column headerText="#{msg['consultaProcedimientoPaso.tabla.personaRol']}"><h:outputText value="#{r.idPersonaRol.idPersona.nombres} #{r.idPersonaRol.idPersona.apellidos} - #{r.idPersonaRol.idRol.nombre}"/></p:column>
                         <p:column headerText="#{msg['consultaProcedimientoPaso.tabla.estado']}"><h:outputText value="#{r.estado}"/></p:column>

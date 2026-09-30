@@ -19,11 +19,10 @@
                 <h:form id="frmTabla">
                     <g:botonesTop modelo="#{consultaProcedimientoModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
                     <p:dataTable id="tabla" value="#{consultaProcedimientoModel.modelo}" var="r" lazy="true"
-                                 paginator="true" rows="#{consultaProcedimientoModel.cantidadRegistros}" paginatorPosition="both"
+                                 paginator="true" rows="#{consultaProcedimientoModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{consultaProcedimientoModel.registro}" rowKey="#{r.idConsultaProcedimiento}">
                         <p:ajax event="rowSelect" listener="#{consultaProcedimientoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idConsultaProcedimiento}"/></p:column>
                         <p:column headerText="#{msg['consultaProcedimiento.tabla.consulta']}"><h:outputText value="#{r.idConsulta.idConsulta}"/></p:column>
                         <p:column headerText="#{msg['consultaProcedimiento.tabla.procedimiento']}"><h:outputText value="#{r.idProcedimiento}"/></p:column>
                         <p:column headerText="#{msg['consultaProcedimiento.tabla.fechaInicio']}"><h:outputText value="#{r.fechaInicio}"/></p:column>

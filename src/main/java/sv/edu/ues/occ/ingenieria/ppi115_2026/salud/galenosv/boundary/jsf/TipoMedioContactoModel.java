@@ -34,6 +34,18 @@ public class TipoMedioContactoModel extends AbstractModel<TipoMedioContacto> imp
     }
 
     @Override
+    protected void validarUnicidad(TipoMedioContacto r, boolean esModificacion) {
+        if (r.getNombre() == null || r.getNombre().isBlank()) {
+            return;
+        }
+        r.setNombre(r.getNombre().trim());
+        java.util.UUID excluir = esModificacion ? r.getIdTipoMedioContacto() : null;
+        if (dao.existeNombre(r.getNombre(), excluir)) {
+            throw new IllegalArgumentException("Ya existe un tipo de medio de contacto con ese nombre");
+        }
+    }
+
+    @Override
     protected DefaultDAO<TipoMedioContacto> getDao() {
         return dao;
     }

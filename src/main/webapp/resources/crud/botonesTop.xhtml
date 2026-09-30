@@ -18,7 +18,7 @@
     <cc:implementation>
         <h:panelGrid columns="#{cc.attrs.modelo.estado eq 'NADA' ? 1 : 2}">
             <p:commandButton id="btnNuevo"
-                             value="#{msg['boton.nuevo']} #{cc.attrs.modelo.nombreBean}"
+                             value="#{msg['boton.agregar']} #{cc.attrs.modelo.nombreBean}"
                              icon="pi pi-plus" styleClass="ui-button-primary"
                              actionListener="#{cc.attrs.modelo.btnNuevoHandler}"
                              rendered="#{cc.attrs.modelo.estado eq 'NADA'}"

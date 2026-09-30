@@ -15,9 +15,9 @@
             </div>
             <div>
                 <p:button value="#{msg['inicio.accion.nuevoPaciente']}" outcome="/paginas/Persona"
-                          icon="pi pi-user-plus" style="margin-right:8px"/>
+                          icon="pi pi-user-plus" styleClass="ui-button-primary" style="margin-right:8px"/>
                 <p:button value="#{msg['inicio.accion.nuevaConsulta']}" outcome="/paginas/Consulta"
-                          icon="pi pi-plus"/>
+                          icon="pi pi-plus" styleClass="ui-button-primary"/>
             </div>
         </div>
 
@@ -42,28 +42,6 @@
                 #{msg['inicio.stats.consultas']}: <strong>#{inicioBean.totalConsultas}</strong> ·
                 #{msg['inicio.stats.ordenes']}: <strong>#{inicioBean.totalOrdenes}</strong> ·
                 #{msg['inicio.stats.resultados']}: <strong>#{inicioBean.totalResultados}</strong>
-            </p>
-        </div>
-
-        <div class="care-flow">
-            <div class="section-heading">
-                <span class="section-icon"><i class="pi pi-compass"/></span>
-                <div>
-                    <h2>#{msg['inicio.flujo']}</h2>
-                    <p>#{msg['inicio.flujo.descripcion']}</p>
-                </div>
-            </div>
-            <ol class="flow-steps">
-                <li><span>1</span><strong>#{msg['inicio.flujo.admision']}: #{msg['persona.titulo']}</strong></li>
-                <li><span>2</span><strong>#{msg['inicio.flujo.consulta']}: #{msg['consulta.titulo']}</strong></li>
-                <li><span>3</span><strong>#{msg['inicio.flujo.procedimiento']}: #{msg['procedimiento.titulo']}</strong></li>
-                <li><span>4</span><strong>#{msg['inicio.flujo.examen']}</strong></li>
-            </ol>
-            <p style="margin-top:16px">
-                <p:link value="#{msg['persona.titulo']} →" outcome="/paginas/Persona" style="margin-right:16px"/>
-                <p:link value="#{msg['consulta.titulo']} →" outcome="/paginas/Consulta" style="margin-right:16px"/>
-                <p:link value="#{msg['procedimiento.titulo']} →" outcome="/paginas/Procedimiento" style="margin-right:16px"/>
-                <p:link value="#{msg['examenResultado.titulo']} →" outcome="/paginas/ExamenResultado"/>
             </p>
         </div>
 

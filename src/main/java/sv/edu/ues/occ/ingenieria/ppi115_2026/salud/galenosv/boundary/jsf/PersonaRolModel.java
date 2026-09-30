@@ -93,6 +93,18 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
         };
     }
 
+    @Override
+    protected void validarUnicidad(PersonaRol r, boolean esModificacion) {
+        if (r.getIdPersona() == null || r.getIdRol() == null || r.getIdClinica() == null) {
+            return;
+        }
+        java.util.UUID excluir = esModificacion ? r.getIdPersonaRol() : null;
+        if (dao.existeAsignacion(r.getIdPersona().getIdPersona(), r.getIdRol().getIdRol(),
+                r.getIdClinica().getIdClinica(), excluir)) {
+            throw new IllegalArgumentException("Esa asignación de rol ya existe para esa persona en esa clínica");
+        }
+    }
+
     public PersonaRolModel() {
         this.nombreBean = "PersonaRol";
     }
@@ -166,6 +178,7 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
         if (this.registro != null) {
             try {
                 prepararRelaciones();
+                validarUnicidad(this.registro, false);
                 dao.crear(this.registro);
                 limpiar("Registro guardado");
             } catch (Exception e) {
@@ -180,6 +193,7 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
         if (this.registro != null) {
             try {
                 prepararRelaciones();
+                validarUnicidad(this.registro, true);
                 dao.modificar(this.registro);
                 limpiar("Registro modificado");
             } catch (Exception e) {

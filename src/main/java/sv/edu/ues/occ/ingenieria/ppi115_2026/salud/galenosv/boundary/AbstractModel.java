@@ -132,6 +132,8 @@ public abstract class AbstractModel<T> implements Serializable {
                     return;
                 }
 
+                validarUnicidad(this.registro, false);
+
                 getDao().crear(this.registro);
                 this.registro = null;
                 this.estado = ESTADO_CRUD.NADA;
@@ -173,6 +175,8 @@ public abstract class AbstractModel<T> implements Serializable {
                     return;
                 }
 
+                validarUnicidad(this.registro, true);
+
                 getDao().modificar(this.registro);
                 this.registro = null;
                 this.estado = ESTADO_CRUD.NADA;
@@ -187,8 +191,15 @@ public abstract class AbstractModel<T> implements Serializable {
         }
     }
 
-    protected boolean esNombreVacio(T registro) {
-        if (registro == null) {
+    /**
+     * Verifica que el registro no duplique a otro existente.
+     * Por defecto no hace nada; cada modelo la sobrescribe según sus reglas.
+     * Debe lanzar IllegalArgumentException si hay duplicado.
+     */
+    protected void validarUnicidad(T registro, boolean esModificacion) {
+    }
+
+    protected boolean esNombreVacio(T registro) {        if (registro == null) {
             return true;
         }
         try {

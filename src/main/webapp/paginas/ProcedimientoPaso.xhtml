@@ -14,11 +14,10 @@
                 <h:form id="frmTabla">
                     <g:botonesTop modelo="#{procedimientoPasoModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
                     <p:dataTable id="tabla" value="#{procedimientoPasoModel.modelo}" var="r" lazy="true"
-                                 paginator="true" rows="#{procedimientoPasoModel.cantidadRegistros}" paginatorPosition="both"
+                                 paginator="true" rows="#{procedimientoPasoModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{procedimientoPasoModel.registro}" rowKey="#{r.idProcedimientoPaso}">
                         <p:ajax event="rowSelect" listener="#{procedimientoPasoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idProcedimientoPaso}"/></p:column>
                         <p:column headerText="#{msg['tabla.nombre']}"><h:outputText value="#{r.nombre}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPaso.tabla.procedimiento']}"><h:outputText value="#{r.idProcedimiento.nombre}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPaso.tabla.rol']}"><h:outputText value="#{r.idRol.nombre}"/></p:column>

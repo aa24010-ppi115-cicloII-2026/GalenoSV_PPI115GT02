@@ -18,18 +18,15 @@
                 <h:panelGrid columns="1" style="width:100%">
                     <g:botonesTop modelo="#{examenModel}" actualizar=":frmExamen"/>
                     <p:dataTable id="tabla" value="#{examenModel.modelo}" var="r" lazy="true"
-                                 paginator="true" rows="#{examenModel.cantidadRegistros}" paginatorPosition="both"
+                                 paginator="true" rows="#{examenModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{examenModel.registro}" rowKey="#{r.idExamen}">
                         <p:ajax event="rowSelect" listener="#{examenModel.selectionHandler}" update=":frmExamen"/>
-                        <p:column headerText="#{msg['tabla.id']}">
-                            <h:outputText value="#{r.idExamen}"/>
-                        </p:column>
                         <p:column headerText="#{msg['tabla.nombre']}">
                             <h:outputText value="#{r.nombre}"/>
                         </p:column>
                         <p:column headerText="#{msg['tabla.activo']}">
-                            <h:outputText value="#{r.activo ? 'Sí' : 'No'}"/>
+                            <h:outputText value="#{r.activo ? msg['tabla.si'] : msg['tabla.no']}"/>
                         </p:column>
                         <p:column headerText="#{msg['tabla.observaciones']}">
                             <h:outputText value="#{r.observaciones}"/>
@@ -45,7 +42,7 @@
                 <p:tabView id="tabExamen" dynamic="true" cache="false">
                     <!-- ─── Pestaña 1: Detalle del Examen ─── -->
                     <p:tab title="#{msg['examen.tab.detalle']}" closable="false">
-                        <p:panel header="Datos Generales del Examen">
+                        <p:panel header="#{msg['examen.panel.datos']}">
                             <h:panelGrid columns="2" cellpadding="5">
                                 <p:outputLabel for="txtId" value="#{msg['examen.form.id']}"/>
                                 <p:inputText id="txtId" value="#{examenModel.registro.idExamen}" size="50" disabled="true"/>
@@ -73,7 +70,7 @@
                                 <p:commandButton value="#{msg['boton.eliminar']}" actionListener="#{examenModel.btnEliminarHandler}"
                                                  rendered="#{examenModel.estado eq 'MODIFICAR'}" update=":frmExamen"
                                                  styleClass="ui-button-danger" process="@this">
-                                    <p:confirm header="Confirmación" message="¿Eliminar examen?" icon="pi pi-info-circle"/>
+                                    <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                 </p:commandButton>
                             </h:panelGrid>
                         </p:panel>
@@ -110,7 +107,7 @@
                                 <p:commandButton value="#{msg['boton.eliminar']}" actionListener="#{examenModel.examenTipoExamenModel.btnEliminarHandler}"
                                                  rendered="#{examenModel.examenTipoExamenModel.estado eq 'MODIFICAR'}" 
                                                  update=":frmExamen:tabExamen" process="@this" styleClass="ui-button-danger">
-                                     <p:confirm header="Confirmación" message="¿Eliminar este tipo de examen?" icon="pi pi-info-circle"/>
+                                     <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                 </p:commandButton>
                                                  
                                 <p:commandButton value="#{msg['boton.cancelar']}" actionListener="#{examenModel.examenTipoExamenModel.btnCancelarHandler}"
@@ -125,7 +122,7 @@
                                              
                             <p:dataTable id="tablaTipoExamen" value="#{examenModel.examenTipoExamenModel.modelo}" var="rt"
                                          lazy="true" paginator="true" rows="#{examenModel.examenTipoExamenModel.cantidadRegistros}"
-                                         paginatorPosition="both" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                         paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
                                          selectionMode="single" selection="#{examenModel.examenTipoExamenModel.registro}"
                                          rowKey="#{rt.idExamenTipoExamen}">
                                          
@@ -149,8 +146,8 @@
 
             <!-- Confirm Dialog global -->
             <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
-                <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
-                <p:commandButton value="Sí" type="button" styleClass="ui-confirmdialog-yes"/>
+                <p:commandButton value="#{msg['confirm.no']}" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
+                <p:commandButton value="#{msg['confirm.si']}" type="button" styleClass="ui-confirmdialog-yes"/>
             </p:confirmDialog>
         </h:form>
 

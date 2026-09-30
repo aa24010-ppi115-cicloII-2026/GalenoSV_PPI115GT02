@@ -24,22 +24,22 @@
                     <g:botonesTop modelo="#{examenResultadoModel}" actualizar=":frmExamenResultado"/>
                     <p:dataTable id="tabla" value="#{examenResultadoModel.modelo}" var="r" lazy="true"
                                  paginator="true" rows="#{examenResultadoModel.cantidadRegistros}"
-                                 paginatorPosition="both" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                 paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
                                  selectionMode="single" selection="#{examenResultadoModel.registro}"
                                  rowKey="#{r.idExamenResultado}">
                         <p:ajax event="rowSelect" listener="#{examenResultadoModel.selectionHandler}" update=":frmExamenResultado"/>
 
-                        <p:column headerText="Orden / Paciente" style="width:40%">
+                        <p:column headerText="#{msg['examenResultado.tabla.ordenPaciente']}" style="width:40%">
                             <h:outputText value="#{examenResultadoModel.descripcionOrden(r.idOrdenExamen)}"/>
                         </p:column>
-                        <p:column headerText="Fecha Resultado">
+                        <p:column headerText="#{msg['examenResultado.tabla.fechaCreacion']}">
                             <h:outputText value="#{examenResultadoModel.formatearFecha(r.fechaCreacion)}"/>
                         </p:column>
-                        <p:column headerText="Resultado (resumen)">
+                        <p:column headerText="#{msg['examenResultado.tabla.resultado']}">
                             <h:outputText value="#{r.resultado != null and r.resultado.length() gt 80 ? r.resultado.substring(0,80).concat('...') : r.resultado}"/>
                         </p:column>
-                        <p:column headerText="¿Con interpretación?" style="width:120px; text-align:center">
-                            <h:outputText value="#{not empty r.interpretacion ? 'Sí' : 'No'}"/>
+                        <p:column headerText="#{msg['examenResultado.tabla.conInterpretacion']}" style="width:120px; text-align:center">
+                            <h:outputText value="#{not empty r.interpretacion ? msg['tabla.si'] : msg['tabla.no']}"/>
                         </p:column>
                     </p:dataTable>
                 </h:panelGrid>
@@ -49,49 +49,49 @@
             <h:panelGroup id="pnlDetalle" layout="block" rendered="#{examenResultadoModel.estado ne 'NADA'}">
                 <g:botonesTop modelo="#{examenResultadoModel}" actualizar=":frmExamenResultado"/>
 
-                <p:panel header="Datos del Resultado de Examen" style="margin-top:10px;">
+                <p:panel header="#{msg['examenResultado.panel.datos']}" style="margin-top:10px;">
                     <h:panelGrid columns="2" cellpadding="8" style="width:100%">
 
                         <!-- ID (solo lectura) -->
-                        <p:outputLabel for="txtId" value="ID del Resultado"/>
+                        <p:outputLabel for="txtId" value="#{msg['examenResultado.form.id']}"/>
                         <p:inputText id="txtId" value="#{examenResultadoModel.registro.idExamenResultado}"
                                      size="50" disabled="true"/>
 
                         <!-- Orden de Examen asociada -->
-                        <p:outputLabel for="cmbOrden" value="Orden de Examen *"/>
+                        <p:outputLabel for="cmbOrden" value="#{msg['examenResultado.form.ordenExamen']} *"/>
                         <p:selectOneMenu id="cmbOrden" value="#{examenResultadoModel.idOrdenExamenSeleccionada}"
                                          style="width:400px" required="true"
-                                         requiredMessage="Debe seleccionar la Orden de Examen">
-                            <f:selectItem itemLabel="-- Seleccione una orden --" itemValue=""/>
+                                         requiredMessage="#{msg['examenResultado.seleccione.orden']}">
+                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{examenResultadoModel.ordenesExamen}" var="o"
                                            itemLabel="#{examenResultadoModel.descripcionOrden(o)}"
                                            itemValue="#{o.idOrdenExamen}"/>
                         </p:selectOneMenu>
 
                         <!-- Fecha (automática, solo lectura) -->
-                        <p:outputLabel for="txtFecha" value="Fecha del Resultado"/>
+                        <p:outputLabel for="txtFecha" value="#{msg['examenResultado.form.fechaCreacion']}"/>
                         <p:inputText id="txtFecha"
                                      value="#{examenResultadoModel.formatearFecha(examenResultadoModel.registro.fechaCreacion)}"
                                      size="30" disabled="true"/>
 
                         <!-- Resultado -->
-                        <p:outputLabel for="txtResultado" value="Resultado *"/>
+                        <p:outputLabel for="txtResultado" value="#{msg['examenResultado.form.resultado']} *"/>
                         <p:inputTextarea id="txtResultado" value="#{examenResultadoModel.registro.resultado}"
                                          rows="5" cols="60" required="true"
-                                         requiredMessage="El resultado es obligatorio"
-                                         placeholder="Ingrese los valores o hallazgos del examen..."/>
+                                         requiredMessage="#{msg['examenResultado.resultado.requerido']}"
+                                         placeholder="#{msg['examenResultado.placeholder.resultado']}"/>
 
                         <!-- Interpretación -->
-                        <p:outputLabel for="txtInterpretacion" value="Interpretación del Médico"/>
+                        <p:outputLabel for="txtInterpretacion" value="#{msg['examenResultado.form.interpretacionMedico']}"/>
                         <p:inputTextarea id="txtInterpretacion" value="#{examenResultadoModel.registro.interpretacion}"
                                          rows="4" cols="60"
-                                         placeholder="Observaciones o interpretación clínica del resultado..."/>
+                                         placeholder="#{msg['examenResultado.placeholder.interpretacion']}"/>
 
                         <!-- Ruta del atestado (archivo físico) -->
-                        <p:outputLabel for="txtRuta" value="Ruta del Atestado / Archivo"/>
+                        <p:outputLabel for="txtRuta" value="#{msg['examenResultado.form.rutaAtestado']}"/>
                         <p:inputText id="txtRuta" value="#{examenResultadoModel.registro.rutaAtestado}"
                                      size="60"
-                                     placeholder="Ej: /documentos/lab/resultado_2024_001.pdf"/>
+                                     placeholder="#{msg['examenResultado.ejemplo.ruta']}"/>
                     </h:panelGrid>
 
                     <!-- Botones de acción con process explícito para evitar validación cruzada -->
@@ -113,28 +113,28 @@
                                          rendered="#{examenResultadoModel.estado eq 'MODIFICAR'}"
                                          update=":frmExamenResultado" styleClass="ui-button-danger"
                                          process="@this">
-                            <p:confirm header="Confirmación"
-                                       message="¿Está seguro de eliminar este resultado de examen?"
+                            <p:confirm header="#{msg['confirm.titulo']}"
+                                       message="#{msg['confirm.eliminar']}"
                                        icon="pi pi-info-circle"/>
                         </p:commandButton>
                     </h:panelGrid>
                 </p:panel>
 
                 <!-- ===== PANEL DE CONTEXTO: Info de la Orden seleccionada ===== -->
-                <p:panel header="Contexto de la Orden de Examen" style="margin-top:15px;"
+                <p:panel header="#{msg['examenResultado.panel.contexto']}" style="margin-top:15px;"
                          rendered="#{examenResultadoModel.registro.idOrdenExamen != null}">
                     <h:panelGrid columns="4" cellpadding="8">
-                        <p:outputLabel value="Paciente:"/>
+                        <p:outputLabel value="#{msg['consulta.form.paciente']}:"/>
                         <h:outputText value="#{examenResultadoModel.registro.idOrdenExamen.idConsultaProcedimientoPaso.idConsultaProcedimiento.idConsulta.idPersonaRol.idPersona.nombres}
                                               #{examenResultadoModel.registro.idOrdenExamen.idConsultaProcedimientoPaso.idConsultaProcedimiento.idConsulta.idPersonaRol.idPersona.apellidos}"/>
 
-                        <p:outputLabel value="Estado del Paso:"/>
+                        <p:outputLabel value="#{msg['examenResultado.info.estadoPaso']}:"/>
                         <h:outputText value="#{examenResultadoModel.registro.idOrdenExamen.idConsultaProcedimientoPaso.estado}"/>
 
-                        <p:outputLabel value="Indicaciones de la Orden:"/>
+                        <p:outputLabel value="#{msg['examenResultado.info.indicaciones']}:"/>
                         <h:outputText value="#{examenResultadoModel.registro.idOrdenExamen.indicaciones}"/>
 
-                        <p:outputLabel value="Fecha de la Orden:"/>
+                        <p:outputLabel value="#{msg['examenResultado.info.fechaOrden']}:"/>
                         <h:outputText value="#{examenResultadoModel.formatearFecha(examenResultadoModel.registro.idOrdenExamen.fechaCreacion)}"/>
                     </h:panelGrid>
                 </p:panel>
@@ -142,8 +142,8 @@
 
             <!-- Confirm Dialog global -->
             <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
-                <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
-                <p:commandButton value="Sí" type="button" styleClass="ui-confirmdialog-yes"/>
+                <p:commandButton value="#{msg['confirm.no']}" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
+                <p:commandButton value="#{msg['confirm.si']}" type="button" styleClass="ui-confirmdialog-yes"/>
             </p:confirmDialog>
 
         </h:form>

@@ -46,6 +46,22 @@ public class PersonaRolDAO extends DefaultDAO<PersonaRol> {
         }
     }
 
+
+    public boolean existeAsignacion(java.util.UUID idPersona, java.util.UUID idRol, java.util.UUID idClinica, java.util.UUID excluirId) {
+        if (idPersona == null || idRol == null || idClinica == null) {
+            return false;
+        }
+        String jpql = "SELECT COUNT(p) FROM PersonaRol p WHERE p.idPersona.idPersona = :per AND p.idRol.idRol = :rol AND p.idClinica.idClinica = :cli" + (excluirId == null ? "" : " AND p.idPersonaRol <> :excluir");
+        var q = getEntityManager().createQuery(jpql, Long.class);
+        q.setParameter("per", idPersona);
+        q.setParameter("rol", idRol);
+        q.setParameter("cli", idClinica);
+        if (excluirId != null) {
+            q.setParameter("excluir", excluirId);
+        }
+        return q.getSingleResult() > 0;
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

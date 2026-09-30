@@ -43,6 +43,18 @@ public class ClinicaModel extends AbstractModel<Clinica> implements Serializable
     }
 
     @Override
+    protected void validarUnicidad(Clinica r, boolean esModificacion) {
+        if (r.getNombre() == null || r.getNombre().isBlank()) {
+            return;
+        }
+        r.setNombre(r.getNombre().trim());
+        java.util.UUID excluir = esModificacion ? r.getIdClinica() : null;
+        if (dao.existeNombre(r.getNombre(), excluir)) {
+            throw new IllegalArgumentException("Ya existe una clínica con ese nombre");
+        }
+    }
+
+    @Override
     protected DefaultDAO<Clinica> getDao() {
         return dao;
     }

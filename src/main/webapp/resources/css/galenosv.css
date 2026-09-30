@@ -318,3 +318,45 @@ body.app-body {
     .quick-actions,
     .flow-steps { grid-template-columns: 1fr; }
 }
+
+/* Ajustes sobrios: un solo color primario, espacios contenidos */
+.ui-button.ui-button-primary {
+    background: var(--gs-teal);
+    border-color: var(--gs-teal);
+}
+.ui-button.ui-button-primary:hover {
+    background: var(--gs-teal-dark);
+    border-color: var(--gs-teal-dark);
+}
+.app-content .ui-breadcrumb {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+.welcome-intro > div:last-child {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: flex-end;
+}
+.welcome-intro .ui-button {
+    white-space: nowrap;
+}
+.quick-actions {
+    align-items: stretch;
+}
+.quick-actions .quick-action.ui-button {
+    min-height: 84px;
+    font-size: 0.95rem;
+}
+.quick-actions .quick-action .ui-button-icon {
+    font-size: 1.4rem;
+}
+.ui-datatable thead th {
+    font-weight: 600;
+}
+@media (max-width: 720px) {
+    .welcome-intro > div:last-child {
+        justify-content: flex-start;
+    }
+}

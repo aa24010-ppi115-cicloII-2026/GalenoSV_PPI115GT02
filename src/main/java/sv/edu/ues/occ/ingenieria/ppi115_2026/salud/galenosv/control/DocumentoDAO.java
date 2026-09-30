@@ -58,6 +58,20 @@ public class DocumentoDAO extends DefaultDAO<Documento> {
         return query.getSingleResult();
     }
 
+
+    public boolean existeValor(String valor, java.util.UUID excluirId) {
+        if (valor == null || valor.isBlank()) {
+            return false;
+        }
+        String jpql = "SELECT COUNT(d) FROM Documento d WHERE d.valor = :val" + (excluirId == null ? "" : " AND d.idDocumento <> :excluir");
+        var q = getEntityManager().createQuery(jpql, Long.class);
+        q.setParameter("val", valor.trim());
+        if (excluirId != null) {
+            q.setParameter("excluir", excluirId);
+        }
+        return q.getSingleResult() > 0;
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

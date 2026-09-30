@@ -14,11 +14,10 @@
                 <h:form id="frmTabla">
                     <g:botonesTop modelo="#{procedimientoPasoExamenModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
                     <p:dataTable id="tabla" value="#{procedimientoPasoExamenModel.modelo}" var="r" lazy="true"
-                                 paginator="true" rows="#{procedimientoPasoExamenModel.cantidadRegistros}" paginatorPosition="both"
+                                 paginator="true" rows="#{procedimientoPasoExamenModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{procedimientoPasoExamenModel.registro}" rowKey="#{r.idProcedimientoPasoExamen}">
                         <p:ajax event="rowSelect" listener="#{procedimientoPasoExamenModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idProcedimientoPasoExamen}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPasoExamen.tabla.paso']}"><h:outputText value="#{r.idProcedimientoPaso.nombre}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPasoExamen.tabla.examen']}"><h:outputText value="#{r.idExamen.nombre}"/></p:column>
                         <p:column headerText="#{msg['tabla.activo']}"><h:outputText value="#{r.activo ? msg['tabla.activo'] : msg['tabla.inactivo']}"/></p:column>

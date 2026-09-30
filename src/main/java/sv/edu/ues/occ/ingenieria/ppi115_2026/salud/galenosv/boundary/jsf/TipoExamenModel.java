@@ -33,6 +33,18 @@ public class TipoExamenModel extends AbstractModel<TipoExamen> implements Serial
     }
 
     @Override
+    protected void validarUnicidad(TipoExamen r, boolean esModificacion) {
+        if (r.getNombre() == null || r.getNombre().isBlank()) {
+            return;
+        }
+        r.setNombre(r.getNombre().trim());
+        java.util.UUID excluir = esModificacion ? r.getIdTipoExamen() : null;
+        if (dao.existeNombre(r.getNombre(), excluir)) {
+            throw new IllegalArgumentException("Ya existe un tipo de examen con ese nombre");
+        }
+    }
+
+    @Override
     protected DefaultDAO<TipoExamen> getDao() {
         return dao;
     }

@@ -17,28 +17,27 @@
                 <h:panelGroup id="pnlTabla" layout="block" rendered="#{procedimientoModel.estado eq 'NADA'}">
                     <g:botonesTop modelo="#{procedimientoModel}" actualizar=":frmProcedimiento"/>
                     <p:dataTable id="tabla" value="#{procedimientoModel.modelo}" var="r" lazy="true"
-                                 paginator="true" rows="#{procedimientoModel.cantidadRegistros}" paginatorPosition="both"
+                                 paginator="true" rows="#{procedimientoModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{procedimientoModel.registro}" rowKey="#{r.idProcedimiento}">
                         <p:ajax event="rowSelect" listener="#{procedimientoModel.selectionHandler}" update=":frmProcedimiento"/>
-                        <p:column headerText="ID" width="300"><h:outputText value="#{r.idProcedimiento}"/></p:column>
-                        <p:column headerText="Nombre"><h:outputText value="#{r.nombre}"/></p:column>
-                        <p:column headerText="Activo"><h:outputText value="#{r.activo ? 'Sí' : 'No'}"/></p:column>
+                        <p:column headerText="#{msg['tabla.nombre']}"><h:outputText value="#{r.nombre}"/></p:column>
+                        <p:column headerText="#{msg['tabla.activo']}"><h:outputText value="#{r.activo ? msg['tabla.si'] : msg['tabla.no']}"/></p:column>
                     </p:dataTable>
                 </h:panelGroup>
 
                 <!-- Panel de Detalle (Maestro-Detalle) -->
                 <h:panelGroup id="pnlDetalle" layout="block" rendered="#{procedimientoModel.estado ne 'NADA'}">
                     <g:botonesTop modelo="#{procedimientoModel}" actualizar=":frmProcedimiento"/>
-                    <p:panel header="Datos del Procedimiento (Maestro)">
+                    <p:panel header="#{msg['procedimiento.panel.maestro']}">
                         <h:panelGrid columns="2" cellpadding="5">
-                            <p:outputLabel for="txtId" value="ID"/>
+                            <p:outputLabel for="txtId" value="#{msg['tabla.id']}"/>
                             <p:inputText id="txtId" value="#{procedimientoModel.registro.idProcedimiento}" size="50" disabled="true"/>
-                            <p:outputLabel for="txtNombre" value="Nombre *"/>
+                            <p:outputLabel for="txtNombre" value="#{msg['procedimiento.form.nombre']} *"/>
                             <p:inputText id="txtNombre" value="#{procedimientoModel.registro.nombre}" size="50" required="true"/>
-                            <p:outputLabel for="chkActivo" value="Activo"/>
+                            <p:outputLabel for="chkActivo" value="#{msg['procedimiento.form.activo']}"/>
                             <p:selectBooleanCheckbox id="chkActivo" value="#{procedimientoModel.registro.activo}"/>
-                            <p:outputLabel for="txtObservaciones" value="Observaciones"/>
+                            <p:outputLabel for="txtObservaciones" value="#{msg['procedimiento.form.observaciones']}"/>
                             <p:inputTextarea id="txtObservaciones" value="#{procedimientoModel.registro.observaciones}" rows="3" cols="50"/>
                         </h:panelGrid>
                         
@@ -46,12 +45,12 @@
                             <p:commandButton value="#{msg['boton.guardar']}" actionListener="#{procedimientoModel.btnGuardarHandler}" rendered="#{procedimientoModel.estado eq 'CREAR'}" update=":frmProcedimiento" styleClass="ui-button-success" process="@this txtId txtNombre chkActivo txtObservaciones"/>
                             <p:commandButton value="#{msg['boton.modificar']}" actionListener="#{procedimientoModel.btnModificarHandler}" rendered="#{procedimientoModel.estado eq 'MODIFICAR'}" update=":frmProcedimiento" styleClass="ui-button-primary" process="@this txtId txtNombre chkActivo txtObservaciones"/>
                             <p:commandButton value="#{msg['boton.eliminar']}" actionListener="#{procedimientoModel.btnEliminarHandler}" rendered="#{procedimientoModel.estado eq 'MODIFICAR'}" update=":frmProcedimiento" styleClass="ui-button-danger" process="@this">
-                                <p:confirm header="Confirmación" message="¿Está seguro de eliminar este procedimiento?" icon="pi pi-info-circle"/>
+                                <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                             </p:commandButton>
                             
                             <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
-                                <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
-                                <p:commandButton value="Sí" type="button" styleClass="ui-confirmdialog-yes" />
+                                <p:commandButton value="#{msg['confirm.no']}" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
+                                <p:commandButton value="#{msg['confirm.si']}" type="button" styleClass="ui-confirmdialog-yes" />
                             </p:confirmDialog>
                         </h:panelGrid>
                     </p:panel>
@@ -61,35 +60,35 @@
                         <p:tabView style="margin-top:20px;">
                             
                             <!-- ─── Pestaña 1: Pasos ─── -->
-                            <p:tab title="Pasos">
+                            <p:tab title="#{msg['procedimiento.tab.pasos']}">
                                 <h:panelGroup id="panelNuevoPaso" style="margin-bottom:15px; display:block;">
                                     <h:panelGrid columns="9" cellpadding="5" styleClass="ui-fluid">
-                                        <p:outputLabel value="Nombre del Paso:"/>
+                                        <p:outputLabel value="#{msg['procedimientoPaso.form.nombre']}:"/>
                                         <p:inputText value="#{procedimientoModel.nuevoPaso.nombre}" size="20" required="true"/>
 
-                                        <p:outputLabel value="Rol (Responsable):"/>
+                                        <p:outputLabel value="#{msg['procedimientoPaso.form.rol']}:"/>
                                         <p:selectOneMenu value="#{procedimientoModel.idRolSeleccionadoPaso}" style="width:150px">
-                                            <f:selectItem itemLabel="Cualquiera" itemValue=""/>
+                                            <f:selectItem itemLabel="#{msg['procedimiento.form.cualquiera']}" itemValue=""/>
                                             <f:selectItems value="#{procedimientoModel.roles}" var="rol"
                                                            itemLabel="#{rol.nombre}" itemValue="#{rol.idRol}"/>
                                         </p:selectOneMenu>
 
-                                        <p:outputLabel value="Indica Fin:"/>
+                                        <p:outputLabel value="#{msg['procedimientoPaso.form.indicaFin']}:"/>
                                         <p:selectBooleanCheckbox value="#{procedimientoModel.nuevoPaso.indicaFin}"/>
 
-                                        <p:commandButton value="Agregar" icon="pi pi-plus"
+                                        <p:commandButton value="#{msg['boton.agregar']}" icon="pi pi-plus"
                                                          actionListener="#{procedimientoModel.agregarPaso()}"
                                                          process="panelNuevoPaso"
                                                          update="panelNuevoPaso tablaPasos :frmProcedimiento:mensajes @([id$=cmbPasoSecuenciaPrincipal]) @([id$=cmbPasoSecuenciaAnterior]) @([id$=cmbPasoExamenPrincipal])"
                                                          styleClass="ui-button-info" rendered="#{not procedimientoModel.editandoPaso}"/>
                                                          
-                                        <p:commandButton value="Guardar Cambios" icon="pi pi-pencil"
+                                        <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
                                                          actionListener="#{procedimientoModel.modificarPaso()}"
                                                          process="panelNuevoPaso"
                                                          update="panelNuevoPaso tablaPasos :frmProcedimiento:mensajes @([id$=cmbPasoSecuenciaPrincipal]) @([id$=cmbPasoSecuenciaAnterior]) @([id$=cmbPasoExamenPrincipal])"
                                                          styleClass="ui-button-warning" rendered="#{procedimientoModel.editandoPaso}"/>
 
-                                        <p:commandButton value="Cancelar" icon="pi pi-times"
+                                        <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
                                                          actionListener="#{procedimientoModel.cancelarEdicionPaso()}"
                                                          process="@this"
                                                          update="panelNuevoPaso tablaPasos"
@@ -98,63 +97,63 @@
                                 </h:panelGroup>
 
                                 <p:dataTable id="tablaPasos" value="#{procedimientoModel.pasosDelProcedimiento}"
-                                             var="paso" emptyMessage="No hay pasos configurados"
+                                             var="paso" emptyMessage="#{msg['tabla.sinRegistros']}"
                                              selectionMode="single" selection="#{procedimientoModel.pasoSeleccionado}"
                                              rowKey="#{paso.idProcedimientoPaso}">
                                              
                                     <p:ajax event="rowSelect" listener="#{procedimientoModel.onPasoSelect}" update="panelNuevoPaso"/>
                                     
-                                    <p:column headerText="Nombre del Paso">
+                                    <p:column headerText="#{msg['procedimientoPaso.form.nombre']}">
                                         <h:outputText value="#{paso.nombre}"/>
                                     </p:column>
-                                    <p:column headerText="Rol Asignado">
+                                    <p:column headerText="#{msg['procedimientoPaso.tabla.rol']}">
                                         <h:outputText value="#{paso.idRol != null ? paso.idRol.nombre : 'Cualquiera'}"/>
                                     </p:column>
-                                    <p:column headerText="Indica Fin">
-                                        <h:outputText value="#{paso.indicaFin ? 'Sí' : 'No'}"/>
+                                    <p:column headerText="#{msg['procedimientoPaso.tabla.indicaFin']}">
+                                        <h:outputText value="#{paso.indicaFin ? msg['tabla.si'] : msg['tabla.no']}"/>
                                     </p:column>
-                                    <p:column headerText="Acción" width="100" style="text-align:center;">
+                                    <p:column headerText="#{msg['tabla.accion']}" width="100" style="text-align:center;">
                                         <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
                                                          actionListener="#{procedimientoModel.eliminarPaso(paso)}"
                                                          process="@this"
                                                          update="tablaPasos panelNuevoPaso :frmProcedimiento:mensajes @([id$=cmbPasoSecuenciaPrincipal]) @([id$=cmbPasoSecuenciaAnterior]) @([id$=cmbPasoExamenPrincipal])">
-                                            <p:confirm header="Confirmación" message="¿Eliminar este paso?" icon="pi pi-info-circle"/>
+                                            <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                         </p:commandButton>
                                     </p:column>
                                 </p:dataTable>
                             </p:tab>
 
                             <!-- ─── Pestaña 2: Secuencias ─── -->
-                            <p:tab title="Secuencia (Orden)">
+                            <p:tab title="#{msg['procedimiento.tab.secuencia']}">
                                 <h:panelGroup id="panelNuevaSecuencia" style="margin-bottom:15px; display:block;">
                                     <h:panelGrid columns="7" cellpadding="5" styleClass="ui-fluid">
-                                        <p:outputLabel value="Paso Principal:"/>
-                                        <p:selectOneMenu id="cmbPasoSecuenciaPrincipal" value="#{procedimientoModel.idPasoSeleccionadoSecuencia}" style="width:200px" required="true" requiredMessage="Debe seleccionar un paso principal">
-                                            <f:selectItem itemLabel="Seleccione" itemValue=""/>
+                                        <p:outputLabel value="#{msg['procedimiento.form.pasoPrincipal']}:"/>
+                                        <p:selectOneMenu id="cmbPasoSecuenciaPrincipal" value="#{procedimientoModel.idPasoSeleccionadoSecuencia}" style="width:200px" required="true" requiredMessage="#{msg['procedimiento.validacion.pasoPrincipal']}">
+                                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                                             <f:selectItems value="#{procedimientoModel.pasosDelProcedimiento}" var="p"
                                                            itemLabel="#{p.nombre}" itemValue="#{p.idProcedimientoPaso}"/>
                                         </p:selectOneMenu>
 
-                                        <p:outputLabel value="Va después de (Anterior):"/>
+                                        <p:outputLabel value="#{msg['procedimiento.form.despuesDe']}:"/>
                                         <p:selectOneMenu id="cmbPasoSecuenciaAnterior" value="#{procedimientoModel.idPasoAnteriorSeleccionadoSecuencia}" style="width:200px">
-                                            <f:selectItem itemLabel="(Ninguno / Inicio)" itemValue=""/>
+                                            <f:selectItem itemLabel="#{msg['procedimientoPasoSecuencia.form.sinReferencia']}" itemValue=""/>
                                             <f:selectItems value="#{procedimientoModel.pasosDelProcedimiento}" var="p"
                                                            itemLabel="#{p.nombre}" itemValue="#{p.idProcedimientoPaso}"/>
                                         </p:selectOneMenu>
 
-                                        <p:commandButton value="Enlazar" icon="pi pi-link"
+                                        <p:commandButton value="#{msg['boton.enlazar']}" icon="pi pi-link"
                                                          actionListener="#{procedimientoModel.agregarSecuencia()}"
                                                          process="panelNuevaSecuencia"
                                                          update="panelNuevaSecuencia tablaSecuencias :frmProcedimiento:mensajes"
                                                          styleClass="ui-button-info" rendered="#{not procedimientoModel.editandoSecuencia}"/>
 
-                                        <p:commandButton value="Guardar Cambios" icon="pi pi-pencil"
+                                        <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
                                                          actionListener="#{procedimientoModel.modificarSecuencia()}"
                                                          process="panelNuevaSecuencia"
                                                          update="panelNuevaSecuencia tablaSecuencias :frmProcedimiento:mensajes"
                                                          styleClass="ui-button-warning" rendered="#{procedimientoModel.editandoSecuencia}"/>
 
-                                        <p:commandButton value="Cancelar" icon="pi pi-times"
+                                        <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
                                                          actionListener="#{procedimientoModel.cancelarEdicionSecuencia()}"
                                                          process="@this"
                                                          update="panelNuevaSecuencia tablaSecuencias"
@@ -163,63 +162,63 @@
                                 </h:panelGroup>
 
                                 <p:dataTable id="tablaSecuencias" value="#{procedimientoModel.secuenciasDelProcedimiento}"
-                                             var="sec" emptyMessage="No hay secuencias configuradas"
+                                             var="sec" emptyMessage="#{msg['tabla.sinRegistros']}"
                                              selectionMode="single" selection="#{procedimientoModel.secuenciaSeleccionada}"
                                              rowKey="#{sec.idProcedimientoPasoSecuencia}">
                                              
                                     <p:ajax event="rowSelect" listener="#{procedimientoModel.onSecuenciaSelect}" update="panelNuevaSecuencia"/>
                                     
-                                    <p:column headerText="Paso Principal">
+                                    <p:column headerText="#{msg['procedimiento.form.pasoPrincipal']}">
                                         <h:outputText value="#{procedimientoModel.nombrePaso(sec.idProcedimientoPaso.idProcedimientoPaso)}"/>
                                     </p:column>
-                                    <p:column headerText="Relación">
-                                        <h:outputText value="DESPUÉS DE"/>
+                                    <p:column headerText="#{msg['procedimiento.tabla.relacion']}">
+                                        <h:outputText value="#{msg['procedimiento.relacion.despues']}"/>
                                     </p:column>
-                                    <p:column headerText="Paso Anterior">
+                                    <p:column headerText="#{msg['procedimientoPasoSecuencia.tabla.referencia']}">
                                         <h:outputText value="#{procedimientoModel.nombrePaso(sec.idProcedimientoPasoReferencia)}"/>
                                     </p:column>
-                                    <p:column headerText="Acción" width="100" style="text-align:center;">
+                                    <p:column headerText="#{msg['tabla.accion']}" width="100" style="text-align:center;">
                                         <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
                                                          actionListener="#{procedimientoModel.eliminarSecuencia(sec)}"
                                                          process="@this"
                                                          update="tablaSecuencias panelNuevaSecuencia :frmProcedimiento:mensajes">
-                                            <p:confirm header="Confirmación" message="¿Eliminar este enlace?" icon="pi pi-info-circle"/>
+                                            <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                         </p:commandButton>
                                     </p:column>
                                 </p:dataTable>
                             </p:tab>
 
                             <!-- ─── Pestaña 3: Exámenes Requeridos ─── -->
-                            <p:tab title="Exámenes Requeridos">
+                            <p:tab title="#{msg['procedimiento.tab.examenes']}">
                                 <h:panelGroup id="panelNuevoExamen" style="margin-bottom:15px; display:block;">
                                     <h:panelGrid columns="7" cellpadding="5" styleClass="ui-fluid">
-                                        <p:outputLabel value="Paso Principal:"/>
-                                        <p:selectOneMenu id="cmbPasoExamenPrincipal" value="#{procedimientoModel.idPasoSeleccionadoExamen}" style="width:200px" required="true" requiredMessage="Seleccione un paso">
-                                            <f:selectItem itemLabel="Seleccione un paso" itemValue=""/>
+                                        <p:outputLabel value="#{msg['procedimiento.form.pasoPrincipal']}:"/>
+                                        <p:selectOneMenu id="cmbPasoExamenPrincipal" value="#{procedimientoModel.idPasoSeleccionadoExamen}" style="width:200px" required="true" requiredMessage="#{msg['procedimiento.seleccione.paso']}">
+                                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                                             <f:selectItems value="#{procedimientoModel.pasosDelProcedimiento}" var="p"
                                                            itemLabel="#{p.nombre}" itemValue="#{p.idProcedimientoPaso}"/>
                                         </p:selectOneMenu>
 
-                                        <p:outputLabel value="Examen a Solicitar:"/>
-                                        <p:selectOneMenu value="#{procedimientoModel.idExamenSeleccionado}" style="width:200px" required="true" requiredMessage="Seleccione un examen">
-                                            <f:selectItem itemLabel="Seleccione" itemValue=""/>
+                                        <p:outputLabel value="#{msg['procedimiento.form.examenSolicitar']}:"/>
+                                        <p:selectOneMenu value="#{procedimientoModel.idExamenSeleccionado}" style="width:200px" required="true" requiredMessage="#{msg['procedimiento.seleccione.examen']}">
+                                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                                             <f:selectItems value="#{procedimientoModel.examenes}" var="ex"
                                                            itemLabel="#{ex.nombre}" itemValue="#{ex.idExamen}"/>
                                         </p:selectOneMenu>
 
-                                        <p:commandButton value="Vincular Examen" icon="pi pi-check-square"
+                                        <p:commandButton value="#{msg['boton.vincularExamen']}" icon="pi pi-check-square"
                                                          actionListener="#{procedimientoModel.agregarPasoExamen()}"
                                                          process="panelNuevoExamen"
                                                          update="panelNuevoExamen tablaExamenes :frmProcedimiento:mensajes"
                                                          styleClass="ui-button-info" rendered="#{not procedimientoModel.editandoExamen}"/>
 
-                                        <p:commandButton value="Guardar Cambios" icon="pi pi-pencil"
+                                        <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
                                                          actionListener="#{procedimientoModel.modificarPasoExamen()}"
                                                          process="panelNuevoExamen"
                                                          update="panelNuevoExamen tablaExamenes :frmProcedimiento:mensajes"
                                                          styleClass="ui-button-warning" rendered="#{procedimientoModel.editandoExamen}"/>
 
-                                        <p:commandButton value="Cancelar" icon="pi pi-times"
+                                        <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
                                                          actionListener="#{procedimientoModel.cancelarEdicionExamen()}"
                                                          process="@this"
                                                          update="panelNuevoExamen tablaExamenes"
@@ -228,27 +227,27 @@
                                 </h:panelGroup>
 
                                 <p:dataTable id="tablaExamenes" value="#{procedimientoModel.examenesDelProcedimiento}"
-                                             var="ppe" emptyMessage="No hay exámenes requeridos"
+                                             var="ppe" emptyMessage="#{msg['tabla.sinRegistros']}"
                                              selectionMode="single" selection="#{procedimientoModel.examenSeleccionado}"
                                              rowKey="#{ppe.idProcedimientoPasoExamen}">
                                              
                                     <p:ajax event="rowSelect" listener="#{procedimientoModel.onExamenSelect}" update="panelNuevoExamen"/>
                                     
-                                    <p:column headerText="Paso Principal">
+                                    <p:column headerText="#{msg['procedimiento.form.pasoPrincipal']}">
                                         <h:outputText value="#{procedimientoModel.nombrePaso(ppe.idProcedimientoPaso.idProcedimientoPaso)}"/>
                                     </p:column>
-                                    <p:column headerText="Examen Requerido">
+                                    <p:column headerText="#{msg['procedimientoPasoExamen.tabla.examen']}">
                                         <h:outputText value="#{ppe.idExamen.nombre}"/>
                                     </p:column>
-                                    <p:column headerText="Activo">
-                                        <h:outputText value="#{ppe.activo ? 'Sí' : 'No'}"/>
+                                    <p:column headerText="#{msg['procedimientoPasoExamen.form.activo']}">
+                                        <h:outputText value="#{ppe.activo ? msg['tabla.si'] : msg['tabla.no']}"/>
                                     </p:column>
-                                    <p:column headerText="Acción" width="100" style="text-align:center;">
+                                    <p:column headerText="#{msg['tabla.accion']}" width="100" style="text-align:center;">
                                         <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
                                                          actionListener="#{procedimientoModel.eliminarPasoExamen(ppe)}"
                                                          process="@this"
                                                          update="tablaExamenes panelNuevoExamen :frmProcedimiento:mensajes">
-                                            <p:confirm header="Confirmación" message="¿Eliminar requerimiento de examen?" icon="pi pi-info-circle"/>
+                                            <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
                                         </p:commandButton>
                                     </p:column>
                                 </p:dataTable>

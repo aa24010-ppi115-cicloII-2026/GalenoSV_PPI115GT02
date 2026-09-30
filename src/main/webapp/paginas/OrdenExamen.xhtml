@@ -19,11 +19,10 @@
                 <h:form id="frmTabla">
                     <g:botonesTop modelo="#{ordenExamenModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
                     <p:dataTable id="tabla" value="#{ordenExamenModel.modelo}" var="r" lazy="true"
-                                 paginator="true" rows="#{ordenExamenModel.cantidadRegistros}" paginatorPosition="both"
+                                 paginator="true" rows="#{ordenExamenModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{ordenExamenModel.registro}" rowKey="#{r.idOrdenExamen}">
                         <p:ajax event="rowSelect" listener="#{ordenExamenModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes"/>
-                        <p:column headerText="#{msg['tabla.id']}"><h:outputText value="#{r.idOrdenExamen}"/></p:column>
                         <p:column headerText="#{msg['ordenExamen.tabla.consultaProcedimientoPaso']}"><h:outputText value="#{r.idConsultaProcedimientoPaso.idConsultaProcedimientoPaso}"/></p:column>
                         <p:column headerText="#{msg['ordenExamen.tabla.fechaCreacion']}"><h:outputText value="#{r.fechaCreacion}"/></p:column>
                         <p:column headerText="#{msg['ordenExamen.tabla.indicaciones']}"><h:outputText value="#{r.indicaciones}"/></p:column>

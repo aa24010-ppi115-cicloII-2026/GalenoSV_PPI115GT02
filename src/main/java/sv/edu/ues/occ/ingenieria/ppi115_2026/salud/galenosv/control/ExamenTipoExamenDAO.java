@@ -86,6 +86,21 @@ public class ExamenTipoExamenDAO extends DefaultDAO<ExamenTipoExamen> {
             throw new IllegalStateException("No se pueden contar registros por examen", ex);
         }
     }
+
+    public boolean existeVinculo(java.util.UUID idExamen, java.util.UUID idTipo, java.util.UUID excluirId) {
+        if (idExamen == null || idTipo == null) {
+            return false;
+        }
+        String jpql = "SELECT COUNT(e) FROM ExamenTipoExamen e WHERE e.idExamen.idExamen = :exa AND e.idTipoExamen.idTipoExamen = :tip" + (excluirId == null ? "" : " AND e.idExamenTipoExamen <> :excluir");
+        var q = getEntityManager().createQuery(jpql, Long.class);
+        q.setParameter("exa", idExamen);
+        q.setParameter("tip", idTipo);
+        if (excluirId != null) {
+            q.setParameter("excluir", excluirId);
+        }
+        return q.getSingleResult() > 0;
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

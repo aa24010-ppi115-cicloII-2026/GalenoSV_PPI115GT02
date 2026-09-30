@@ -33,6 +33,18 @@ public class RolModel extends AbstractModel<Rol> implements Serializable {
     }
 
     @Override
+    protected void validarUnicidad(Rol r, boolean esModificacion) {
+        if (r.getNombre() == null || r.getNombre().isBlank()) {
+            return;
+        }
+        r.setNombre(r.getNombre().trim());
+        java.util.UUID excluir = esModificacion ? r.getIdRol() : null;
+        if (dao.existeNombre(r.getNombre(), excluir)) {
+            throw new IllegalArgumentException("Ya existe un rol con ese nombre");
+        }
+    }
+
+    @Override
     protected DefaultDAO<Rol> getDao() {
         return dao;
     }

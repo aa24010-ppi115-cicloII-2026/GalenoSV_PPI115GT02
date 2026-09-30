@@ -49,6 +49,17 @@ public class ExamenTipoExamenModel extends AbstractModel<ExamenTipoExamen> imple
     private UUID idExamen;
     private TipoExamen tipoExamenSeleccionado;
 
+    @Override
+    protected void validarUnicidad(ExamenTipoExamen r, boolean esModificacion) {
+        if (r.getIdExamen() == null || r.getIdTipoExamen() == null) {
+            return;
+        }
+        java.util.UUID excluir = esModificacion ? r.getIdExamenTipoExamen() : null;
+        if (dao.existeVinculo(r.getIdExamen().getIdExamen(), r.getIdTipoExamen().getIdTipoExamen(), excluir)) {
+            throw new IllegalArgumentException("Ese tipo de examen ya está vinculado a ese examen");
+        }
+    }
+
     public ExamenTipoExamenModel() {
         this.nombreBean = "ExamenTipoExamen";
     }
@@ -178,6 +189,7 @@ public class ExamenTipoExamenModel extends AbstractModel<ExamenTipoExamen> imple
         if (this.registro != null) {
             try {
                 prepararRelaciones();
+                validarUnicidad(this.registro, false);
                 dao.crear(this.registro);
                 limpiarDespuesDeGuardar();
                 getFacesContext().addMessage(null,
@@ -194,6 +206,7 @@ public class ExamenTipoExamenModel extends AbstractModel<ExamenTipoExamen> imple
         if (this.registro != null) {
             try {
                 prepararRelaciones();
+                validarUnicidad(this.registro, true);
                 dao.modificar(this.registro);
                 limpiarDespuesDeGuardar();
                 getFacesContext().addMessage(null,
