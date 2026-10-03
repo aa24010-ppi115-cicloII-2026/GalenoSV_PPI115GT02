@@ -54,6 +54,12 @@ public class ExamenDAO extends DefaultDAO<Examen> {
         return q.getSingleResult() > 0;
     }
 
+    public List<Examen> findActivos() {
+        return getEntityManager().createQuery(
+                "SELECT e FROM Examen e WHERE e.activo = TRUE ORDER BY e.nombre", Examen.class)
+                .getResultList();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

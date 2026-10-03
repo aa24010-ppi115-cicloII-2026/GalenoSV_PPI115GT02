@@ -1,90 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
-<f:view xmlns:f="jakarta.faces.core"
-        xmlns="http://www.w3.org/1999/xhtml"
-        xmlns:h="jakarta.faces.html"
-        xmlns:p="http://primefaces.org/ui"
-        xmlns:ui="jakarta.faces.facelets"
-        locale="#{idiomaBean.locale}">
+<f:view xmlns:f="jakarta.faces.core" xmlns="http://www.w3.org/1999/xhtml"
+        xmlns:h="jakarta.faces.html" xmlns:p="http://primefaces.org/ui"
+        xmlns:ui="jakarta.faces.facelets" locale="#{idiomaBean.locale}">
 <html>
-    <h:head>
-        <title><ui:insert name="titulo">#{msg['sistema.titulo']}</ui:insert></title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <h:outputStylesheet library="css" name="galenosv.css"/>
-    </h:head>
-    <h:body styleClass="app-body">
-        <div class="app-shell">
-            <header class="app-header">
-                <h:graphicImage library="images" name="galenosv-logo.png"
-                                alt="#{msg['sistema.titulo']}" styleClass="app-logo"/>
-                <h1 class="app-page-title">
-                    <ui:insert name="encabezado">#{msg['sistema.titulo']}</ui:insert>
-                </h1>
-                <h:form id="frmIdioma" styleClass="app-language">
-                    <p:outputLabel for="cmbIdioma" value="#{msg['idioma.etiqueta']}"/>
+<h:head>
+    <title><ui:insert name="titulo">#{msg['sistema.titulo']}</ui:insert></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <h:outputStylesheet library="css" name="galenosv.css"/>
+</h:head>
+<h:body styleClass="app-body">
+    <div class="video-shell">
+        <header class="video-header">
+            <h:graphicImage library="images" name="galenosv-logo.png" alt="GalenoSV" styleClass="video-logo"/>
+            <h1 class="video-title"><ui:insert name="encabezado">#{msg['sistema.titulo']}</ui:insert></h1>
+            <div class="video-header-right">
+                <h:form id="frmIdioma" styleClass="video-language">
+                    <p:outputLabel for="cmbIdioma" value="Idioma"/>
                     <p:selectOneMenu id="cmbIdioma" value="#{idiomaBean.idioma}">
-                        <f:selectItem itemLabel="#{msg['idioma.espanol']}" itemValue="es"/>
-                        <f:selectItem itemLabel="#{msg['idioma.ingles']}" itemValue="en"/>
-                        <f:selectItem itemLabel="#{msg['idioma.frances']}" itemValue="fr"/>
-                        <f:selectItem itemLabel="#{msg['idioma.chino']}" itemValue="zh"/>
+                        <f:selectItem itemLabel="Español" itemValue="es"/>
+                        <f:selectItem itemLabel="English" itemValue="en"/>
+                        <f:selectItem itemLabel="Français" itemValue="fr"/>
+                        <f:selectItem itemLabel="中文" itemValue="zh"/>
                         <p:ajax listener="#{idiomaBean.cambiarIdioma(idiomaBean.idioma)}" update="@all"/>
                     </p:selectOneMenu>
                 </h:form>
-            </header>
-
-            <div class="app-workspace">
-                <aside class="app-sidebar">
-                    <nav aria-label="#{msg['menu.principal']}">
-                        <h:form id="frmMenu">
-                            <p:button value="#{msg['menu.inicio']}" outcome="/paginas/Inicio"
-                                      icon="pi pi-home" styleClass="sidebar-home"/>
-                            <p:panelMenu id="menuPrincipal" styleClass="app-menu">
-                                <p:submenu label="#{msg['menu.catalogos']}" icon="pi pi-book">
-                                    <p:menuitem value="#{msg['tipoMedioContacto.titulo']}" outcome="/paginas/TipoMedioContacto"/>
-                                    <p:menuitem value="#{msg['tipoDocumento.titulo']}" outcome="/paginas/TipoDocumento"/>
-                                    <p:menuitem value="#{msg['tipoExamen.titulo']}" outcome="/paginas/TipoExamen"/>
-                                    <p:menuitem value="#{msg['examen.titulo']}" outcome="/paginas/Examen"/>
-                                    <p:menuitem value="#{msg['procedimiento.titulo']}" outcome="/paginas/Procedimiento"/>
-                                </p:submenu>
-                                <p:submenu label="#{msg['menu.clinica']}" icon="pi pi-building">
-                                    <p:menuitem value="#{msg['clinica.titulo']}" outcome="/paginas/Clinica"/>
-                                    <p:menuitem value="#{msg['rol.titulo']}" outcome="/paginas/Rol"/>
-                                </p:submenu>
-                                <p:submenu label="#{msg['menu.personas']}" icon="pi pi-users">
-                                    <p:menuitem value="#{msg['persona.titulo']}" outcome="/paginas/Persona"/>
-                                    <p:menuitem value="#{msg['personaRol.titulo']}" outcome="/paginas/PersonaRol"/>
-                                    <p:menuitem value="#{msg['documento.titulo']}" outcome="/paginas/Documento"/>
-                                    <p:menuitem value="#{msg['medioContacto.titulo']}" outcome="/paginas/MedioContacto"/>
-                                </p:submenu>
-                                <p:submenu label="#{msg['menu.procedimientos']}" icon="pi pi-list-check">
-                                    <p:menuitem value="#{msg['procedimientoPaso.titulo']}" outcome="/paginas/ProcedimientoPaso"/>
-                                    <p:menuitem value="#{msg['procedimientoPasoSecuencia.titulo']}" outcome="/paginas/ProcedimientoPasoSecuencia"/>
-                                    <p:menuitem value="#{msg['procedimientoPasoExamen.titulo']}" outcome="/paginas/ProcedimientoPasoExamen"/>
-                                </p:submenu>
-                                <p:submenu label="#{msg['menu.atencion']}" icon="pi pi-heart">
-                                    <p:menuitem value="#{msg['consulta.titulo']}" outcome="/paginas/Consulta"/>
-                                    <p:menuitem value="#{msg['consultaProcedimiento.titulo']}" outcome="/paginas/ConsultaProcedimiento"/>
-                                    <p:menuitem value="#{msg['consultaProcedimientoPaso.titulo']}" outcome="/paginas/ConsultaProcedimientoPaso"/>
-                                    <p:menuitem value="#{msg['ordenExamen.titulo']}" outcome="/paginas/OrdenExamen"/>
-                                    <p:menuitem value="#{msg['examenResultado.titulo']}" outcome="/paginas/ExamenResultado"/>
-                                </p:submenu>
-                            </p:panelMenu>
-                        </h:form>
-                    </nav>
-                </aside>
-                <main class="app-content">
-                    <p:growl id="avisos" showDetail="true" life="4000"/>
-                    <p:messages id="mensajes" showDetail="true" closable="true" redisplay="false"/>
-                    <p:breadCrumb style="margin-bottom:12px">
-                        <p:menuitem value="#{msg['menu.inicio']}" outcome="/paginas/Inicio"/>
-                        <p:menuitem value="#{msg['sistema.titulo']}" disabled="true"/>
-                    </p:breadCrumb>
-                    <ui:insert name="contenido"><h:outputText value="#{msg['layout.sinContenido']}"/></ui:insert>
-                </main>
+                <p:button outcome="/paginas/ClinicaTrabajo" styleClass="video-user-card" icon="pi pi-user"
+                          value="#{clinicaTrabajoBean.seleccionada ? clinicaTrabajoBean.nombreAsignacionActual : 'Cambiar de Rol'}"/>
             </div>
-            <footer class="app-footer"><h:outputText value="#{msg['layout.footer']}"/></footer>
-        </div>
-        <ui:insert name="extras"/>
-    </h:body>
+        </header>
+
+        <h:form id="frmAbrirMenu" styleClass="video-menu-trigger">
+            <p:commandButton type="button" icon="pi pi-bars" ariaLabel="Abrir menú"
+                             onclick="PF('menuLateral').show()"/>
+        </h:form>
+
+        <p:sidebar widgetVar="menuLateral" position="left" styleClass="video-sidebar" baseZIndex="1000">
+            <h:form id="frmMenu">
+                <div class="sidebar-brand"><h:graphicImage library="images" name="galenosv-logo.png" alt="GalenoSV"/></div>
+                <p:button value="#{msg['menu.inicio']}" outcome="/paginas/Inicio" icon="pi pi-home" styleClass="sidebar-home"/>
+                <p:panelMenu id="menuPrincipal" styleClass="app-menu">
+                    <p:submenu label="#{msg['menu.catalogos']}" icon="pi pi-book">
+                        <p:menuitem value="#{msg['tipoMedioContacto.titulo']}" outcome="/paginas/TipoMedioContacto"/>
+                        <p:menuitem value="#{msg['tipoDocumento.titulo']}" outcome="/paginas/TipoDocumento"/>
+                        <p:menuitem value="#{msg['tipoExamen.titulo']}" outcome="/paginas/TipoExamen"/>
+                        <p:menuitem value="#{msg['examen.titulo']}" outcome="/paginas/Examen"/>
+                        <p:menuitem value="Procedimientos" outcome="/paginas/Procedimiento"/>
+                    </p:submenu>
+                    <p:submenu label="#{msg['menu.clinica']}" icon="pi pi-building">
+                        <p:menuitem value="Cambiar de Rol" outcome="/paginas/ClinicaTrabajo"/>
+                        <p:menuitem value="#{msg['clinica.titulo']}" outcome="/paginas/Clinica"/>
+                        <p:menuitem value="#{msg['rol.titulo']}" outcome="/paginas/Rol"/>
+                    </p:submenu>
+                    <p:submenu label="#{msg['menu.personas']}" icon="pi pi-users">
+                        <p:menuitem value="Personas" outcome="/paginas/Persona"/>
+                        <p:menuitem value="#{msg['personaRol.titulo']}" outcome="/paginas/PersonaRol"/>
+                    </p:submenu>
+                    <p:submenu label="Atención" icon="pi pi-heart">
+                        <p:menuitem value="Consultas" outcome="/paginas/Consulta"/>
+                        <p:menuitem value="#{msg['ordenExamen.titulo']}" outcome="/paginas/OrdenExamen"/>
+                        <p:menuitem value="#{msg['examenResultado.titulo']}" outcome="/paginas/ExamenResultado"/>
+                    </p:submenu>
+                </p:panelMenu>
+            </h:form>
+        </p:sidebar>
+
+        <main class="video-content">
+            <p:growl id="avisos" showDetail="true" life="4000"/>
+            <ui:insert name="contenido"><h:outputText value="#{msg['layout.sinContenido']}"/></ui:insert>
+        </main>
+        <footer class="video-footer"><h:outputText value="#{msg['layout.footer']}"/></footer>
+    </div>
+    <ui:insert name="extras"/>
+</h:body>
 </html>
 </f:view>

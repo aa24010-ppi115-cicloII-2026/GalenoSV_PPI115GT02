@@ -60,7 +60,8 @@
                         <p:outputLabel for="cmbPersona" value="#{msg['personaRol.form.persona']} *"/>
                         <p:selectOneMenu id="cmbPersona" value="#{personaRolModel.idPersonaSeleccionada}"
                                          style="width:300px" required="true"
-                                         requiredMessage="#{msg['personaRol.seleccione.persona']}">
+                                         requiredMessage="#{msg['personaRol.seleccione.persona']}"
+                                         disabled="#{personaRolModel.estado eq 'MODIFICAR'}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{personaRolModel.personas}" var="p"
                                            itemLabel="#{p.nombres} #{p.apellidos}"
@@ -70,7 +71,8 @@
                         <p:outputLabel for="cmbRol" value="#{msg['personaRol.form.rol']} *"/>
                         <p:selectOneMenu id="cmbRol" value="#{personaRolModel.idRolSeleccionado}"
                                          style="width:300px" required="true"
-                                         requiredMessage="#{msg['personaRol.seleccione.rol']}">
+                                         requiredMessage="#{msg['personaRol.seleccione.rol']}"
+                                         disabled="#{personaRolModel.estado eq 'MODIFICAR'}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{personaRolModel.roles}" var="r"
                                            itemLabel="#{r.nombre}" itemValue="#{r.idRol}"/>
@@ -79,7 +81,8 @@
                         <p:outputLabel for="cmbClinica" value="#{msg['personaRol.form.clinica']} *"/>
                         <p:selectOneMenu id="cmbClinica" value="#{personaRolModel.idClinicaSeleccionada}"
                                          style="width:300px" required="true"
-                                         requiredMessage="#{msg['personaRol.seleccione.clinica']}">
+                                         requiredMessage="#{msg['personaRol.seleccione.clinica']}"
+                                         disabled="#{personaRolModel.estado eq 'MODIFICAR'}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{personaRolModel.clinicas}" var="c"
                                            itemLabel="#{c.nombre}" itemValue="#{c.idClinica}"/>

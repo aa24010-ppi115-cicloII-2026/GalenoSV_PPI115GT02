@@ -40,6 +40,12 @@ public class TipoMedioContactoDAO extends DefaultDAO<TipoMedioContacto> {
         return q.getSingleResult() > 0;
     }
 
+    public List<TipoMedioContacto> findActivos() {
+        return getEntityManager().createQuery(
+                "SELECT t FROM TipoMedioContacto t WHERE t.activo = TRUE ORDER BY t.nombre",
+                TipoMedioContacto.class).getResultList();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

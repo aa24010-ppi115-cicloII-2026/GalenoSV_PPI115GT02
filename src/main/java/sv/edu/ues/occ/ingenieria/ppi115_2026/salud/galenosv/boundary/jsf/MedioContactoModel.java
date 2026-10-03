@@ -188,8 +188,8 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
         }
         registro.setIdPersona(personaDAO.find(UUID.fromString(idPersonaSeleccionada)));
         TipoMedioContacto tipo = tipoMedioContactoDAO.find(UUID.fromString(idTipoMedioContactoSeleccionado));
-        if (tipo == null) {
-            throw new IllegalArgumentException("El tipo seleccionado ya no existe");
+        if (tipo == null || !Boolean.TRUE.equals(tipo.getActivo())) {
+            throw new IllegalArgumentException("Solo se pueden asignar tipos de medio de contacto activos");
         }
         sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
                 registro.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
@@ -236,7 +236,7 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
     }
 
     public List<TipoMedioContacto> getTiposMedioContacto() {
-        return tipoMedioContactoDAO.findAll();
+        return tipoMedioContactoDAO.findActivos();
     }
 
     public String getIdPersonaSeleccionada() {

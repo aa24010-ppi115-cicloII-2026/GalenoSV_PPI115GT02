@@ -245,8 +245,16 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
             throw new IllegalArgumentException("Debe seleccionar una clinica");
         }
         registro.setIdPersona(personaDAO.find(UUID.fromString(idPersonaSeleccionada)));
-        registro.setIdRol(rolDAO.find(UUID.fromString(idRolSeleccionado)));
-        registro.setIdClinica(clinicaDAO.find(UUID.fromString(idClinicaSeleccionada)));
+        Rol rol = rolDAO.find(UUID.fromString(idRolSeleccionado));
+        Clinica clinica = clinicaDAO.find(UUID.fromString(idClinicaSeleccionada));
+        if (rol == null || !Boolean.TRUE.equals(rol.getActivo())) {
+            throw new IllegalArgumentException("Solo se pueden asignar roles activos");
+        }
+        if (clinica == null || !Boolean.TRUE.equals(clinica.getActivo())) {
+            throw new IllegalArgumentException("Solo se pueden asignar clínicas activas");
+        }
+        registro.setIdRol(rol);
+        registro.setIdClinica(clinica);
     }
 
     private void sincronizarSeleccion() {
@@ -287,11 +295,11 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
     }
 
     public List<Rol> getRoles() {
-        return rolDAO.findAll();
+        return rolDAO.findActivos();
     }
 
     public List<Clinica> getClinicas() {
-        return clinicaDAO.findAll();
+        return clinicaDAO.findActivas();
     }
 
     public String getIdPersonaSeleccionada() {

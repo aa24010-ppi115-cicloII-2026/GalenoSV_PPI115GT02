@@ -37,12 +37,14 @@
                         <p:outputLabel for="txtId" value="#{msg['medioContacto.form.id']}"/>
                         <p:inputText id="txtId" value="#{medioContactoModel.registro.idMedioContacto}" size="50" disabled="true"/>
                         <p:outputLabel for="cmbPersona" value="#{msg['medioContacto.form.persona']}"/>
-                        <p:selectOneMenu id="cmbPersona" value="#{medioContactoModel.idPersonaSeleccionada}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
+                        <p:selectOneMenu id="cmbPersona" value="#{medioContactoModel.idPersonaSeleccionada}" required="true" requiredMessage="#{msg['validacion.seleccione']}"
+                                         disabled="#{medioContactoModel.estado eq 'MODIFICAR'}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{medioContactoModel.personas}" var="p" itemLabel="#{p.nombres} #{p.apellidos}" itemValue="#{p.idPersona}"/>
                         </p:selectOneMenu>
                         <p:outputLabel for="cmbTipo" value="#{msg['medioContacto.form.tipoMedioContacto']}"/>
-                        <p:selectOneMenu id="cmbTipo" value="#{medioContactoModel.idTipoMedioContactoSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
+                        <p:selectOneMenu id="cmbTipo" value="#{medioContactoModel.idTipoMedioContactoSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}"
+                                         disabled="#{medioContactoModel.estado eq 'MODIFICAR'}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{medioContactoModel.tiposMedioContacto}" var="t" itemLabel="#{t.nombre}" itemValue="#{t.idTipoMedioContacto}"/>
                         </p:selectOneMenu>

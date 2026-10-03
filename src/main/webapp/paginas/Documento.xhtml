@@ -37,12 +37,14 @@
                         <p:outputLabel for="txtId" value="#{msg['documento.form.id']}"/>
                         <p:inputText id="txtId" value="#{documentoModel.registro.idDocumento}" size="50" disabled="true"/>
                         <p:outputLabel for="cmbPersona" value="#{msg['documento.form.persona']}"/>
-                        <p:selectOneMenu id="cmbPersona" value="#{documentoModel.idPersonaSeleccionada}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
+                        <p:selectOneMenu id="cmbPersona" value="#{documentoModel.idPersonaSeleccionada}" required="true" requiredMessage="#{msg['validacion.seleccione']}"
+                                         disabled="#{documentoModel.estado eq 'MODIFICAR'}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{documentoModel.personas}" var="p" itemLabel="#{p.nombres} #{p.apellidos}" itemValue="#{p.idPersona}"/>
                         </p:selectOneMenu>
                         <p:outputLabel for="cmbTipo" value="#{msg['documento.form.tipoDocumento']}"/>
-                        <p:selectOneMenu id="cmbTipo" value="#{documentoModel.idTipoDocumentoSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
+                        <p:selectOneMenu id="cmbTipo" value="#{documentoModel.idTipoDocumentoSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}"
+                                         disabled="#{documentoModel.estado eq 'MODIFICAR'}">
                             <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
                             <f:selectItems value="#{documentoModel.tiposDocumento}" var="t" itemLabel="#{t.nombre}" itemValue="#{t.idTipoDocumento}"/>
                         </p:selectOneMenu>

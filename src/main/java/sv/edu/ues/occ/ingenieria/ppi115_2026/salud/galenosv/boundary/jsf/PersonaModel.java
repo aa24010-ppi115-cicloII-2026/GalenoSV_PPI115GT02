@@ -7,6 +7,8 @@ import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +35,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoMedioCont
 public class PersonaModel extends AbstractModel<Persona> implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private static final ZoneId ZONA_LOCAL = ZoneId.of("America/El_Salvador");
 
     @Inject
     FacesContext facesContext;
@@ -57,6 +60,9 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
 
     @Inject
     DocumentoDAO documentoDAO;
+
+    @Inject
+    DocumentoModel documentoModel;
 
     // Para la pestaña 1 (Roles)
     private PersonaRol nuevoRol;
@@ -245,8 +251,11 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             }
             Rol rol = rolDAO.find(UUID.fromString(idRolSeleccionado));
             Clinica clinica = clinicaDAO.find(UUID.fromString(idClinicaSeleccionadaRol));
-            if (rol == null || clinica == null) {
-                throw new IllegalArgumentException("El rol o la clínica seleccionada ya no existe");
+            if (rol == null || !Boolean.TRUE.equals(rol.getActivo())) {
+                throw new IllegalArgumentException("Solo se pueden asignar roles activos");
+            }
+            if (clinica == null || !Boolean.TRUE.equals(clinica.getActivo())) {
+                throw new IllegalArgumentException("Solo se pueden asignar clínicas activas");
             }
             nuevoRol.setIdRol(rol);
             nuevoRol.setIdClinica(clinica);
@@ -280,8 +289,11 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             }
             Rol rol = rolDAO.find(UUID.fromString(idRolSeleccionado));
             Clinica clinica = clinicaDAO.find(UUID.fromString(idClinicaSeleccionadaRol));
-            if (rol == null || clinica == null) {
-                throw new IllegalArgumentException("El rol o la clínica seleccionada ya no existe");
+            if (rol == null || !Boolean.TRUE.equals(rol.getActivo())) {
+                throw new IllegalArgumentException("Solo se pueden asignar roles activos");
+            }
+            if (clinica == null || !Boolean.TRUE.equals(clinica.getActivo())) {
+                throw new IllegalArgumentException("Solo se pueden asignar clínicas activas");
             }
             nuevoRol.setIdRol(rol);
             nuevoRol.setIdClinica(clinica);
@@ -363,8 +375,8 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
                 throw new IllegalArgumentException("El valor es requerido");
             }
             TipoMedioContacto tipo = tipoMedioContactoDAO.find(UUID.fromString(idTipoMedioContactoSeleccionado));
-            if (tipo == null) {
-                throw new IllegalArgumentException("El tipo de medio seleccionado ya no existe");
+            if (tipo == null || !Boolean.TRUE.equals(tipo.getActivo())) {
+                throw new IllegalArgumentException("Solo se pueden asignar tipos de medio de contacto activos");
             }
             sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
                     nuevoMedioContacto.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
@@ -407,8 +419,8 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
                 throw new IllegalArgumentException("El valor es requerido");
             }
             TipoMedioContacto tipo = tipoMedioContactoDAO.find(UUID.fromString(idTipoMedioContactoSeleccionado));
-            if (tipo == null) {
-                throw new IllegalArgumentException("El tipo de medio seleccionado ya no existe");
+            if (tipo == null || !Boolean.TRUE.equals(tipo.getActivo())) {
+                throw new IllegalArgumentException("Solo se pueden asignar tipos de medio de contacto activos");
             }
             sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
                     nuevoMedioContacto.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
@@ -459,11 +471,11 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     // ─── LISTAS PARA COMBOS ──────────────────────────────────────────────────────
 
     public List<Rol> getRolesDisponibles() {
-        return rolDAO.findAll();
+        return rolDAO.findActivos();
     }
 
     public List<TipoMedioContacto> getTiposMedioContacto() {
-        return tipoMedioContactoDAO.findAll();
+        return tipoMedioContactoDAO.findActivos();
     }
 
     // Getters y Setters
@@ -476,7 +488,27 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     public void setIdClinicaSeleccionadaRol(String idClinicaSeleccionadaRol) { this.idClinicaSeleccionadaRol = idClinicaSeleccionadaRol; }
 
     public List<Clinica> getClinicas() {
-        return clinicaDAO.findAll();
+        return clinicaDAO.findActivas();
+    }
+
+    public LocalDate getFechaNacimiento() {
+        if (registro == null || registro.getFechaNacimiento() == null) {
+            return null;
+        }
+        return registro.getFechaNacimiento().atZoneSameInstant(ZONA_LOCAL).toLocalDate();
+    }
+
+    public void setFechaNacimiento(LocalDate fechaNacimiento) {
+        if (registro != null) {
+            registro.setFechaNacimiento(fechaNacimiento == null ? null
+                    : fechaNacimiento.atStartOfDay(ZONA_LOCAL).toOffsetDateTime());
+        }
+    }
+
+    public DocumentoModel getDocumentoModel() {
+        documentoModel.establecerPersonaMaestro(
+                estado == ESTADO_CRUD.MODIFICAR && registro != null ? registro.getIdPersona() : null);
+        return documentoModel;
     }
     public PersonaRol getRolSeleccionado() { return rolSeleccionado; }
     public void setRolSeleccionado(PersonaRol rolSeleccionado) { this.rolSeleccionado = rolSeleccionado; }

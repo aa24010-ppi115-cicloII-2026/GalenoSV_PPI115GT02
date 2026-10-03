@@ -185,8 +185,8 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
         }
         registro.setIdPersona(personaDAO.find(UUID.fromString(idPersonaSeleccionada)));
         TipoDocumento tipo = tipoDocumentoDAO.find(UUID.fromString(idTipoDocumentoSeleccionado));
-        if (tipo == null) {
-            throw new IllegalArgumentException("El tipo seleccionado ya no existe");
+        if (tipo == null || !Boolean.TRUE.equals(tipo.getActivo())) {
+            throw new IllegalArgumentException("Solo se pueden asignar tipos de documento activos");
         }
         sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato.validar(
                 registro.getValor(), tipo.getExpresionRegular(), tipo.getIndicaciones());
@@ -233,7 +233,7 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
     }
 
     public List<TipoDocumento> getTiposDocumento() {
-        return tipoDocumentoDAO.findAll();
+        return tipoDocumentoDAO.findActivos();
     }
 
     public String getIdPersonaSeleccionada() {

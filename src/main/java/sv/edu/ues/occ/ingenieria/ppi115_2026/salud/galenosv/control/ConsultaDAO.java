@@ -10,6 +10,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Consulta;
 
 /**
@@ -121,6 +122,31 @@ public class ConsultaDAO extends DefaultDAO<Consulta> {
         q.setParameter("id", idPersonaRol);
         q.setParameter("ahora", OffsetDateTime.now());
         return q.getResultList();
+    }
+
+    public List<Consulta> findByClinicaYFechas(UUID idClinica, OffsetDateTime desde,
+            OffsetDateTime hasta, int first, int max) {
+        if (idClinica == null || desde == null || hasta == null || first < 0 || max <= 0) {
+            return java.util.Collections.emptyList();
+        }
+        return getEntityManager().createQuery(
+                "SELECT c FROM Consulta c JOIN FETCH c.idPersonaRol pr "
+                        + "JOIN FETCH pr.idPersona JOIN FETCH pr.idRol JOIN FETCH pr.idClinica cli "
+                        + "WHERE cli.idClinica = :clinica AND c.fechaInicio >= :desde "
+                        + "AND c.fechaInicio < :hasta ORDER BY c.fechaInicio DESC", Consulta.class)
+                .setParameter("clinica", idClinica).setParameter("desde", desde)
+                .setParameter("hasta", hasta).setFirstResult(first).setMaxResults(max).getResultList();
+    }
+
+    public long countByClinicaYFechas(UUID idClinica, OffsetDateTime desde, OffsetDateTime hasta) {
+        if (idClinica == null || desde == null || hasta == null) {
+            return 0L;
+        }
+        return getEntityManager().createQuery(
+                "SELECT COUNT(c) FROM Consulta c WHERE c.idPersonaRol.idClinica.idClinica = :clinica "
+                        + "AND c.fechaInicio >= :desde AND c.fechaInicio < :hasta", Long.class)
+                .setParameter("clinica", idClinica).setParameter("desde", desde)
+                .setParameter("hasta", hasta).getSingleResult();
     }
 
 }

@@ -99,6 +99,34 @@ public class PersonaRolDAO extends DefaultDAO<PersonaRol> {
                 .setFirstResult(first).setMaxResults(max).getResultList();
     }
 
+    public List<PersonaRol> findActivosByClinica(UUID idClinica) {
+        if (idClinica == null) {
+            return java.util.Collections.emptyList();
+        }
+        return getEntityManager().createQuery(
+                "SELECT DISTINCT p FROM PersonaRol p "
+                        + "JOIN FETCH p.idPersona JOIN FETCH p.idRol r JOIN FETCH p.idClinica c "
+                        + "WHERE c.idClinica = :clinica AND c.activo = TRUE AND r.activo = TRUE "
+                        + "ORDER BY p.idPersona.apellidos, p.idPersona.nombres, r.nombre", PersonaRol.class)
+                .setParameter("clinica", idClinica).getResultList();
+    }
+
+    public List<PersonaRol> findPersonasAtendiblesByClinica(UUID idClinica) {
+        return findActivosByClinica(idClinica);
+    }
+
+    public List<PersonaRol> findResponsables(UUID idClinica, UUID idRol) {
+        if (idClinica == null || idRol == null) {
+            return java.util.Collections.emptyList();
+        }
+        return getEntityManager().createQuery(
+                "SELECT p FROM PersonaRol p JOIN FETCH p.idPersona JOIN FETCH p.idRol r JOIN FETCH p.idClinica c "
+                        + "WHERE c.idClinica = :clinica AND r.idRol = :rol "
+                        + "AND c.activo = TRUE AND r.activo = TRUE ORDER BY p.fechaCreacion, p.idPersonaRol",
+                PersonaRol.class)
+                .setParameter("clinica", idClinica).setParameter("rol", idRol).getResultList();
+    }
+
     public Long countByClinica(UUID id) {
         return getEntityManager().createQuery(
                 "SELECT COUNT(p) FROM PersonaRol p WHERE p.idClinica.idClinica = :id", Long.class)

@@ -1,300 +1,210 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
-                xmlns:f="jakarta.faces.core"
-                xmlns:h="jakarta.faces.html"
-                xmlns:p="http://primefaces.org/ui"
-                xmlns:ui="jakarta.faces.facelets"
-                xmlns:g="jakarta.faces.composite/crud"
+                xmlns:f="jakarta.faces.core" xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui" xmlns:ui="jakarta.faces.facelets"
                 template="../WEB-INF/plantillas/general.xhtml">
-
-    <ui:define name="titulo">#{msg['consulta.titulo']} - #{msg['sistema.titulo']}</ui:define>
-    <ui:define name="encabezado">#{msg['consulta.titulo']}</ui:define>
-
+    <ui:define name="titulo">Consultas - GalenoSV</ui:define>
+    <ui:define name="encabezado">Consultas</ui:define>
     <ui:define name="contenido">
-        <!-- Un solo formulario para que rowSelect actualice correctamente el detalle -->
         <h:form id="frmConsulta">
             <p:messages id="mensajes" showDetail="true" closable="true"/>
-
-            <!-- ===== TABLA PRINCIPAL (solo visible en estado NADA) ===== -->
-            <h:panelGroup id="pnlTabla" layout="block" rendered="#{consultaModel.estado eq 'NADA'}">
-                <h:panelGrid columns="1" style="width:100%">
-                    <g:botonesTop modelo="#{consultaModel}" actualizar=":frmConsulta"/>
-                    <p:dataTable id="tabla" value="#{consultaModel.modelo}" var="r" lazy="true"
+            <h:panelGroup id="contenidoConsulta" layout="block">
+                <h:panelGroup rendered="#{consultaModel.estado eq 'NADA'}">
+                    <div class="video-filterbar">
+                        <h:panelGrid columns="7">
+                            <h:outputText value="Clínica:"/>
+                            <h:outputText value="#{clinicaTrabajoBean.seleccionada ? clinicaTrabajoBean.clinicaActual.nombre : 'No seleccionada'}"
+                                          styleClass="#{clinicaTrabajoBean.seleccionada ? 'context-ok' : 'context-missing'}"/>
+                            <p:outputLabel for="fechaDesde" value="Fecha desde:"/>
+                            <p:datePicker id="fechaDesde" value="#{consultaModel.fechaDesde}" pattern="dd/MM/yyyy"/>
+                            <p:outputLabel for="fechaHasta" value="Fecha hasta:"/>
+                            <p:datePicker id="fechaHasta" value="#{consultaModel.fechaHasta}" pattern="dd/MM/yyyy"/>
+                            <p:commandButton value="Filtrar" icon="pi pi-filter"
+                                             actionListener="#{consultaModel.aplicarFiltros}"
+                                             process="fechaDesde fechaHasta"
+                                             update="contenidoConsulta mensajes"/>
+                        </h:panelGrid>
+                    </div>
+                    <p:dataTable value="#{consultaModel.modelo}" var="r" lazy="true"
                                  paginator="true" rows="#{consultaModel.cantidadRegistros}"
-                                 paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                 emptyMessage="No se encontraron consultas"
                                  selectionMode="single" selection="#{consultaModel.registro}"
                                  rowKey="#{r.idConsulta}">
                         <p:ajax event="rowSelect" listener="#{consultaModel.selectionHandler}"
-                                update=":frmConsulta"/>
-                        <p:column headerText="#{msg['consulta.tabla.paciente']}">
+                                update="contenidoConsulta mensajes"/>
+                        <p:column headerText="ID"><h:outputText value="#{r.idConsulta}"/></p:column>
+                        <p:column headerText="Paciente">
                             <h:outputText value="#{r.idPersonaRol.idPersona.nombres} #{r.idPersonaRol.idPersona.apellidos}"/>
                         </p:column>
-                        <p:column headerText="#{msg['consulta.tabla.fechaInicio']}">
-                            <h:outputText value="#{consultaModel.formatearFecha(r.fechaInicio)}"/>
-                        </p:column>
-                        <p:column headerText="#{msg['consulta.tabla.estado']}">
-                            <h:outputText value="#{empty r.fechaFin ? msg['consulta.estado.activa'] : msg['consulta.estado.finalizada']}"/>
-                        </p:column>
-                        <p:column headerText="#{msg['tabla.observaciones']}">
-                            <h:outputText value="#{r.observaciones}"/>
-                        </p:column>
+                        <p:column headerText="Información"><h:outputText value="#{r.idPersonaRol.idRol.nombre}"/></p:column>
+                        <p:column headerText="Fecha de Consulta"><h:outputText value="#{consultaModel.formatearFecha(r.fechaInicio)}"/></p:column>
+                        <p:column headerText="Fecha de Alta"><h:outputText value="#{consultaModel.formatearFecha(r.fechaFin)}"/></p:column>
+                        <p:column headerText="Referencia Externa"><h:outputText value="#{r.referenciaExterna}"/></p:column>
+                        <p:column headerText="Observaciones"><h:outputText value="#{r.observaciones}"/></p:column>
                     </p:dataTable>
+                    <div class="video-actions" style="margin-top:10px">
+                        <p:commandButton value="Nueva Consulta" icon="pi pi-plus"
+                                         actionListener="#{consultaModel.btnNuevoHandler}"
+                                         update="contenidoConsulta mensajes"/>
+                    </div>
+                </h:panelGroup>
+
+                <h:panelGroup rendered="#{consultaModel.estado ne 'NADA'}">
+                    <div class="video-actions">
+                        <p:commandButton value="Nueva Consulta" icon="pi pi-plus"
+                                         rendered="#{consultaModel.estado eq 'MODIFICAR'}"
+                                         actionListener="#{consultaModel.btnNuevoHandler}"
+                                         update="contenidoConsulta mensajes"/>
+                        <p:commandButton value="Cancelar Consulta" icon="pi pi-times"
+                                         actionListener="#{consultaModel.btnCancelarHandler}" immediate="true"
+                                         update="contenidoConsulta mensajes" styleClass="ui-button-secondary"/>
+                    </div>
+                    <p:tabView id="tabsConsulta">
+                        <p:tab title="Detalle">
+                            <h:panelGrid columns="3" cellpadding="4" styleClass="video-form-grid">
+                                <p:outputLabel for="consultaId" value="ID"/>
+                                <p:inputText id="consultaId" value="#{consultaModel.registro.idConsulta}"
+                                             size="52" disabled="true"/>
+                                <h:outputText/>
+
+                                <p:outputLabel for="consultaPaciente" value="Paciente *"/>
+                                <p:inputText id="consultaPaciente" value="#{consultaModel.nombrePacienteSeleccionado}"
+                                             size="38" readonly="true" required="true"/>
+                                <p:commandButton type="button" value="Buscar paciente" icon="pi pi-search"
+                                                 onclick="PF('dlgPacientes').show()"/>
+
+                                <p:outputLabel value="Por Nombre"/>
+                                <h:outputText value="#{consultaModel.nombrePacienteSeleccionado}"/>
+                                <h:outputText/>
+
+                                <p:outputLabel for="consultaInicio" value="Fecha Consulta"/>
+                                <p:inputText id="consultaInicio"
+                                             value="#{consultaModel.formatearFecha(consultaModel.registro.fechaInicio)}"
+                                             size="52" disabled="true"/>
+                                <h:outputText/>
+
+                                <p:outputLabel for="consultaFin" value="Fecha Alta"/>
+                                <p:inputText id="consultaFin"
+                                             value="#{consultaModel.formatearFecha(consultaModel.registro.fechaFin)}"
+                                             size="52" disabled="true"/>
+                                <h:outputText/>
+
+                                <p:outputLabel for="consultaReferencia" value="Referencia Externa"/>
+                                <p:inputTextarea id="consultaReferencia"
+                                                 value="#{consultaModel.registro.referenciaExterna}"
+                                                 rows="2" cols="50" maxlength="1000"/>
+                                <h:outputText/>
+
+                                <p:outputLabel for="consultaIndicaciones" value="Indicaciones"/>
+                                <p:inputTextarea id="consultaIndicaciones"
+                                                 value="#{consultaModel.registro.observaciones}"
+                                                 rows="4" cols="50" maxlength="1000"/>
+                                <h:outputText/>
+                            </h:panelGrid>
+                            <div class="video-actions">
+                                <p:commandButton value="Guardar Consulta" icon="pi pi-save"
+                                                 actionListener="#{consultaModel.btnGuardarHandler}"
+                                                 rendered="#{consultaModel.estado eq 'CREAR'}"
+                                                 process="@this consultaId consultaPaciente consultaReferencia consultaIndicaciones"
+                                                 update="contenidoConsulta mensajes :avisos"/>
+                                <p:commandButton value="Guardar Consulta" icon="pi pi-save"
+                                                 actionListener="#{consultaModel.btnModificarHandler}"
+                                                 rendered="#{consultaModel.estado eq 'MODIFICAR'}"
+                                                 process="@this consultaId consultaPaciente consultaReferencia consultaIndicaciones"
+                                                 update="contenidoConsulta mensajes :avisos"/>
+                            </div>
+                        </p:tab>
+
+                        <p:tab title="Procedimiento" disabled="#{consultaModel.estado eq 'CREAR'}">
+                            <h:panelGroup id="panelProcedimientos">
+                                <h:panelGrid columns="4" cellpadding="4" styleClass="video-form-grid">
+                                    <p:outputLabel for="procedimientoConsulta" value="Procedimiento *"/>
+                                    <p:selectOneMenu id="procedimientoConsulta"
+                                                     value="#{consultaModel.idProcedimientoSeleccionado}"
+                                                     required="true" style="width:330px"
+                                                     disabled="#{consultaModel.editandoProc}">
+                                        <f:selectItem itemLabel="Seleccione un procedimiento" itemValue=""/>
+                                        <f:selectItems value="#{consultaModel.procedimientos}" var="proc"
+                                                       itemLabel="#{proc.nombre}" itemValue="#{proc.idProcedimiento}"/>
+                                    </p:selectOneMenu>
+                                    <p:outputLabel for="observacionProcedimiento" value="Observaciones"/>
+                                    <p:inputText id="observacionProcedimiento"
+                                                 value="#{consultaModel.nuevoConsultaProcedimiento.observaciones}"
+                                                 size="35" maxlength="1000"/>
+                                </h:panelGrid>
+                                <div class="video-actions">
+                                    <p:commandButton value="Nuevo" icon="pi pi-plus"
+                                                     actionListener="#{consultaModel.agregarConsultaProcedimiento}"
+                                                     rendered="#{not consultaModel.editandoProc}"
+                                                     process="panelProcedimientos"
+                                                     update="panelProcedimientos mensajes :avisos"/>
+                                    <p:commandButton value="Guardar" icon="pi pi-save"
+                                                     actionListener="#{consultaModel.modificarConsultaProcedimiento}"
+                                                     rendered="#{consultaModel.editandoProc}"
+                                                     process="panelProcedimientos"
+                                                     update="panelProcedimientos mensajes :avisos"/>
+                                    <p:commandButton value="Cancelar" icon="pi pi-times"
+                                                     actionListener="#{consultaModel.cancelarEdicionProc}"
+                                                     rendered="#{consultaModel.editandoProc}"
+                                                     process="@this" update="panelProcedimientos"
+                                                     styleClass="ui-button-secondary"/>
+                                </div>
+
+                                <p:dataTable id="tablaProcedimientos"
+                                             value="#{consultaModel.consultaProcedimientosDeConsulta}" var="cp"
+                                             emptyMessage="No se encontraron procedimientos"
+                                             selectionMode="single" selection="#{consultaModel.procSeleccionado}"
+                                             rowKey="#{cp.idConsultaProcedimiento}">
+                                    <p:ajax event="rowSelect" listener="#{consultaModel.onProcSelect}"
+                                            update="panelProcedimientos"/>
+                                    <p:column headerText="ID"><h:outputText value="#{cp.idConsultaProcedimiento}"/></p:column>
+                                    <p:column headerText="Tipo"><h:outputText value="#{consultaModel.nombreProcedimiento(cp.idProcedimiento)}"/></p:column>
+                                    <p:column headerText="Fecha Inicio"><h:outputText value="#{consultaModel.formatearFecha(cp.fechaInicio)}"/></p:column>
+                                    <p:column headerText="Fecha Finalización"><h:outputText value="#{consultaModel.formatearFecha(cp.fechaFin)}"/></p:column>
+                                    <p:column headerText="Observaciones"><h:outputText value="#{cp.observaciones}"/></p:column>
+                                    <p:column headerText="Pasos">
+                                        <ul class="consulta-pasos">
+                                            <ui:repeat value="#{cp.consultaProcedimientoPasoList}" var="paso">
+                                                <li>
+                                                    <h:outputText value="#{consultaModel.nombrePasoInicial(cp)} (#{paso.estado}) - #{paso.idPersonaRol.idPersona.nombres} #{paso.idPersonaRol.idPersona.apellidos} (#{paso.idPersonaRol.idRol.nombre})"/>
+                                                </li>
+                                            </ui:repeat>
+                                        </ul>
+                                    </p:column>
+                                </p:dataTable>
+                            </h:panelGroup>
+                        </p:tab>
+                    </p:tabView>
+                </h:panelGroup>
+            </h:panelGroup>
+
+            <p:dialog header="Buscar paciente" widgetVar="dlgPacientes" modal="true"
+                      width="820" responsive="true">
+                <h:panelGrid columns="3" cellpadding="4">
+                    <p:outputLabel for="filtroPaciente" value="Nombre y apellido"/>
+                    <p:inputText id="filtroPaciente" value="#{consultaModel.filtroPaciente}" size="42"/>
+                    <p:commandButton value="Buscar" icon="pi pi-search"
+                                     process="filtroPaciente" update="tablaPacientes"/>
                 </h:panelGrid>
-            </h:panelGroup>
-
-            <!-- ===== DETALLE (visible en estado CREAR o MODIFICAR) ===== -->
-            <h:panelGroup id="pnlDetalle" layout="block" rendered="#{consultaModel.estado ne 'NADA'}">
-
-                <!-- PANEL MAESTRO: Datos de la Consulta -->
-                <p:panel header="#{msg['consulta.panel.maestro']}" style="margin-bottom:20px">
-                    <h:panelGrid columns="1" style="width:100%">
-                        <g:botonesTop modelo="#{consultaModel}" actualizar=":frmConsulta"/>
-                        <h:panelGrid columns="2" cellpadding="5">
-
-                            <p:outputLabel for="txtId" value="#{msg['consulta.form.id']}"/>
-                            <p:inputText id="txtId" value="#{consultaModel.registro.idConsulta}"
-                                         size="50" disabled="true"/>
-
-                            <p:outputLabel for="cmbPaciente" value="#{msg['consulta.form.paciente']}"/>
-                            <p:selectOneMenu id="cmbPaciente" value="#{consultaModel.idPersonaRolSeleccionado}"
-                                             required="true" requiredMessage="#{msg['consulta.paciente.requerido']}">
-                                <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
-                                <f:selectItems value="#{consultaModel.pacientes}" var="pr"
-                                               itemLabel="#{pr.idPersona.nombres} #{pr.idPersona.apellidos} - #{pr.idRol.nombre}"
-                                               itemValue="#{pr.idPersonaRol}"/>
-                            </p:selectOneMenu>
-
-                            <p:outputLabel for="txtFechaInicio" value="#{msg['consulta.form.fechaInicio']}"/>
-                            <p:inputText id="txtFechaInicio"
-                                         value="#{consultaModel.formatearFecha(consultaModel.registro.fechaInicio)}"
-                                         size="50" disabled="true"/>
-
-                            <p:outputLabel for="txtReferencia" value="#{msg['consulta.form.referenciaExterna']}"/>
-                            <p:inputTextarea id="txtReferencia" value="#{consultaModel.registro.referenciaExterna}"
-                                             rows="2" cols="50" maxlength="1000"/>
-
-                            <p:outputLabel for="txtObservaciones" value="#{msg['consulta.form.observaciones']}"/>
-                            <p:inputTextarea id="txtObservaciones" value="#{consultaModel.registro.observaciones}"
-                                             rows="4" cols="50" maxlength="1000"/>
-                        </h:panelGrid>
-
-                        <h:panelGrid columns="#{consultaModel.estado eq 'CREAR' ? 1 : 2}">
-                            <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}"
-                                             actionListener="#{consultaModel.btnGuardarHandler}"
-                                             rendered="#{consultaModel.estado eq 'CREAR'}"
-                                             update=":frmConsulta" styleClass="ui-button-success"/>
-                            <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}"
-                                             actionListener="#{consultaModel.btnModificarHandler}"
-                                             rendered="#{consultaModel.estado eq 'MODIFICAR'}"
-                                             update=":frmConsulta" styleClass="ui-button-warning"/>
-                            <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}"
-                                             actionListener="#{consultaModel.btnEliminarHandler}"
-                                             rendered="#{consultaModel.estado eq 'MODIFICAR'}"
-                                             update=":frmConsulta" styleClass="ui-button-danger"/>
-                        </h:panelGrid>
-                    </h:panelGrid>
-                </p:panel>
-
-                <!-- PESTAÑAS DE DETALLES: solo en modo MODIFICAR -->
-                <p:tabView id="tabDetalles" rendered="#{consultaModel.estado eq 'MODIFICAR'}">
-
-                    <!-- ───── PESTAÑA 1: Procedimientos realizados en esta consulta ───── -->
-                    <p:tab title="#{msg['consulta.tab.procedimientos']}">
-                        <h:panelGroup id="panelNuevoProc" style="margin-bottom:10px; display:block;">
-                            <h:panelGrid columns="7" cellpadding="5">
-                                <p:outputLabel value="#{msg['procedimiento.titulo']}:"/>
-                                <p:selectOneMenu value="#{consultaModel.idProcedimientoSeleccionado}" style="width:180px" required="true" requiredMessage="#{msg['consulta.seleccione.procedimiento']}">
-                                    <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
-                                    <f:selectItems value="#{consultaModel.procedimientos}" var="proc"
-                                                   itemLabel="#{proc.nombre}" itemValue="#{proc.idProcedimiento}"/>
-                                </p:selectOneMenu>
-
-                                <p:outputLabel value="#{msg['tabla.observaciones']}:"/>
-                                <p:inputTextarea value="#{consultaModel.nuevoConsultaProcedimiento.observaciones}" rows="1" cols="30" maxlength="1000"/>
-
-                                <p:commandButton value="#{msg['boton.agregar']}" icon="pi pi-plus"
-                                                 actionListener="#{consultaModel.agregarConsultaProcedimiento()}"
-                                                 process="panelNuevoProc"
-                                                 update="panelNuevoProc tablaProcs :frmConsulta:mensajes @([id$=idConsultaProcedimientoSeleccionado]) :avisos"
-                                                 rendered="#{not consultaModel.editandoProc}"/>
-                                <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
-                                                 actionListener="#{consultaModel.modificarConsultaProcedimiento()}"
-                                                 process="panelNuevoProc"
-                                                 update="panelNuevoProc tablaProcs :frmConsulta:mensajes @([id$=idConsultaProcedimientoSeleccionado]) :avisos"
-                                                 styleClass="ui-button-warning" rendered="#{consultaModel.editandoProc}"/>
-                                <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
-                                                 actionListener="#{consultaModel.cancelarEdicionProc()}"
-                                                 process="@this" update="panelNuevoProc tablaProcs"
-                                                 styleClass="ui-button-secondary" rendered="#{consultaModel.editandoProc}"/>
-                            </h:panelGrid>
-                        </h:panelGroup>
-
-                        <p:dataTable id="tablaProcs"
-                                     value="#{consultaModel.consultaProcedimientosDeConsulta}"
-                                     var="cp" emptyMessage="#{msg['tabla.sinRegistros']}"
-                                     selectionMode="single" selection="#{consultaModel.procSeleccionado}"
-                                     rowKey="#{cp.idConsultaProcedimiento}">
-                            <p:ajax event="rowSelect" listener="#{consultaModel.onProcSelect}" update="panelNuevoProc"/>
-                            <p:column headerText="#{msg['procedimiento.titulo']}">
-                                <h:outputText value="#{consultaModel.nombreProcedimiento(cp.idProcedimiento)}"/>
-                            </p:column>
-                            <p:column headerText="#{msg['consulta.tabla.fechaInicio']}">
-                                <h:outputText value="#{consultaModel.formatearFecha(cp.fechaInicio)}"/>
-                            </p:column>
-                            <p:column headerText="#{msg['tabla.observaciones']}">
-                                <h:outputText value="#{cp.observaciones}"/>
-                            </p:column>
-                            <p:column headerText="#{msg['tabla.accion']}" style="width:80px;text-align:center">
-                                <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger"
-                                                 actionListener="#{consultaModel.eliminarConsultaProcedimiento(cp)}"
-                                                 process="@this" update="tablaProcs panelNuevoProc :frmConsulta:mensajes @([id$=idConsultaProcedimientoSeleccionado]) :avisos">
-                                    <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
-                                </p:commandButton>
-                            </p:column>
-                        </p:dataTable>
-                    </p:tab>
-
-                    
-                    <!-- ───── PESTAÑA 2: Pasos de Procedimientos ───── -->
-                    <p:tab title="#{msg['consulta.tab.pasos']}">
-                        <h:panelGroup id="panelNuevoPaso" style="margin-bottom:10px; display:block;">
-                            <h:panelGrid columns="9" cellpadding="5">
-                                <p:outputLabel value="#{msg['procedimiento.titulo']}:"/>
-                                <p:selectOneMenu value="#{consultaModel.idConsultaProcedimientoSeleccionado}" style="width:180px" required="true" requiredMessage="#{msg['consulta.seleccione.procedimiento']}">
-                                    <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
-                                    <f:selectItems value="#{consultaModel.consultaProcedimientosDeConsulta}" var="cp"
-                                                   itemLabel="#{consultaModel.nombreProcedimiento(cp.idProcedimiento)}" itemValue="#{cp.idConsultaProcedimiento}"/>
-                                </p:selectOneMenu>
-
-                                <p:outputLabel value="#{msg['consulta.form.medico']}:"/>
-                                <p:selectOneMenu value="#{consultaModel.idPersonaRolPasoSeleccionado}" style="width:150px" required="true" requiredMessage="#{msg['consulta.seleccione.medico']}">
-                                    <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
-                                    <f:selectItems value="#{consultaModel.personalMedico}" var="med"
-                                                   itemLabel="#{med.idPersona.nombres}" itemValue="#{med.idPersonaRol}"/>
-                                </p:selectOneMenu>
-
-                                <p:outputLabel value="#{msg['consultaProcedimientoPaso.tabla.estado']}:"/>
-                                <p:selectOneMenu value="#{consultaModel.nuevoConsultaProcedimientoPaso.estado}" style="width:130px">
-                                    <f:selectItem itemLabel="#{msg['consultaProcedimientoPaso.estado.pendiente']}" itemValue="PENDIENTE"/>
-                                    <f:selectItem itemLabel="#{msg['consultaProcedimientoPaso.estado.enProceso']}" itemValue="EN PROCESO"/>
-                                    <f:selectItem itemLabel="#{msg['consultaProcedimientoPaso.estado.realizado']}" itemValue="REALIZADO"/>
-                                    <f:selectItem itemLabel="#{msg['consultaProcedimientoPaso.estado.cancelado']}" itemValue="CANCELADO"/>
-                                </p:selectOneMenu>
-
-                                <p:commandButton value="#{msg['boton.agregar']}" icon="pi pi-plus"
-                                                 actionListener="#{consultaModel.agregarConsultaProcedimientoPaso()}"
-                                                 process="panelNuevoPaso"
-                                                 update="panelNuevoPaso tablaPasos :frmConsulta:mensajes @([id$=cmbPasoParaOrden]) :avisos"
-                                                 rendered="#{not consultaModel.editandoPaso}"/>
-                                <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
-                                                 actionListener="#{consultaModel.modificarConsultaProcedimientoPaso()}"
-                                                 process="panelNuevoPaso"
-                                                 update="panelNuevoPaso tablaPasos :frmConsulta:mensajes @([id$=cmbPasoParaOrden]) :avisos"
-                                                 styleClass="ui-button-warning" rendered="#{consultaModel.editandoPaso}"/>
-                                <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
-                                                 actionListener="#{consultaModel.cancelarEdicionPaso()}"
-                                                 process="@this" update="panelNuevoPaso tablaPasos"
-                                                 styleClass="ui-button-secondary" rendered="#{consultaModel.editandoPaso}"/>
-                            </h:panelGrid>
-                        </h:panelGroup>
-
-                        <p:dataTable id="tablaPasos"
-                                     value="#{consultaModel.pasosDeConsulta}"
-                                     var="paso" emptyMessage="#{msg['tabla.sinRegistros']}"
-                                     selectionMode="single" selection="#{consultaModel.pasoSeleccionado}"
-                                     rowKey="#{paso.idConsultaProcedimientoPaso}">
-                            <p:ajax event="rowSelect" listener="#{consultaModel.onPasoSelect}" update="panelNuevoPaso"/>
-                            <p:column headerText="#{msg['procedimiento.titulo']}">
-                                <h:outputText value="#{consultaModel.nombreProcedimiento(paso.idConsultaProcedimiento.idProcedimiento)}"/>
-                            </p:column>
-                            <p:column headerText="#{msg['consultaProcedimientoPaso.tabla.fechaInicio']}">
-                                <h:outputText value="#{consultaModel.formatearFecha(paso.fechaInicio)}"/>
-                            </p:column>
-                            <p:column headerText="#{msg['consultaProcedimientoPaso.tabla.estado']}">
-                                <h:outputText value="#{paso.estado}"/>
-                            </p:column>
-                            <p:column headerText="#{msg['consulta.form.medico']}">
-                                <h:outputText value="#{paso.idPersonaRol.idPersona.nombres}"/>
-                            </p:column>
-                            <p:column headerText="#{msg['tabla.accion']}" style="width:80px;text-align:center">
-                                <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger"
-                                                 actionListener="#{consultaModel.eliminarConsultaProcedimientoPaso(paso)}"
-                                                 process="@this" update="tablaPasos panelNuevoPaso :frmConsulta:mensajes @([id$=cmbPasoParaOrden]) :avisos">
-                                    <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
-                                </p:commandButton>
-                            </p:column>
-                        </p:dataTable>
-                    </p:tab>
-
-
-                    <!-- ───── PESTAÑA 3: Órdenes de exámenes ───── -->
-                    <p:tab title="#{msg['consulta.tab.ordenes']}">
-                        <h:panelGroup id="panelNuevaOrden" style="margin-bottom:10px; display:block;">
-                            <h:panelGrid columns="7" cellpadding="5">
-                                <p:outputLabel value="#{msg['consulta.form.pasoProcedimiento']}:"/>
-                                <p:selectOneMenu id="cmbPasoParaOrden" value="#{consultaModel.idConsultaProcedimientoPasoSeleccionado}" style="width:250px" required="true" requiredMessage="#{msg['consulta.seleccione.paso']}">
-                                    <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
-                                    <f:selectItems value="#{consultaModel.pasosDeConsulta}" var="paso"
-                                                   itemLabel="#{consultaModel.nombreProcedimiento(paso.idConsultaProcedimiento.idProcedimiento)} - #{paso.estado}"
-                                                   itemValue="#{paso.idConsultaProcedimientoPaso}"/>
-                                </p:selectOneMenu>
-
-                                <p:outputLabel value="#{msg['ordenExamen.form.indicaciones']}:"/>
-                                <p:inputTextarea value="#{consultaModel.nuevoOrdenExamen.indicaciones}" rows="1" cols="30" maxlength="1000"/>
-
-                                <p:commandButton value="#{msg['consulta.boton.agregarOrden']}" icon="pi pi-plus"
-                                                 actionListener="#{consultaModel.agregarOrdenExamen()}"
-                                                 process="panelNuevaOrden"
-                                                 update="panelNuevaOrden tablaOrdenes :frmConsulta:mensajes :avisos"
-                                                 rendered="#{not consultaModel.editandoOrden}"/>
-                                <p:commandButton value="#{msg['boton.guardar']}" icon="pi pi-pencil"
-                                                 actionListener="#{consultaModel.modificarOrdenExamen()}"
-                                                 process="panelNuevaOrden"
-                                                 update="panelNuevaOrden tablaOrdenes :frmConsulta:mensajes :avisos"
-                                                 styleClass="ui-button-warning" rendered="#{consultaModel.editandoOrden}"/>
-                                <p:commandButton value="#{msg['boton.cancelar']}" icon="pi pi-times"
-                                                 actionListener="#{consultaModel.cancelarEdicionOrden()}"
-                                                 process="@this" update="panelNuevaOrden tablaOrdenes"
-                                                 styleClass="ui-button-secondary" rendered="#{consultaModel.editandoOrden}"/>
-                            </h:panelGrid>
-                        </h:panelGroup>
-
-                        <p:dataTable id="tablaOrdenes"
-                                     value="#{consultaModel.ordenesDeConsulta}"
-                                     var="oe" emptyMessage="#{msg['tabla.sinRegistros']}"
-                                     selectionMode="single" selection="#{consultaModel.ordenSeleccionada}"
-                                     rowKey="#{oe.idOrdenExamen}">
-                            <p:ajax event="rowSelect" listener="#{consultaModel.onOrdenSelect}" update="panelNuevaOrden"/>
-                            <p:column headerText="#{msg['ordenExamen.tabla.fechaCreacion']}">
-                                <h:outputText value="#{consultaModel.formatearFecha(oe.fechaCreacion)}"/>
-                            </p:column>
-                            <p:column headerText="#{msg['ordenExamen.tabla.consultaProcedimientoPaso']}">
-                                <h:outputText value="#{consultaModel.nombreProcedimiento(oe.idConsultaProcedimientoPaso.idConsultaProcedimiento.idProcedimiento)} - #{oe.idConsultaProcedimientoPaso.estado}"/>
-                            </p:column>
-                            <p:column headerText="#{msg['ordenExamen.tabla.indicaciones']}">
-                                <h:outputText value="#{oe.indicaciones}"/>
-                            </p:column>
-                            <p:column headerText="#{msg['tabla.accion']}" style="width:80px;text-align:center">
-                                <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger"
-                                                 actionListener="#{consultaModel.eliminarOrdenExamen(oe)}"
-                                                 process="@this" update="tablaOrdenes panelNuevaOrden :frmConsulta:mensajes :avisos">
-                                    <p:confirm header="#{msg['confirm.titulo']}" message="#{msg['confirm.eliminar']}" icon="pi pi-info-circle"/>
-                                </p:commandButton>
-                            </p:column>
-                        </p:dataTable>
-                    </p:tab>
-
-
-                </p:tabView>
-
-                <!-- Confirm Dialog global -->
-                <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
-                    <p:commandButton value="#{msg['confirm.no']}" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
-                    <p:commandButton value="#{msg['confirm.si']}" type="button" styleClass="ui-confirmdialog-yes"/>
-                </p:confirmDialog>
-
-            </h:panelGroup>
-
+                <p:dataTable id="tablaPacientes" value="#{consultaModel.pacientesFiltrados}" var="paciente"
+                             emptyMessage="No se encontraron pacientes" paginator="true" rows="8">
+                    <p:column headerText="Persona">
+                        <h:outputText value="#{paciente.idPersona.nombres} #{paciente.idPersona.apellidos}"/>
+                    </p:column>
+                    <p:column headerText="Fecha de nacimiento">
+                        <h:outputText value="#{fechaBean.fecha(paciente.idPersona.fechaNacimiento)}"/>
+                    </p:column>
+                    <p:column headerText="Documentos">
+                        <h:outputText value="#{consultaModel.documentosPaciente(paciente)}"/>
+                    </p:column>
+                    <p:column style="width:105px">
+                        <p:commandButton value="Seleccionar"
+                                         actionListener="#{consultaModel.seleccionarPaciente(paciente)}"
+                                         process="@this" update=":frmConsulta:tabsConsulta:consultaPaciente"
+                                         oncomplete="PF('dlgPacientes').hide()"/>
+                    </p:column>
+                </p:dataTable>
+            </p:dialog>
         </h:form>
     </ui:define>
 </ui:composition>

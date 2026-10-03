@@ -231,6 +231,9 @@ public class ExamenTipoExamenModel extends AbstractModel<ExamenTipoExamen> imple
         if (tipoExamen == null) {
             tipoExamen = tipoExamenDAO.find(UUID.fromString(idTipoExamenSeleccionado));
         }
+        if (tipoExamen == null || !Boolean.TRUE.equals(tipoExamen.getActivo())) {
+            throw new IllegalArgumentException("Solo se pueden asignar tipos de examen activos");
+        }
         registro.setIdExamen(examen);
         registro.setIdTipoExamen(tipoExamen);
     }
@@ -256,7 +259,7 @@ public class ExamenTipoExamenModel extends AbstractModel<ExamenTipoExamen> imple
 
     public List<TipoExamen> buscarTipoPorNombre(String filtro) {
         try {
-            return tipoExamenDAO.findByNombreLike(filtro, 0, 30);
+            return tipoExamenDAO.findActivosByNombreLike(filtro, 0, 30);
         } catch (Exception e) {
             getFacesContext().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_WARN, "Atencion", "Ingrese al menos tres caracteres"));
@@ -269,7 +272,7 @@ public class ExamenTipoExamenModel extends AbstractModel<ExamenTipoExamen> imple
     }
 
     public List<TipoExamen> getTiposExamen() {
-        return tipoExamenDAO.findAll();
+        return tipoExamenDAO.findActivos();
     }
 
     public String getIdExamenSeleccionado() {

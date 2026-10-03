@@ -33,6 +33,19 @@ public class ProcedimientoPasoDAO extends DefaultDAO<ProcedimientoPaso> {
                 .setParameter("id", id).setMaxResults(1000).getResultList();
     }
 
+    public java.util.List<ProcedimientoPaso> findInicialesByProcedimiento(java.util.UUID idProcedimiento) {
+        if (idProcedimiento == null) {
+            return java.util.Collections.emptyList();
+        }
+        return getEntityManager().createQuery(
+                "SELECT p FROM ProcedimientoPaso p LEFT JOIN FETCH p.idRol r "
+                        + "WHERE p.idProcedimiento.idProcedimiento = :procedimiento "
+                        + "AND NOT EXISTS (SELECT s.idProcedimientoPasoSecuencia "
+                        + "FROM ProcedimientoPasoSecuencia s WHERE s.idProcedimientoPaso = p) "
+                        + "ORDER BY p.nombre", ProcedimientoPaso.class)
+                .setParameter("procedimiento", idProcedimiento).getResultList();
+    }
+
     public Long countByProcedimiento(java.util.UUID id) {
         if (id == null) {
             return 0L;

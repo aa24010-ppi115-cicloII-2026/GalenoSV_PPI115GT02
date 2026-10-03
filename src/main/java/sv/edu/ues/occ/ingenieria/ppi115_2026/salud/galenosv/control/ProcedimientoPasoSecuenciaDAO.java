@@ -42,6 +42,19 @@ public class ProcedimientoPasoSecuenciaDAO extends DefaultDAO<ProcedimientoPasoS
                 .setParameter("id", id).getSingleResult();
     }
 
+    public java.util.List<ProcedimientoPasoSecuencia> findDependientes(java.util.UUID idPasoReferencia) {
+        if (idPasoReferencia == null) {
+            return java.util.Collections.emptyList();
+        }
+        return getEntityManager().createQuery(
+                "SELECT e FROM ProcedimientoPasoSecuencia e "
+                + "WHERE e.idProcedimientoPasoReferencia = :id ORDER BY e.idProcedimientoPasoSecuencia",
+                ProcedimientoPasoSecuencia.class)
+                .setParameter("id", idPasoReferencia)
+                .setMaxResults(1000)
+                .getResultList();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

@@ -60,6 +60,23 @@ public class TipoExamenDAO extends DefaultDAO<TipoExamen> {
         }
     }
 
+    public List<TipoExamen> findActivosByNombreLike(String filtro, int first, int max) {
+        if (filtro == null || filtro.trim().length() < 3 || first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Parametros invalidos para buscar tipo de examen");
+        }
+        return getEntityManager().createQuery(
+                "SELECT t FROM TipoExamen t WHERE t.activo = TRUE "
+                        + "AND UPPER(t.nombre) LIKE :nombre ORDER BY t.nombre", TipoExamen.class)
+                .setParameter("nombre", "%" + filtro.trim().toUpperCase() + "%")
+                .setFirstResult(first).setMaxResults(max).getResultList();
+    }
+
+    public List<TipoExamen> findActivos() {
+        return getEntityManager().createQuery(
+                "SELECT t FROM TipoExamen t WHERE t.activo = TRUE ORDER BY t.nombre",
+                TipoExamen.class).getResultList();
+    }
+
 
     public boolean existeNombre(String nombre, java.util.UUID excluirId) {
         if (nombre == null || nombre.isBlank()) {

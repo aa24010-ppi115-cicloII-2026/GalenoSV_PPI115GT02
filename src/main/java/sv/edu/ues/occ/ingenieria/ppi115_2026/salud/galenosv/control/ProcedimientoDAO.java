@@ -8,6 +8,7 @@ import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Procedimiento;
+import java.util.List;
 
 /**
  *
@@ -35,6 +36,12 @@ public class ProcedimientoDAO extends DefaultDAO<Procedimiento> {
             q.setParameter("excluir", excluirId);
         }
         return q.getSingleResult() > 0;
+    }
+
+    public List<Procedimiento> findActivos() {
+        return getEntityManager().createQuery(
+                "SELECT p FROM Procedimiento p WHERE p.activo = TRUE ORDER BY p.nombre",
+                Procedimiento.class).getResultList();
     }
 
     @Override

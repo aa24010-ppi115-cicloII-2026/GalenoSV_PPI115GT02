@@ -57,6 +57,12 @@ public class ClinicaDAO extends DefaultDAO<Clinica> {
         }
     }
 
+    public List<Clinica> findActivas() {
+        return getEntityManager().createQuery(
+                "SELECT c FROM Clinica c WHERE c.activo = TRUE ORDER BY c.nombre", Clinica.class)
+                .getResultList();
+    }
+
 
     public boolean existeNombre(String nombre, java.util.UUID excluirId) {
         if (nombre == null || nombre.isBlank()) {

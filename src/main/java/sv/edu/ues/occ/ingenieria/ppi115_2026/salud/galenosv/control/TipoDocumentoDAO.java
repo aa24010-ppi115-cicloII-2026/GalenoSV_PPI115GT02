@@ -55,6 +55,12 @@ public class TipoDocumentoDAO extends DefaultDAO<TipoDocumento> {
         return q.getSingleResult() > 0;
     }
 
+    public List<TipoDocumento> findActivos() {
+        return getEntityManager().createQuery(
+                "SELECT t FROM TipoDocumento t WHERE t.activo = TRUE ORDER BY t.nombre",
+                TipoDocumento.class).getResultList();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

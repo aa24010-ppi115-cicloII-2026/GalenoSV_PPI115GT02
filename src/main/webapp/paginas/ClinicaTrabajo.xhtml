@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:f="jakarta.faces.core"
+                xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="jakarta.faces.facelets"
+                template="../WEB-INF/plantillas/general.xhtml">
+    <ui:define name="titulo">Cambiar de Rol - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">Cambiar de Rol</ui:define>
+    <ui:define name="contenido">
+        <h:form id="frmClinicaTrabajo">
+            <p:messages showDetail="true" closable="true"/>
+            <div class="video-compact">
+                <h:panelGrid columns="2" cellpadding="8" styleClass="video-form-grid">
+                    <p:outputLabel for="clinica" value="Clínica *"/>
+                    <p:selectOneMenu id="clinica" value="#{clinicaTrabajoBean.idClinicaSeleccionada}"
+                                     required="true" style="width:360px">
+                        <f:selectItem itemLabel="Seleccione una clínica" itemValue=""/>
+                        <f:selectItems value="#{clinicaTrabajoBean.clinicas}" var="c"
+                                       itemLabel="#{c.nombre}" itemValue="#{c.idClinica}"/>
+                        <p:ajax listener="#{clinicaTrabajoBean.alCambiarClinica}" update="asignacion"/>
+                    </p:selectOneMenu>
+
+                    <p:outputLabel for="asignacion" value="Rol *"/>
+                    <p:selectOneMenu id="asignacion" value="#{clinicaTrabajoBean.idPersonaRolSeleccionado}"
+                                     required="true" style="width:360px">
+                        <f:selectItem itemLabel="Seleccione una persona y rol" itemValue=""/>
+                        <f:selectItems value="#{clinicaTrabajoBean.asignacionesDisponibles}" var="pr"
+                                       itemLabel="#{pr.idPersona.nombres} #{pr.idPersona.apellidos} - #{pr.idRol.nombre}"
+                                       itemValue="#{pr.idPersonaRol}"/>
+                    </p:selectOneMenu>
+                </h:panelGrid>
+                <p:commandButton value="Cambiar de Rol" icon="pi pi-check"
+                                 action="#{clinicaTrabajoBean.aplicar}" process="@form" update="@form :avisos"
+                                 style="margin-left:153px"/>
+            </div>
+        </h:form>
+    </ui:define>
+</ui:composition>
