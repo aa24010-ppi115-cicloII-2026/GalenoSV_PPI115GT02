@@ -287,11 +287,11 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
     }
 
     public List<Rol> getRoles() {
-        return rolDAO.findAll();
+        return rolDAO.findActivo();
     }
 
     public List<Clinica> getClinicas() {
-        return clinicaDAO.findAll();
+        return clinicaDAO.findActivo();
     }
 
     public String getIdPersonaSeleccionada() {

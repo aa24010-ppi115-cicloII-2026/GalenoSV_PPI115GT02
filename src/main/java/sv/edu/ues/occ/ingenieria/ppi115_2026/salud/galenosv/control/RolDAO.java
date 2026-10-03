@@ -55,6 +55,16 @@ public class RolDAO extends DefaultDAO<Rol> {
         return q.getSingleResult() > 0;
     }
 
+    public java.util.List<Rol> findActivo() {
+        try {
+            jakarta.persistence.TypedQuery<Rol> q = getEntityManager().createNamedQuery("Rol.findByActivo", Rol.class);
+            q.setParameter("activo", true);
+            return q.getResultList();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Error al buscar roles activos", ex);
+        }
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

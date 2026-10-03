@@ -55,6 +55,16 @@ public class TipoDocumentoDAO extends DefaultDAO<TipoDocumento> {
         return q.getSingleResult() > 0;
     }
 
+    public java.util.List<TipoDocumento> findActivo() {
+        try {
+            jakarta.persistence.TypedQuery<TipoDocumento> q = getEntityManager().createNamedQuery("TipoDocumento.findByActivo", TipoDocumento.class);
+            q.setParameter("activo", true);
+            return q.getResultList();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Error al buscar tipos de documento activos", ex);
+        }
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

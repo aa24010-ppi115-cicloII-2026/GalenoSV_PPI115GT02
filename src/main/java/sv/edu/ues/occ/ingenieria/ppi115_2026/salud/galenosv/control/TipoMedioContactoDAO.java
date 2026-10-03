@@ -80,6 +80,16 @@ public class TipoMedioContactoDAO extends DefaultDAO<TipoMedioContacto> {
         }
     }
 
+    public java.util.List<TipoMedioContacto> findActivo() {
+        try {
+            jakarta.persistence.TypedQuery<TipoMedioContacto> q = getEntityManager().createNamedQuery("TipoMedioContacto.findByActivo", TipoMedioContacto.class);
+            q.setParameter("activo", true);
+            return q.getResultList();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Error al buscar tipos de medio de contacto activos", ex);
+        }
+    }
+
     private List<TipoMedioContacto> convertirResultado(List<?> datos) {
         List<TipoMedioContacto> resultado = new ArrayList<>();
         for (Object dato : datos) {

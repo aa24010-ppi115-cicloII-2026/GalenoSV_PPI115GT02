@@ -74,6 +74,16 @@ public class TipoExamenDAO extends DefaultDAO<TipoExamen> {
         return q.getSingleResult() > 0;
     }
 
+    public java.util.List<TipoExamen> findActivo() {
+        try {
+            jakarta.persistence.TypedQuery<TipoExamen> q = getEntityManager().createNamedQuery("TipoExamen.findByActivo", TipoExamen.class);
+            q.setParameter("activo", true);
+            return q.getResultList();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Error al buscar tipos de examen activos", ex);
+        }
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

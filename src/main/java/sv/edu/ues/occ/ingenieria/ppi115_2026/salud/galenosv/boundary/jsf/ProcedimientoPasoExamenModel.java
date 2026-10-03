@@ -159,7 +159,7 @@ public class ProcedimientoPasoExamenModel extends AbstractModel<ProcedimientoPas
     }
 
     public List<Examen> getExamenes() {
-        return examenDAO.findAll();
+        return examenDAO.findActivo();
     }
 
     public String getIdProcedimientoPasoSeleccionado() {

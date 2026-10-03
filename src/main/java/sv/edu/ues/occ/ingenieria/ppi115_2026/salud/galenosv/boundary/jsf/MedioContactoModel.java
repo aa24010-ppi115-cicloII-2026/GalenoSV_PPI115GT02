@@ -236,7 +236,7 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
     }
 
     public List<TipoMedioContacto> getTiposMedioContacto() {
-        return tipoMedioContactoDAO.findAll();
+        return tipoMedioContactoDAO.findActivo();
     }
 
     public String getIdPersonaSeleccionada() {

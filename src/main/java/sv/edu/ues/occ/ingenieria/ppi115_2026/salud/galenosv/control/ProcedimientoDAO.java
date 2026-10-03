@@ -37,6 +37,16 @@ public class ProcedimientoDAO extends DefaultDAO<Procedimiento> {
         return q.getSingleResult() > 0;
     }
 
+    public java.util.List<Procedimiento> findActivo() {
+        try {
+            jakarta.persistence.TypedQuery<Procedimiento> q = getEntityManager().createNamedQuery("Procedimiento.findByActivo", Procedimiento.class);
+            q.setParameter("activo", true);
+            return q.getResultList();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Error al buscar procedimientos activos", ex);
+        }
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

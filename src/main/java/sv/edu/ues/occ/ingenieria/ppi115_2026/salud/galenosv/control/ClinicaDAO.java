@@ -71,6 +71,16 @@ public class ClinicaDAO extends DefaultDAO<Clinica> {
         return q.getSingleResult() > 0;
     }
 
+    public java.util.List<Clinica> findActivo() {
+        try {
+            jakarta.persistence.TypedQuery<Clinica> q = getEntityManager().createNamedQuery("Clinica.findByActivo", Clinica.class);
+            q.setParameter("activo", true);
+            return q.getResultList();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Error al buscar clinicas activas", ex);
+        }
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

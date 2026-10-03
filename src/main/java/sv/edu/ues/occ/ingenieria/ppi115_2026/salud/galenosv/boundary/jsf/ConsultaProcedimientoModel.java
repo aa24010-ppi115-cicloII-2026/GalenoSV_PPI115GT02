@@ -158,7 +158,7 @@ public class ConsultaProcedimientoModel extends AbstractModel<ConsultaProcedimie
     }
 
     public List<Procedimiento> getProcedimientos() {
-        return procedimientoDAO.findAll();
+        return procedimientoDAO.findActivo();
     }
 
     public String getIdConsultaSeleccionada() {

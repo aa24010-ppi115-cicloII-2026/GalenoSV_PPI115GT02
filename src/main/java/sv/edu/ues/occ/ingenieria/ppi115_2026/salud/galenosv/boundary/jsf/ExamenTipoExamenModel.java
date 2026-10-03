@@ -265,11 +265,11 @@ public class ExamenTipoExamenModel extends AbstractModel<ExamenTipoExamen> imple
     }
 
     public List<Examen> getExamenes() {
-        return examenDAO.findAll();
+        return examenDAO.findActivo();
     }
 
     public List<TipoExamen> getTiposExamen() {
-        return tipoExamenDAO.findAll();
+        return tipoExamenDAO.findActivo();
     }
 
     public String getIdExamenSeleccionado() {

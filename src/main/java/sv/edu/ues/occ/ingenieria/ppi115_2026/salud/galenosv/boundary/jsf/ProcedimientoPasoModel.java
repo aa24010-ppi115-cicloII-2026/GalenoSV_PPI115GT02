@@ -156,11 +156,11 @@ public class ProcedimientoPasoModel extends AbstractModel<ProcedimientoPaso> imp
     }
 
     public List<Procedimiento> getProcedimientos() {
-        return procedimientoDAO.findAll();
+        return procedimientoDAO.findActivo();
     }
 
     public List<Rol> getRoles() {
-        return rolDAO.findAll();
+        return rolDAO.findActivo();
     }
 
     public String getIdProcedimientoSeleccionado() {

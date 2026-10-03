@@ -459,11 +459,11 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     // ─── LISTAS PARA COMBOS ──────────────────────────────────────────────────────
 
     public List<Rol> getRolesDisponibles() {
-        return rolDAO.findAll();
+        return rolDAO.findActivo();
     }
 
     public List<TipoMedioContacto> getTiposMedioContacto() {
-        return tipoMedioContactoDAO.findAll();
+        return tipoMedioContactoDAO.findActivo();
     }
 
     // Getters y Setters
@@ -476,7 +476,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     public void setIdClinicaSeleccionadaRol(String idClinicaSeleccionadaRol) { this.idClinicaSeleccionadaRol = idClinicaSeleccionadaRol; }
 
     public List<Clinica> getClinicas() {
-        return clinicaDAO.findAll();
+        return clinicaDAO.findActivo();
     }
     public PersonaRol getRolSeleccionado() { return rolSeleccionado; }
     public void setRolSeleccionado(PersonaRol rolSeleccionado) { this.rolSeleccionado = rolSeleccionado; }

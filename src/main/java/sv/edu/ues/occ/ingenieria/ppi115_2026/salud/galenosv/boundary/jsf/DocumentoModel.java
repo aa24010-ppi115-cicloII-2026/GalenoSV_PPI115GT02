@@ -233,7 +233,7 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
     }
 
     public List<TipoDocumento> getTiposDocumento() {
-        return tipoDocumentoDAO.findAll();
+        return tipoDocumentoDAO.findActivo();
     }
 
     public String getIdPersonaSeleccionada() {

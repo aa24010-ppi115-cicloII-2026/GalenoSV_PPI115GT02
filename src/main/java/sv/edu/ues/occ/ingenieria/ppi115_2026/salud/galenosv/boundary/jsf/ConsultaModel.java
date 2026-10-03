@@ -647,7 +647,7 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     }
 
     public List<Procedimiento> getProcedimientos() {
-        return procedimientoDAO.findAll();
+        return procedimientoDAO.findActivo();
     }
     
     // Solo las personas cuyo rol sea "Médico" (o variaciones)

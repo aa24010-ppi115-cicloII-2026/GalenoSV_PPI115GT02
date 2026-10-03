@@ -572,11 +572,11 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     }
 
     public List<Rol> getRoles() {
-        return rolDAO.findAll();
+        return rolDAO.findActivo();
     }
 
     public List<Examen> getExamenes() {
-        return examenDAO.findAll();
+        return examenDAO.findActivo();
     }
 
     // Getters y Setters

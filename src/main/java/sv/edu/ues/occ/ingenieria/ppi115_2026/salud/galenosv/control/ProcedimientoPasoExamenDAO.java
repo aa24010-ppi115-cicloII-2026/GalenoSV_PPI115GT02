@@ -52,6 +52,16 @@ public class ProcedimientoPasoExamenDAO extends DefaultDAO<ProcedimientoPasoExam
                 .setParameter("id", idExamen).getSingleResult();
     }
 
+    public java.util.List<ProcedimientoPasoExamen> findActivo() {
+        try {
+            jakarta.persistence.TypedQuery<ProcedimientoPasoExamen> q = getEntityManager().createNamedQuery("ProcedimientoPasoExamen.findByActivo", ProcedimientoPasoExamen.class);
+            q.setParameter("activo", true);
+            return q.getResultList();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Error al buscar procedimiento paso examen activos", ex);
+        }
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;
