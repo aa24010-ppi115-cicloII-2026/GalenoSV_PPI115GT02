@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:f="jakarta.faces.core"
                 xmlns:h="jakarta.faces.html"
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="jakarta.faces.facelets"
@@ -8,18 +9,19 @@
     <ui:define name="titulo">#{msg['clinica.titulo']} - #{msg['sistema.titulo']}</ui:define>
     <ui:define name="encabezado">#{msg['clinica.titulo']}</ui:define>
     <ui:define name="contenido">
-        <h:panelGrid columns="1">
+        <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
             <h:panelGroup id="pnlTabla" layout="block">
                 <h:form id="frmTabla" rendered="#{clinicaModel.estado eq 'NADA'}">
                     <h:panelGrid columns="1">
-                        <g:botonesTop modelo="#{clinicaModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                        <g:botonesTop modelo="#{clinicaModel}" actualizar=":pnlContenido :mensajes"/>
                         <p:dataTable id="tabla" value="#{clinicaModel.modelo}" var="r" lazy="true"
                                      paginator="true" rows="#{clinicaModel.cantidadRegistros}"
                                      paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
                                      selectionMode="single" selection="#{clinicaModel.registro}"
                                      rowKey="#{r.idClinica}">
                             <p:ajax event="rowSelect" listener="#{clinicaModel.selectionHandler}"
-                                    update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
+                                    resetValues="true"
+                                    update=":pnlContenido :mensajes :avisos"/>
                             <p:column headerText="#{msg['tabla.nombre']}"><h:outputText value="#{r.nombre}"/></p:column>
                             <p:column headerText="#{msg['tabla.activo']}"><h:outputText value="#{r.activo ? msg['tabla.activo'] : msg['tabla.inactivo']}"/></p:column>
                             <p:column headerText="#{msg['clinica.tabla.tipo']}"><h:outputText value="#{r.tipo}"/></p:column>
@@ -31,7 +33,7 @@
             <h:panelGroup id="pnlDetalle" layout="block">
                 <h:form id="frmDetalle" rendered="#{clinicaModel.estado ne 'NADA'}">
                     <h:panelGrid columns="1">
-                        <g:botonesTop modelo="#{clinicaModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                        <g:botonesTop modelo="#{clinicaModel}" actualizar=":pnlContenido :mensajes"/>
                         <h:panelGrid columns="2" cellpadding="5">
                             <p:outputLabel for="txtId" value="#{msg['clinica.form.id']}"/>
                             <p:inputText id="txtId" value="#{clinicaModel.registro.idClinica}" size="50" disabled="true"/>
@@ -41,7 +43,13 @@
                             <p:outputLabel for="swActivo" value="#{msg['clinica.form.activo']}"/>
                             <p:toggleSwitch id="swActivo" value="#{clinicaModel.registro.activo}"/>
                             <p:outputLabel for="txtTipo" value="#{msg['clinica.form.tipo']}"/>
-                            <p:inputText id="txtTipo" value="#{clinicaModel.registro.tipo}" size="30" maxlength="20"/>
+                            <p:selectOneMenu id="txtTipo" value="#{clinicaModel.registro.tipo}"
+                                             required="true" requiredMessage="#{msg['validacion.seleccione']}"
+                                             style="width:360px">
+                                <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                                <f:selectItems value="#{clinicaModel.tiposClinica}" var="t"
+                                               itemLabel="#{t.etiqueta}" itemValue="#{t.valor}"/>
+                            </p:selectOneMenu>
                             <p:outputLabel for="txtComentarios" value="#{msg['clinica.form.comentarios']}"/>
                             <p:inputTextarea id="txtComentarios" value="#{clinicaModel.registro.comentarios}" rows="3" cols="50" maxlength="1000"/>
                         </h:panelGrid>
@@ -49,15 +57,15 @@
                             <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}"
                                              actionListener="#{clinicaModel.btnGuardarHandler}"
                                              rendered="#{clinicaModel.estado eq 'CREAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-success"/>
                             <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}"
                                              actionListener="#{clinicaModel.btnModificarHandler}"
                                              rendered="#{clinicaModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-warning"/>
                             <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}"
                                              actionListener="#{clinicaModel.btnEliminarHandler}"
                                              rendered="#{clinicaModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-danger"/>
                         </h:panelGrid>
                     </h:panelGrid>
                 </h:form>
@@ -71,7 +79,7 @@
                                          selection="#{clinicaModel.personaRolModel.registro}"
                                          rendered="#{clinicaModel.personaRolModel.estado eq 'NADA'}"
                                          emptyMessage="#{msg['tabla.sinRegistros']}">
-                                <p:ajax event="rowSelect" listener="#{clinicaModel.personaRolModel.selectionHandler}" update="@form :mensajes :avisos"/>
+                                <p:ajax event="rowSelect" listener="#{clinicaModel.personaRolModel.selectionHandler}" resetValues="true" update="@form :mensajes :avisos"/>
                                 <p:column headerText="#{msg['personaRol.form.persona']}">
                                     <h:outputText value="#{asignacion.idPersona.nombres} #{asignacion.idPersona.apellidos}"/>
                                 </p:column>

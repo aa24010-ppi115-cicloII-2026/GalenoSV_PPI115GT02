@@ -9,15 +9,16 @@
     <ui:define name="titulo">#{msg['procedimientoPaso.titulo']} - #{msg['sistema.titulo']}</ui:define>
     <ui:define name="encabezado">#{msg['procedimientoPaso.titulo']}</ui:define>
     <ui:define name="contenido">
-        <h:panelGrid columns="1">
+        <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{procedimientoPasoModel.estado eq 'NADA'}">
                 <h:form id="frmTabla">
-                    <g:botonesTop modelo="#{procedimientoPasoModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                    <g:botonesTop modelo="#{procedimientoPasoModel}" actualizar=":pnlContenido :mensajes"/>
                     <p:dataTable id="tabla" value="#{procedimientoPasoModel.modelo}" var="r" lazy="true"
                                  paginator="true" rows="#{procedimientoPasoModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{procedimientoPasoModel.registro}" rowKey="#{r.idProcedimientoPaso}">
-                        <p:ajax event="rowSelect" listener="#{procedimientoPasoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
+                        <p:ajax event="rowSelect" listener="#{procedimientoPasoModel.selectionHandler}"
+                                     resetValues="true" update=":pnlContenido :mensajes :avisos"/>
                         <p:column headerText="#{msg['tabla.nombre']}"><h:outputText value="#{r.nombre}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPaso.tabla.procedimiento']}"><h:outputText value="#{r.idProcedimiento.nombre}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPaso.tabla.rol']}"><h:outputText value="#{r.idRol.nombre}"/></p:column>
@@ -27,7 +28,7 @@
             </h:panelGroup>
             <h:panelGroup id="pnlDetalle" layout="block">
                 <h:form id="frmDetalle" rendered="#{procedimientoPasoModel.estado ne 'NADA'}">
-                    <g:botonesTop modelo="#{procedimientoPasoModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                    <g:botonesTop modelo="#{procedimientoPasoModel}" actualizar=":pnlContenido :mensajes"/>
                     <h:panelGrid columns="2" cellpadding="5">
                         <p:outputLabel for="txtId" value="#{msg['procedimientoPaso.form.id']}"/>
                         <p:inputText id="txtId" value="#{procedimientoPasoModel.registro.idProcedimientoPaso}" size="50" disabled="true"/>
@@ -47,9 +48,9 @@
                         <p:toggleSwitch id="chkFin" value="#{procedimientoPasoModel.registro.indicaFin}"/>
                     </h:panelGrid>
                     <h:panelGrid columns="#{procedimientoPasoModel.estado eq 'CREAR' ? 1 : 2}">
-                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{procedimientoPasoModel.btnGuardarHandler}" rendered="#{procedimientoPasoModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
-                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{procedimientoPasoModel.btnModificarHandler}" rendered="#{procedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
-                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{procedimientoPasoModel.btnEliminarHandler}" rendered="#{procedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
+                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{procedimientoPasoModel.btnGuardarHandler}" rendered="#{procedimientoPasoModel.estado eq 'CREAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-success"/>
+                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{procedimientoPasoModel.btnModificarHandler}" rendered="#{procedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-warning"/>
+                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{procedimientoPasoModel.btnEliminarHandler}" rendered="#{procedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-danger"/>
                     </h:panelGrid>
                 </h:form>
             </h:panelGroup>

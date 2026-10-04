@@ -8,12 +8,12 @@
     <ui:define name="titulo">#{msg['tipoMedioContacto.titulo']} - #{msg['sistema.titulo']}</ui:define>
     <ui:define name="encabezado">#{msg['tipoMedioContacto.titulo']}</ui:define>
     <ui:define name="contenido">
-    <h:panelGrid columns="1">
+    <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
         <h:panelGroup id="pnlTabla" layout="block" rendered="#{tipoMedioContactoModel.estado eq 'NADA'}">
             <h:form id="frmTabla">
                 <h:panelGrid columns="1">
                     <g:botonesTop modelo="#{tipoMedioContactoModel}"
-                                  actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                                  actualizar=":pnlContenido :mensajes"/>
 
                     <p:dataTable id="tabla"
                                  value="#{tipoMedioContactoModel.modelo}"
@@ -28,7 +28,8 @@
                                  rowKey="#{r.idTipoMedioContacto}">
                         <p:ajax event="rowSelect"
                                 listener="#{tipoMedioContactoModel.selectionHandler}"
-                                update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
+                                resetValues="true"
+                                update=":pnlContenido :mensajes :avisos"/>
 
                         <p:column headerText="#{msg['tabla.nombre']}">
                             <h:outputText value="#{r.nombre}"/>
@@ -51,7 +52,7 @@
             <h:form id="frmDetalle" rendered="#{tipoMedioContactoModel.estado ne 'NADA'}">
                 <h:panelGrid columns="1">
                     <g:botonesTop modelo="#{tipoMedioContactoModel}"
-                                  actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                                  actualizar=":pnlContenido :mensajes"/>
 
                     <h:panelGrid columns="2" cellpadding="5">
                         <p:outputLabel for="txtId" value="#{msg['tipoMedioContacto.form.id']}"/>
@@ -78,8 +79,6 @@
                                      required="true"
                                      requiredMessage="#{msg['tipoMedioContacto.expresionRegular.requerida']}"
                                      size="50" maxlength="255"/>
-                        <p:tooltip for="txtExpresionRegular"
-                                   value="#{msg['tipoMedioContacto.tooltip.expresionRegular']}"/>
 
                         <p:outputLabel for="txtIndicaciones" value="#{msg['tipoMedioContacto.form.indicaciones']}"/>
                         <p:inputTextarea id="txtIndicaciones"
@@ -87,23 +86,25 @@
                                          rows="3"
                                          cols="50" maxlength="1000"/>
                     </h:panelGrid>
+                    <p:tooltip for="txtExpresionRegular"
+                               value="#{msg['tipoMedioContacto.tooltip.expresionRegular']}"/>
 
                     <h:panelGrid columns="#{tipoMedioContactoModel.estado eq 'CREAR' ? 1 : 2}">
                         <p:commandButton id="btnGuardar" icon="pi pi-check"
                                          value="#{msg['boton.guardar']}"
                                          actionListener="#{tipoMedioContactoModel.btnGuardarHandler}"
                                          rendered="#{tipoMedioContactoModel.estado eq 'CREAR'}"
-                                         update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
+                                         update=":pnlContenido :mensajes :avisos" styleClass="ui-button-success"/>
                         <p:commandButton id="btnModificar" icon="pi pi-pencil"
                                          value="#{msg['boton.modificar']}"
                                          actionListener="#{tipoMedioContactoModel.btnModificarHandler}"
                                          rendered="#{tipoMedioContactoModel.estado eq 'MODIFICAR'}"
-                                         update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
+                                         update=":pnlContenido :mensajes :avisos" styleClass="ui-button-warning"/>
                         <p:commandButton id="btnEliminar" icon="pi pi-trash"
                                          value="#{msg['boton.eliminar']}"
                                          actionListener="#{tipoMedioContactoModel.btnEliminarHandler}"
                                          rendered="#{tipoMedioContactoModel.estado eq 'MODIFICAR'}"
-                                         update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
+                                         update=":pnlContenido :mensajes :avisos" styleClass="ui-button-danger"/>
                     </h:panelGrid>
                 </h:panelGrid>
             </h:form>

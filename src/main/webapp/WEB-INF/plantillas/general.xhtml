@@ -7,12 +7,16 @@
 <h:head>
     <title><ui:insert name="titulo">#{msg['sistema.titulo']}</ui:insert></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <h:outputStylesheet library="css" name="galenosv.css"/>
+        <h:outputStylesheet library="css" name="galenosv-v3.css"/>
 </h:head>
 <h:body styleClass="app-body">
     <div class="video-shell">
         <header class="video-header">
-            <h:graphicImage library="images" name="galenosv-logo.png" alt="GalenoSV" styleClass="video-logo"/>
+            <h:form id="frmAbrirMenu" styleClass="video-menu-trigger">
+                <p:commandButton type="button" icon="pi pi-bars" ariaLabel="Abrir menú"
+                                 onclick="PF('menuLateral').show()"/>
+            </h:form>
+            <h:graphicImage library="images" name="galenosv-logo.png" alt="GalenoSV" styleClass="video-logo" width="88" style="max-width:88px;height:auto;"/>
             <h1 class="video-title"><ui:insert name="encabezado">#{msg['sistema.titulo']}</ui:insert></h1>
             <div class="video-header-right">
                 <h:form id="frmIdioma" styleClass="video-language">
@@ -30,14 +34,9 @@
             </div>
         </header>
 
-        <h:form id="frmAbrirMenu" styleClass="video-menu-trigger">
-            <p:commandButton type="button" icon="pi pi-bars" ariaLabel="Abrir menú"
-                             onclick="PF('menuLateral').show()"/>
-        </h:form>
-
         <p:sidebar widgetVar="menuLateral" position="left" styleClass="video-sidebar" baseZIndex="1000">
             <h:form id="frmMenu">
-                <div class="sidebar-brand"><h:graphicImage library="images" name="galenosv-logo.png" alt="GalenoSV"/></div>
+                <div class="sidebar-brand"><h:graphicImage library="images" name="galenosv-logo.png" alt="GalenoSV" width="120" style="max-width:120px;height:auto;"/></div>
                 <p:button value="#{msg['menu.inicio']}" outcome="/paginas/Inicio" icon="pi pi-home" styleClass="sidebar-home"/>
                 <p:panelMenu id="menuPrincipal" styleClass="app-menu">
                     <p:submenu label="#{msg['menu.catalogos']}" icon="pi pi-book">

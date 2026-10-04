@@ -31,7 +31,7 @@
                                  selectionMode="single" selection="#{consultaModel.registro}"
                                  rowKey="#{r.idConsulta}">
                         <p:ajax event="rowSelect" listener="#{consultaModel.selectionHandler}"
-                                update="contenidoConsulta mensajes"/>
+                                resetValues="true" update="contenidoConsulta mensajes"/>
                         <p:column headerText="ID"><h:outputText value="#{r.idConsulta}"/></p:column>
                         <p:column headerText="Paciente">
                             <h:outputText value="#{r.idPersonaRol.idPersona.nombres} #{r.idPersonaRol.idPersona.apellidos}"/>
@@ -45,7 +45,7 @@
                     <div class="video-actions" style="margin-top:10px">
                         <p:commandButton value="Nueva Consulta" icon="pi pi-plus"
                                          actionListener="#{consultaModel.btnNuevoHandler}"
-                                         update="contenidoConsulta mensajes"/>
+                                         resetValues="true" update="contenidoConsulta mensajes"/>
                     </div>
                 </h:panelGroup>
 
@@ -54,10 +54,10 @@
                         <p:commandButton value="Nueva Consulta" icon="pi pi-plus"
                                          rendered="#{consultaModel.estado eq 'MODIFICAR'}"
                                          actionListener="#{consultaModel.btnNuevoHandler}"
-                                         update="contenidoConsulta mensajes"/>
+                                         resetValues="true" update="contenidoConsulta mensajes"/>
                         <p:commandButton value="Cancelar Consulta" icon="pi pi-times"
                                          actionListener="#{consultaModel.btnCancelarHandler}" immediate="true"
-                                         update="contenidoConsulta mensajes" styleClass="ui-button-secondary"/>
+                                         resetValues="true" update="contenidoConsulta mensajes" styleClass="ui-button-secondary"/>
                     </div>
                     <p:tabView id="tabsConsulta">
                         <p:tab title="Detalle">
@@ -117,6 +117,37 @@
 
                         <p:tab title="Procedimiento" disabled="#{consultaModel.estado eq 'CREAR'}">
                             <h:panelGroup id="panelProcedimientos">
+                                <h:panelGroup rendered="#{not consultaModel.capturandoProc}">
+                                    <div class="video-actions">
+                                        <p:commandButton value="Nuevo" icon="pi pi-plus"
+                                                         actionListener="#{consultaModel.iniciarCapturaProc}"
+                                                         process="@this"
+                                                         resetValues="true" update="panelProcedimientos mensajes"/>
+                                    </div>
+                                    <p:dataTable id="tablaProcedimientos"
+                                                 value="#{consultaModel.consultaProcedimientosDeConsulta}" var="cp"
+                                                 emptyMessage="No se encontraron procedimientos"
+                                                 selectionMode="single" selection="#{consultaModel.procSeleccionado}"
+                                                 rowKey="#{cp.idConsultaProcedimiento}">
+                                        <p:ajax event="rowSelect" listener="#{consultaModel.onProcSelect}"
+                                                resetValues="true" update="panelProcedimientos"/>
+                                        <p:column headerText="ID"><h:outputText value="#{cp.idConsultaProcedimiento}"/></p:column>
+                                        <p:column headerText="Tipo"><h:outputText value="#{consultaModel.nombreProcedimiento(cp.idProcedimiento)}"/></p:column>
+                                        <p:column headerText="Fecha Inicio"><h:outputText value="#{consultaModel.formatearFecha(cp.fechaInicio)}"/></p:column>
+                                        <p:column headerText="Fecha Finalización"><h:outputText value="#{consultaModel.formatearFecha(cp.fechaFin)}"/></p:column>
+                                        <p:column headerText="Observaciones"><h:outputText value="#{cp.observaciones}"/></p:column>
+                                        <p:column headerText="Pasos">
+                                            <ul class="consulta-pasos">
+                                                <ui:repeat value="#{cp.consultaProcedimientoPasoList}" var="paso">
+                                                    <li>
+                                                        <h:outputText value="#{consultaModel.nombrePasoInicial(cp)} (#{paso.estado}) - #{paso.idPersonaRol.idPersona.nombres} #{paso.idPersonaRol.idPersona.apellidos} (#{paso.idPersonaRol.idRol.nombre})"/>
+                                                    </li>
+                                                </ui:repeat>
+                                            </ul>
+                                        </p:column>
+                                    </p:dataTable>
+                                </h:panelGroup>
+                                <h:panelGroup rendered="#{consultaModel.capturandoProc}">
                                 <h:panelGrid columns="4" cellpadding="4" styleClass="video-form-grid">
                                     <p:outputLabel for="procedimientoConsulta" value="Procedimiento *"/>
                                     <p:selectOneMenu id="procedimientoConsulta"
@@ -133,7 +164,7 @@
                                                  size="35" maxlength="1000"/>
                                 </h:panelGrid>
                                 <div class="video-actions">
-                                    <p:commandButton value="Nuevo" icon="pi pi-plus"
+                                    <p:commandButton value="Guardar" icon="pi pi-save"
                                                      actionListener="#{consultaModel.agregarConsultaProcedimiento}"
                                                      rendered="#{not consultaModel.editandoProc}"
                                                      process="panelProcedimientos"
@@ -145,33 +176,10 @@
                                                      update="panelProcedimientos mensajes :avisos"/>
                                     <p:commandButton value="Cancelar" icon="pi pi-times"
                                                      actionListener="#{consultaModel.cancelarEdicionProc}"
-                                                     rendered="#{consultaModel.editandoProc}"
-                                                     process="@this" update="panelProcedimientos"
+                                                     process="@this" resetValues="true" update="panelProcedimientos"
                                                      styleClass="ui-button-secondary"/>
                                 </div>
-
-                                <p:dataTable id="tablaProcedimientos"
-                                             value="#{consultaModel.consultaProcedimientosDeConsulta}" var="cp"
-                                             emptyMessage="No se encontraron procedimientos"
-                                             selectionMode="single" selection="#{consultaModel.procSeleccionado}"
-                                             rowKey="#{cp.idConsultaProcedimiento}">
-                                    <p:ajax event="rowSelect" listener="#{consultaModel.onProcSelect}"
-                                            update="panelProcedimientos"/>
-                                    <p:column headerText="ID"><h:outputText value="#{cp.idConsultaProcedimiento}"/></p:column>
-                                    <p:column headerText="Tipo"><h:outputText value="#{consultaModel.nombreProcedimiento(cp.idProcedimiento)}"/></p:column>
-                                    <p:column headerText="Fecha Inicio"><h:outputText value="#{consultaModel.formatearFecha(cp.fechaInicio)}"/></p:column>
-                                    <p:column headerText="Fecha Finalización"><h:outputText value="#{consultaModel.formatearFecha(cp.fechaFin)}"/></p:column>
-                                    <p:column headerText="Observaciones"><h:outputText value="#{cp.observaciones}"/></p:column>
-                                    <p:column headerText="Pasos">
-                                        <ul class="consulta-pasos">
-                                            <ui:repeat value="#{cp.consultaProcedimientoPasoList}" var="paso">
-                                                <li>
-                                                    <h:outputText value="#{consultaModel.nombrePasoInicial(cp)} (#{paso.estado}) - #{paso.idPersonaRol.idPersona.nombres} #{paso.idPersonaRol.idPersona.apellidos} (#{paso.idPersonaRol.idRol.nombre})"/>
-                                                </li>
-                                            </ui:repeat>
-                                        </ul>
-                                    </p:column>
-                                </p:dataTable>
+                                </h:panelGroup>
                             </h:panelGroup>
                         </p:tab>
                     </p:tabView>

@@ -13,7 +13,7 @@
                     <div class="video-actions">
                         <p:commandButton value="Nueva Persona" icon="pi pi-plus"
                                          actionListener="#{personaModel.btnNuevoHandler}"
-                                         update="contenidoPersona mensajes"/>
+                                         resetValues="true" update="contenidoPersona mensajes"/>
                     </div>
                     <p:dataTable value="#{personaModel.modelo}" var="r" lazy="true"
                                  paginator="true" rows="#{personaModel.cantidadRegistros}"
@@ -21,7 +21,7 @@
                                  selectionMode="single" selection="#{personaModel.registro}"
                                  rowKey="#{r.idPersona}">
                         <p:ajax event="rowSelect" listener="#{personaModel.selectionHandler}"
-                                update="contenidoPersona mensajes"/>
+                                resetValues="true" update="contenidoPersona mensajes"/>
                         <p:column headerText="Nombres"><h:outputText value="#{r.nombres}"/></p:column>
                         <p:column headerText="Apellidos"><h:outputText value="#{r.apellidos}"/></p:column>
                         <p:column headerText="Fecha de nacimiento"><h:outputText value="#{fechaBean.fecha(r.fechaNacimiento)}"/></p:column>
@@ -32,7 +32,7 @@
                     <div class="video-actions">
                         <p:commandButton value="Cancelar Persona" icon="pi pi-times"
                                          actionListener="#{personaModel.btnCancelarHandler}" immediate="true"
-                                         update="contenidoPersona mensajes" styleClass="ui-button-secondary"/>
+                                         resetValues="true" update="contenidoPersona mensajes" styleClass="ui-button-secondary"/>
                     </div>
                     <p:tabView>
                         <p:tab title="Detalle">
@@ -74,14 +74,14 @@
                                     <div class="video-actions">
                                         <p:commandButton value="Nuevo" icon="pi pi-plus"
                                                          actionListener="#{personaModel.documentoModel.btnNuevoHandler}"
-                                                         process="@this" update="panelDocumentos mensajes"/>
+                                                         process="@this" resetValues="true" update="panelDocumentos mensajes"/>
                                     </div>
                                     <p:dataTable value="#{personaModel.documentoModel.modelo}" var="doc" lazy="true"
                                                  paginator="true" rows="10" emptyMessage="No se encontraron documentos"
                                                  selectionMode="single" selection="#{personaModel.documentoModel.registro}"
                                                  rowKey="#{doc.idDocumento}">
                                         <p:ajax event="rowSelect" listener="#{personaModel.documentoModel.selectionHandler}"
-                                                update="panelDocumentos mensajes"/>
+                                                resetValues="true" update="panelDocumentos mensajes"/>
                                         <p:column headerText="Tipo"><h:outputText value="#{doc.idTipoDocumento.nombre}"/></p:column>
                                         <p:column headerText="Valor"><h:outputText value="#{doc.valor}"/></p:column>
                                         <p:column headerText="Ruta física"><h:outputText value="#{doc.rutaFisica}"/></p:column>
@@ -91,7 +91,7 @@
                                     <div class="video-actions">
                                         <p:commandButton value="Cancelar" icon="pi pi-times"
                                                          actionListener="#{personaModel.documentoModel.btnCancelarHandler}"
-                                                         process="@this" update="panelDocumentos mensajes"
+                                                         process="@this" resetValues="true" update="panelDocumentos mensajes"
                                                          styleClass="ui-button-secondary"/>
                                     </div>
                                     <h:panelGrid columns="2" cellpadding="4" styleClass="video-form-grid">
@@ -137,6 +137,22 @@
 
                         <p:tab title="Medios de Contacto" disabled="#{personaModel.estado eq 'CREAR'}">
                             <h:panelGroup id="panelMedios">
+                                <h:panelGroup rendered="#{not personaModel.capturandoMedio}">
+                                    <div class="video-actions">
+                                        <p:commandButton value="Nuevo" icon="pi pi-plus"
+                                                         actionListener="#{personaModel.iniciarCapturaMedio}"
+                                                         process="@this" resetValues="true" update="panelMedios"/>
+                                    </div>
+                                    <p:dataTable value="#{personaModel.mediosDeContacto}" var="mc"
+                                                 emptyMessage="No se encontraron medios de contacto"
+                                                 selectionMode="single" selection="#{personaModel.medioSeleccionado}"
+                                                 rowKey="#{mc.idMedioContacto}">
+                                        <p:ajax event="rowSelect" listener="#{personaModel.onMedioSelect}" resetValues="true" update="panelMedios"/>
+                                        <p:column headerText="Tipo"><h:outputText value="#{mc.idTipoMedioContacto.nombre}"/></p:column>
+                                        <p:column headerText="Valor"><h:outputText value="#{mc.valor}"/></p:column>
+                                    </p:dataTable>
+                                </h:panelGroup>
+                                <h:panelGroup rendered="#{personaModel.capturandoMedio}">
                                 <h:panelGrid columns="2" cellpadding="4" styleClass="video-form-grid">
                                     <p:outputLabel for="medioTipo" value="Tipo *"/>
                                     <p:selectOneMenu id="medioTipo" value="#{personaModel.idTipoMedioContactoSeleccionado}"
@@ -161,23 +177,33 @@
                                                      process="panelMedios" update="panelMedios mensajes :avisos"/>
                                     <p:commandButton value="Cancelar" icon="pi pi-times"
                                                      actionListener="#{personaModel.cancelarEdicionMedio}"
-                                                     rendered="#{personaModel.editandoMedio}"
-                                                     process="@this" update="panelMedios"
+                                                     process="@this" resetValues="true" update="panelMedios"
                                                      styleClass="ui-button-secondary"/>
                                 </div>
-                                <p:dataTable value="#{personaModel.mediosDeContacto}" var="mc"
-                                             emptyMessage="No se encontraron medios de contacto"
-                                             selectionMode="single" selection="#{personaModel.medioSeleccionado}"
-                                             rowKey="#{mc.idMedioContacto}">
-                                    <p:ajax event="rowSelect" listener="#{personaModel.onMedioSelect}" update="panelMedios"/>
-                                    <p:column headerText="Tipo"><h:outputText value="#{mc.idTipoMedioContacto.nombre}"/></p:column>
-                                    <p:column headerText="Valor"><h:outputText value="#{mc.valor}"/></p:column>
-                                </p:dataTable>
+                                </h:panelGroup>
                             </h:panelGroup>
                         </p:tab>
 
                         <p:tab title="Roles" disabled="#{personaModel.estado eq 'CREAR'}">
                             <h:panelGroup id="panelRoles">
+                                <h:panelGroup rendered="#{not personaModel.capturandoRol}">
+                                    <div class="video-actions">
+                                        <p:commandButton value="Nuevo" icon="pi pi-plus"
+                                                         actionListener="#{personaModel.iniciarCapturaRol}"
+                                                         process="@this" resetValues="true" update="panelRoles"/>
+                                    </div>
+                                    <p:dataTable id="tablaRoles" value="#{personaModel.rolesDePersona}" var="pr"
+                                                 emptyMessage="No se encontraron roles"
+                                                 selectionMode="single" selection="#{personaModel.rolSeleccionado}"
+                                                 rowKey="#{pr.idPersonaRol}">
+                                        <p:ajax event="rowSelect" listener="#{personaModel.onRolSelect}" resetValues="true" update="panelRoles"/>
+                                        <p:column headerText="ID"><h:outputText value="#{pr.idPersonaRol}"/></p:column>
+                                        <p:column headerText="Rol"><h:outputText value="#{pr.idRol.nombre}"/></p:column>
+                                        <p:column headerText="Clínica"><h:outputText value="#{pr.idClinica.nombre}"/></p:column>
+                                        <p:column headerText="Fecha de Creación"><h:outputText value="#{pr.fechaCreacion}"/></p:column>
+                                    </p:dataTable>
+                                </h:panelGroup>
+                                <h:panelGroup rendered="#{personaModel.capturandoRol}">
                                 <h:panelGrid columns="2" cellpadding="4" styleClass="video-form-grid">
                                     <p:outputLabel for="rolClinica" value="Clínica *"/>
                                     <p:selectOneMenu id="rolClinica" value="#{personaModel.idClinicaSeleccionadaRol}"
@@ -197,7 +223,7 @@
                                     </p:selectOneMenu>
                                 </h:panelGrid>
                                 <div class="video-actions">
-                                    <p:commandButton value="Nuevo" icon="pi pi-plus"
+                                    <p:commandButton value="Guardar" icon="pi pi-save"
                                                      actionListener="#{personaModel.agregarRol}"
                                                      rendered="#{not personaModel.editandoRol}"
                                                      process="panelRoles" update="panelRoles mensajes :avisos"/>
@@ -207,20 +233,10 @@
                                                      process="panelRoles" update="panelRoles mensajes :avisos"/>
                                     <p:commandButton value="Cancelar" icon="pi pi-times"
                                                      actionListener="#{personaModel.cancelarEdicionRol}"
-                                                     rendered="#{personaModel.editandoRol}"
-                                                     process="@this" update="panelRoles"
+                                                     process="@this" resetValues="true" update="panelRoles"
                                                      styleClass="ui-button-secondary"/>
                                 </div>
-                                <p:dataTable id="tablaRoles" value="#{personaModel.rolesDePersona}" var="pr"
-                                             emptyMessage="No se encontraron roles"
-                                             selectionMode="single" selection="#{personaModel.rolSeleccionado}"
-                                             rowKey="#{pr.idPersonaRol}">
-                                    <p:ajax event="rowSelect" listener="#{personaModel.onRolSelect}" update="panelRoles"/>
-                                    <p:column headerText="ID"><h:outputText value="#{pr.idPersonaRol}"/></p:column>
-                                    <p:column headerText="Rol"><h:outputText value="#{pr.idRol.nombre}"/></p:column>
-                                    <p:column headerText="Clínica"><h:outputText value="#{pr.idClinica.nombre}"/></p:column>
-                                    <p:column headerText="Fecha de Creación"><h:outputText value="#{pr.fechaCreacion}"/></p:column>
-                                </p:dataTable>
+                                </h:panelGroup>
                             </h:panelGroup>
                         </p:tab>
                     </p:tabView>

@@ -8,12 +8,12 @@
     <ui:define name="titulo">#{msg['tipoExamen.titulo']} - #{msg['sistema.titulo']}</ui:define>
     <ui:define name="encabezado">#{msg['tipoExamen.titulo']}</ui:define>
     <ui:define name="contenido">
-        <h:panelGrid columns="1">
+        <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{tipoExamenModel.estado eq 'NADA'}">
                 <h:form id="frmTabla">
                     <h:panelGrid columns="1">
                         <g:botonesTop modelo="#{tipoExamenModel}"
-                                      actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                                      actualizar=":pnlContenido :mensajes"/>
 
                         <p:dataTable id="tabla"
                                      value="#{tipoExamenModel.modelo}"
@@ -28,7 +28,8 @@
                                      rowKey="#{r.idTipoExamen}">
                             <p:ajax event="rowSelect"
                                     listener="#{tipoExamenModel.selectionHandler}"
-                                    update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
+                                     resetValues="true"
+                                    update=":pnlContenido :mensajes :avisos"/>
 
                             <p:column headerText="#{msg['tabla.nombre']}">
                                 <h:outputText value="#{r.nombre}"/>
@@ -48,7 +49,7 @@
                 <h:form id="frmDetalle" rendered="#{tipoExamenModel.estado ne 'NADA'}">
                     <h:panelGrid columns="1">
                         <g:botonesTop modelo="#{tipoExamenModel}"
-                                      actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                                      actualizar=":pnlContenido :mensajes"/>
 
                         <h:panelGrid columns="2" cellpadding="5">
                             <p:outputLabel for="txtId" value="#{msg['tipoExamen.form.id']}"/>
@@ -80,17 +81,17 @@
                                              value="#{msg['boton.guardar']}"
                                              actionListener="#{tipoExamenModel.btnGuardarHandler}"
                                              rendered="#{tipoExamenModel.estado eq 'CREAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-success"/>
                             <p:commandButton id="btnModificar" icon="pi pi-pencil"
                                              value="#{msg['boton.modificar']}"
                                              actionListener="#{tipoExamenModel.btnModificarHandler}"
                                              rendered="#{tipoExamenModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-warning"/>
                             <p:commandButton id="btnEliminar" icon="pi pi-trash"
                                              value="#{msg['boton.eliminar']}"
                                              actionListener="#{tipoExamenModel.btnEliminarHandler}"
                                              rendered="#{tipoExamenModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-danger"/>
                         </h:panelGrid>
                     </h:panelGrid>
                 </h:form>

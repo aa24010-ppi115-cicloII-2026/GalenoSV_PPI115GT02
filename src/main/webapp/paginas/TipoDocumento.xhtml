@@ -8,12 +8,12 @@
     <ui:define name="titulo">#{msg['tipoDocumento.titulo']} - #{msg['sistema.titulo']}</ui:define>
     <ui:define name="encabezado">#{msg['tipoDocumento.titulo']}</ui:define>
     <ui:define name="contenido">
-        <h:panelGrid columns="1">
+        <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{tipoDocumentoModel.estado eq 'NADA'}">
                 <h:form id="frmTabla">
                     <h:panelGrid columns="1">
                         <g:botonesTop modelo="#{tipoDocumentoModel}"
-                                      actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                                      actualizar=":pnlContenido :mensajes"/>
 
                         <p:dataTable id="tabla"
                                      value="#{tipoDocumentoModel.modelo}"
@@ -28,7 +28,8 @@
                                      rowKey="#{r.idTipoDocumento}">
                             <p:ajax event="rowSelect"
                                     listener="#{tipoDocumentoModel.selectionHandler}"
-                                    update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
+                                    resetValues="true"
+                                    update=":pnlContenido :mensajes :avisos"/>
 
                             <p:column headerText="#{msg['tabla.nombre']}">
                                 <h:outputText value="#{r.nombre}"/>
@@ -51,7 +52,7 @@
                 <h:form id="frmDetalle" rendered="#{tipoDocumentoModel.estado ne 'NADA'}">
                     <h:panelGrid columns="1">
                         <g:botonesTop modelo="#{tipoDocumentoModel}"
-                                      actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                                      actualizar=":pnlContenido :mensajes"/>
 
                         <h:panelGrid columns="2" cellpadding="5">
                             <p:outputLabel for="txtId" value="#{msg['tipoDocumento.form.id']}"/>
@@ -78,8 +79,6 @@
                                          required="true"
                                          requiredMessage="#{msg['tipoDocumento.expresionRegular.requerida']}"
                                          size="50" maxlength="255"/>
-                            <p:tooltip for="txtExpresionRegular"
-                                       value="#{msg['tipoDocumento.tooltip.expresionRegular']}"/>
 
                             <p:outputLabel for="txtIndicaciones" value="#{msg['tipoDocumento.form.indicaciones']}"/>
                             <p:inputTextarea id="txtIndicaciones"
@@ -87,23 +86,25 @@
                                              rows="3"
                                              cols="50" maxlength="1000"/>
                         </h:panelGrid>
+                        <p:tooltip for="txtExpresionRegular"
+                                   value="#{msg['tipoDocumento.tooltip.expresionRegular']}"/>
 
                         <h:panelGrid columns="#{tipoDocumentoModel.estado eq 'CREAR' ? 1 : 2}">
                             <p:commandButton id="btnGuardar" icon="pi pi-check"
                                              value="#{msg['boton.guardar']}"
                                              actionListener="#{tipoDocumentoModel.btnGuardarHandler}"
                                              rendered="#{tipoDocumentoModel.estado eq 'CREAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-success"/>
                             <p:commandButton id="btnModificar" icon="pi pi-pencil"
                                              value="#{msg['boton.modificar']}"
                                              actionListener="#{tipoDocumentoModel.btnModificarHandler}"
                                              rendered="#{tipoDocumentoModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-warning"/>
                             <p:commandButton id="btnEliminar" icon="pi pi-trash"
                                              value="#{msg['boton.eliminar']}"
                                              actionListener="#{tipoDocumentoModel.btnEliminarHandler}"
                                              rendered="#{tipoDocumentoModel.estado eq 'MODIFICAR'}"
-                                             update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-danger"/>
                         </h:panelGrid>
                     </h:panelGrid>
                 </h:form>

@@ -14,7 +14,7 @@
                     <div class="video-actions">
                         <p:commandButton value="Nuevo Procedimiento" icon="pi pi-plus"
                                          actionListener="#{procedimientoModel.btnNuevoHandler}"
-                                         update="contenidoProcedimiento mensajes"/>
+                                         resetValues="true" update="contenidoProcedimiento mensajes"/>
                     </div>
                     <p:dataTable id="tabla" value="#{procedimientoModel.modelo}" var="r" lazy="true"
                                  paginator="true" rows="#{procedimientoModel.cantidadRegistros}"
@@ -22,7 +22,7 @@
                                  selectionMode="single" selection="#{procedimientoModel.registro}"
                                  rowKey="#{r.idProcedimiento}">
                         <p:ajax event="rowSelect" listener="#{procedimientoModel.selectionHandler}"
-                                update="contenidoProcedimiento mensajes"/>
+                                resetValues="true" update="contenidoProcedimiento mensajes"/>
                         <p:column headerText="Nombre"><h:outputText value="#{r.nombre}"/></p:column>
                         <p:column headerText="Activo"><h:outputText value="#{r.activo ? 'Sí' : 'No'}"/></p:column>
                     </p:dataTable>
@@ -32,7 +32,7 @@
                     <div class="video-actions">
                         <p:commandButton value="Cancelar Procedimiento" icon="pi pi-times"
                                          actionListener="#{procedimientoModel.btnCancelarHandler}" immediate="true"
-                                         styleClass="ui-button-secondary" update="contenidoProcedimiento mensajes"/>
+                                         styleClass="ui-button-secondary" resetValues="true" update="contenidoProcedimiento mensajes"/>
                     </div>
 
                     <p:tabView id="tabsProcedimiento">
@@ -76,12 +76,12 @@
                                     <div class="video-actions">
                                         <p:commandButton value="Nuevo Paso Inicial" icon="pi pi-plus"
                                                          actionListener="#{procedimientoModel.prepararCapturaPaso}"
-                                                         process="@this" update="panelPasos"
+                                                         process="@this" resetValues="true" update="panelPasos"
                                                          rendered="#{procedimientoModel.puedeCrearPasoInicial}"/>
                                         <p:commandButton id="btnPasoDependiente"
                                                          value="Agregar al paso seleccionado" icon="pi pi-sitemap"
                                                          actionListener="#{procedimientoModel.prepararPasoDependienteSeleccionado}"
-                                                         process="@this" update="panelPasos :frmProcedimiento:mensajes"
+                                                         process="@this" resetValues="true" update="panelPasos :frmProcedimiento:mensajes"
                                                          disabled="#{empty procedimientoModel.pasoNodoSeleccionado}"
                                                          rendered="#{not procedimientoModel.puedeCrearPasoInicial}"/>
                                     </div>
@@ -106,12 +106,12 @@
                                             <p:commandButton icon="pi pi-sitemap" title="Crear paso dependiente"
                                                              actionListener="#{procedimientoModel.prepararPasoDependiente(paso)}"
                                                              process="@this"
-                                                             update=":frmProcedimiento:tabsProcedimiento:panelPasos"
+                                                             resetValues="true" update=":frmProcedimiento:tabsProcedimiento:panelPasos"
                                                              style="margin-right:4px"/>
                                             <p:commandButton icon="pi pi-pencil" title="Modificar paso"
                                                              actionListener="#{procedimientoModel.prepararEdicionPasoCompleto(paso)}"
                                                              process="@this"
-                                                             update=":frmProcedimiento:tabsProcedimiento:panelPasos"
+                                                             resetValues="true" update=":frmProcedimiento:tabsProcedimiento:panelPasos"
                                                              style="margin-right:4px"/>
                                             <p:commandButton icon="pi pi-trash" title="Eliminar paso"
                                                              actionListener="#{procedimientoModel.eliminarPasoCompleto(paso)}"
@@ -130,7 +130,7 @@
                                     <div class="video-actions">
                                         <p:commandButton value="Cancelar Pasos" icon="pi pi-times"
                                                          actionListener="#{procedimientoModel.cancelarCapturaPaso}"
-                                                         process="@this" update="panelPasos"
+                                                         process="@this" resetValues="true" update="panelPasos"
                                                          styleClass="ui-button-secondary"/>
                                     </div>
                                     <h:panelGrid columns="3" cellpadding="4" styleClass="video-form-grid">

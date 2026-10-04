@@ -21,7 +21,7 @@
                                  paginator="true" rows="#{examenModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{examenModel.registro}" rowKey="#{r.idExamen}">
-                        <p:ajax event="rowSelect" listener="#{examenModel.selectionHandler}" update=":frmExamen"/>
+                        <p:ajax event="rowSelect" listener="#{examenModel.selectionHandler}" resetValues="true" update=":frmExamen"/>
                         <p:column headerText="#{msg['tabla.nombre']}">
                             <h:outputText value="#{r.nombre}"/>
                         </p:column>
@@ -112,14 +112,14 @@
                                 </p:commandButton>
                                                  
                                 <p:commandButton value="#{msg['boton.cancelar']}" actionListener="#{examenModel.examenTipoExamenModel.btnCancelarHandler}"
-                                                 update=":frmExamen:tabExamen" process="@this" styleClass="ui-button-secondary"/>
+                                                 resetValues="true" update=":frmExamen:tabExamen" process="@this" styleClass="ui-button-secondary"/>
                             </h:panelGrid>
                         </h:panelGroup>
 
                         <h:panelGroup id="panelTablaTipoExamen" rendered="#{examenModel.examenTipoExamenModel.estado eq 'NADA'}">
                             <p:commandButton value="#{msg['boton.nuevo']}" icon="pi pi-plus" styleClass="ui-button-info" style="margin-bottom:10px;"
                                              actionListener="#{examenModel.examenTipoExamenModel.btnNuevoHandler}"
-                                             update=":frmExamen:tabExamen" process="@this"/>
+                                             resetValues="true" update=":frmExamen:tabExamen" process="@this"/>
                                              
                             <p:dataTable id="tablaTipoExamen" value="#{examenModel.examenTipoExamenModel.modelo}" var="rt"
                                          lazy="true" paginator="true" rows="#{examenModel.examenTipoExamenModel.cantidadRegistros}"
@@ -127,7 +127,7 @@
                                          selectionMode="single" selection="#{examenModel.examenTipoExamenModel.registro}"
                                          rowKey="#{rt.idExamenTipoExamen}">
                                          
-                                <p:ajax event="rowSelect" listener="#{examenModel.examenTipoExamenModel.selectionHandler}" update=":frmExamen:tabExamen"/>
+                                <p:ajax event="rowSelect" listener="#{examenModel.examenTipoExamenModel.selectionHandler}" resetValues="true" update=":frmExamen:tabExamen"/>
 
                                 <p:column headerText="#{msg['examenTipoExamen.tabla.tipoExamen']}">
                                     <h:outputText value="#{rt.idTipoExamen.nombre}"/>

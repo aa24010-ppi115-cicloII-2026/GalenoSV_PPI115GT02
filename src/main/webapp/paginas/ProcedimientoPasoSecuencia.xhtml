@@ -9,15 +9,16 @@
     <ui:define name="titulo">#{msg['procedimientoPasoSecuencia.titulo']} - #{msg['sistema.titulo']}</ui:define>
     <ui:define name="encabezado">#{msg['procedimientoPasoSecuencia.titulo']}</ui:define>
     <ui:define name="contenido">
-        <h:panelGrid columns="1">
+        <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{procedimientoPasoSecuenciaModel.estado eq 'NADA'}">
                 <h:form id="frmTabla">
-                    <g:botonesTop modelo="#{procedimientoPasoSecuenciaModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                    <g:botonesTop modelo="#{procedimientoPasoSecuenciaModel}" actualizar=":pnlContenido :mensajes"/>
                     <p:dataTable id="tabla" value="#{procedimientoPasoSecuenciaModel.modelo}" var="r" lazy="true"
                                  paginator="true" rows="#{procedimientoPasoSecuenciaModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{procedimientoPasoSecuenciaModel.registro}" rowKey="#{r.idProcedimientoPasoSecuencia}">
-                        <p:ajax event="rowSelect" listener="#{procedimientoPasoSecuenciaModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
+                        <p:ajax event="rowSelect" listener="#{procedimientoPasoSecuenciaModel.selectionHandler}"
+                                     resetValues="true" update=":pnlContenido :mensajes :avisos"/>
                         <p:column headerText="#{msg['procedimientoPasoSecuencia.tabla.paso']}"><h:outputText value="#{r.idProcedimientoPaso.nombre}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPasoSecuencia.tabla.referencia']}"><h:outputText value="#{procedimientoPasoSecuenciaModel.nombrePasoReferencia(r.idProcedimientoPasoReferencia)}"/></p:column>
                         <p:column headerText="#{msg['procedimientoPasoSecuencia.tabla.tipoSecuencia']}"><h:outputText value="#{r.tipoSecuencia}"/></p:column>
@@ -26,7 +27,7 @@
             </h:panelGroup>
             <h:panelGroup id="pnlDetalle" layout="block">
                 <h:form id="frmDetalle" rendered="#{procedimientoPasoSecuenciaModel.estado ne 'NADA'}">
-                    <g:botonesTop modelo="#{procedimientoPasoSecuenciaModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                    <g:botonesTop modelo="#{procedimientoPasoSecuenciaModel}" actualizar=":pnlContenido :mensajes"/>
                     <h:panelGrid columns="2" cellpadding="5">
                         <p:outputLabel for="txtId" value="#{msg['procedimientoPasoSecuencia.form.id']}"/>
                         <p:inputText id="txtId" value="#{procedimientoPasoSecuenciaModel.registro.idProcedimientoPasoSecuencia}" size="50" disabled="true"/>
@@ -44,9 +45,9 @@
                         <p:inputText id="txtTipo" value="#{procedimientoPasoSecuenciaModel.registro.tipoSecuencia}" size="30" maxlength="20"/>
                     </h:panelGrid>
                     <h:panelGrid columns="#{procedimientoPasoSecuenciaModel.estado eq 'CREAR' ? 1 : 2}">
-                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{procedimientoPasoSecuenciaModel.btnGuardarHandler}" rendered="#{procedimientoPasoSecuenciaModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
-                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{procedimientoPasoSecuenciaModel.btnModificarHandler}" rendered="#{procedimientoPasoSecuenciaModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
-                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{procedimientoPasoSecuenciaModel.btnEliminarHandler}" rendered="#{procedimientoPasoSecuenciaModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
+                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{procedimientoPasoSecuenciaModel.btnGuardarHandler}" rendered="#{procedimientoPasoSecuenciaModel.estado eq 'CREAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-success"/>
+                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{procedimientoPasoSecuenciaModel.btnModificarHandler}" rendered="#{procedimientoPasoSecuenciaModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-warning"/>
+                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{procedimientoPasoSecuenciaModel.btnEliminarHandler}" rendered="#{procedimientoPasoSecuenciaModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-danger"/>
                     </h:panelGrid>
                 </h:form>
             </h:panelGroup>

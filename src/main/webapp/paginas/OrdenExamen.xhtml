@@ -14,15 +14,16 @@
                 <p:link value="← #{msg['detalle.volver']}: #{msg['consultaProcedimientoPaso.titulo']}" outcome="/paginas/ConsultaProcedimientoPaso"/>
             </f:facet>
         </p:toolbar>
-        <h:panelGrid columns="1">
+        <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{ordenExamenModel.estado eq 'NADA'}">
                 <h:form id="frmTabla">
-                    <g:botonesTop modelo="#{ordenExamenModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                    <g:botonesTop modelo="#{ordenExamenModel}" actualizar=":pnlContenido :mensajes"/>
                     <p:dataTable id="tabla" value="#{ordenExamenModel.modelo}" var="r" lazy="true"
                                  paginator="true" rows="#{ordenExamenModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{ordenExamenModel.registro}" rowKey="#{r.idOrdenExamen}">
-                        <p:ajax event="rowSelect" listener="#{ordenExamenModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
+                        <p:ajax event="rowSelect" listener="#{ordenExamenModel.selectionHandler}"
+                                     resetValues="true" update=":pnlContenido :mensajes :avisos"/>
                         <p:column headerText="#{msg['ordenExamen.tabla.consultaProcedimientoPaso']}"><h:outputText value="#{r.idConsultaProcedimientoPaso.idConsultaProcedimientoPaso}"/></p:column>
                         <p:column headerText="#{msg['ordenExamen.tabla.fechaCreacion']}"><h:outputText value="#{r.fechaCreacion}"/></p:column>
                         <p:column headerText="#{msg['ordenExamen.tabla.indicaciones']}"><h:outputText value="#{r.indicaciones}"/></p:column>
@@ -31,7 +32,7 @@
             </h:panelGroup>
             <h:panelGroup id="pnlDetalle" layout="block">
                 <h:form id="frmDetalle" rendered="#{ordenExamenModel.estado ne 'NADA'}">
-                    <g:botonesTop modelo="#{ordenExamenModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                    <g:botonesTop modelo="#{ordenExamenModel}" actualizar=":pnlContenido :mensajes"/>
                     <h:panelGrid columns="2" cellpadding="5">
                         <p:outputLabel for="txtId" value="#{msg['ordenExamen.form.id']}"/>
                         <p:inputText id="txtId" value="#{ordenExamenModel.registro.idOrdenExamen}" size="50" disabled="true"/>
@@ -46,9 +47,9 @@
                         <p:inputTextarea id="txtIndicaciones" value="#{ordenExamenModel.registro.indicaciones}" rows="4" cols="50" maxlength="1000"/>
                     </h:panelGrid>
                     <h:panelGrid columns="#{ordenExamenModel.estado eq 'CREAR' ? 1 : 2}">
-                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{ordenExamenModel.btnGuardarHandler}" rendered="#{ordenExamenModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
-                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{ordenExamenModel.btnModificarHandler}" rendered="#{ordenExamenModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
-                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{ordenExamenModel.btnEliminarHandler}" rendered="#{ordenExamenModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
+                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{ordenExamenModel.btnGuardarHandler}" rendered="#{ordenExamenModel.estado eq 'CREAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-success"/>
+                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{ordenExamenModel.btnModificarHandler}" rendered="#{ordenExamenModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-warning"/>
+                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{ordenExamenModel.btnEliminarHandler}" rendered="#{ordenExamenModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-danger"/>
                     </h:panelGrid>
                 </h:form>
             </h:panelGroup>

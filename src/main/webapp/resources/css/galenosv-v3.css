@@ -11,6 +11,7 @@
 }
 
 * { box-sizing: border-box; }
+img { max-width: 100%; height: auto; }
 
 body.app-body {
     margin: 0;
@@ -394,29 +395,37 @@ body.app-body {
 .video-shell { min-height: 100vh; display: flex; flex-direction: column; background: #fff; }
 .video-header {
     position: relative;
-    min-height: 92px;
-    display: grid;
-    grid-template-columns: 150px 1fr 360px;
-    align-items: start;
-    padding: 10px 24px 6px 28px;
-    border: 0;
+    min-height: 64px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 24px;
+    border-bottom: 1px solid var(--gs-border);
     background: #fff;
+    overflow-x: auto;
 }
-.video-logo { width: 88px; height: auto; margin-top: 3px; }
+.video-logo { width: 88px; max-width: 88px; min-width: 88px; height: auto; }
 .video-title {
-    margin: 9px 0 0;
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: #222;
     font-size: 18px;
     font-weight: 600;
     line-height: 1.25;
     text-align: center;
 }
-.video-header-right { display: flex; align-items: flex-start; justify-content: flex-end; gap: 10px; }
+.video-header-right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 0 0 auto; flex-wrap: nowrap; margin-left: auto; }
 .video-language { display: flex; align-items: center; gap: 5px; font-size: 14px; }
 .video-language .ui-selectonemenu { min-width: 92px; }
 .video-language .ui-selectonemenu-label { padding-top: .35rem; padding-bottom: .35rem; }
 .video-user-card.ui-button {
-    max-width: 205px;
+    max-width: 260px;
     min-height: 34px;
     padding: 4px 8px;
     color: #333;
@@ -425,8 +434,11 @@ body.app-body {
     border-radius: 3px;
     box-shadow: none;
     font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-.video-menu-trigger { position: absolute; z-index: 15; top: 98px; left: 22px; }
+.video-menu-trigger { position: static; }
 .video-menu-trigger .ui-button {
     width: 43px; height: 38px; padding: 0;
     color: #fff; background: #087bd3; border-color: #087bd3;
@@ -492,9 +504,23 @@ body.app-body {
 .consulta-pasos li { margin-bottom: 3px; }
 
 @media (max-width: 800px) {
-    .video-header { grid-template-columns: 90px 1fr; padding: 8px 12px; }
+    .video-header { padding: 8px 12px; gap: 10px; }
     .video-title { font-size: 16px; }
-    .video-header-right { grid-column: 1 / -1; margin-top: 8px; }
-    .video-content { width: calc(100% - 28px); padding-top: 48px; }
-    .video-menu-trigger { top: 142px; left: 12px; }
+    .video-content { width: calc(100% - 28px); padding-top: 16px; }
+}
+
+/* Accesos rápidos: celeste con letra blanca para que se lean. */
+.video-content .quick-actions .quick-action.ui-button.ui-button {
+    color: #ffffff;
+    background: #3da2d7;
+    border-color: #3da2d7;
+}
+.video-content .quick-actions .quick-action.ui-button.ui-button:hover {
+    color: #ffffff;
+    background: #2f8cbd;
+    border-color: #2f8cbd;
+}
+.video-content .quick-actions .quick-action.ui-button .ui-button-icon,
+.video-content .quick-actions .quick-action.ui-button .ui-button-text {
+    color: #ffffff;
 }

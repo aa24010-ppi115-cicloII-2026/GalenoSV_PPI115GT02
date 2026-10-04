@@ -27,7 +27,7 @@
                                  paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
                                  selectionMode="single" selection="#{examenResultadoModel.registro}"
                                  rowKey="#{r.idExamenResultado}">
-                        <p:ajax event="rowSelect" listener="#{examenResultadoModel.selectionHandler}" update=":frmExamenResultado"/>
+                        <p:ajax event="rowSelect" listener="#{examenResultadoModel.selectionHandler}" resetValues="true" update=":frmExamenResultado"/>
 
                         <p:column headerText="#{msg['examenResultado.tabla.ordenPaciente']}" style="width:40%">
                             <h:outputText value="#{examenResultadoModel.descripcionOrden(r.idOrdenExamen)}"/>

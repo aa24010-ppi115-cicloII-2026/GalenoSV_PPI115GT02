@@ -28,7 +28,7 @@
                                  paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
                                  selectionMode="single" selection="#{personaRolModel.registro}"
                                  rowKey="#{r.idPersonaRol}">
-                        <p:ajax event="rowSelect" listener="#{personaRolModel.selectionHandler}" update=":frmPersonaRol"/>
+                        <p:ajax event="rowSelect" listener="#{personaRolModel.selectionHandler}" resetValues="true" update=":frmPersonaRol"/>
 
                         <p:column headerText="#{msg['personaRol.tabla.persona']}">
                             <h:outputText value="#{r.idPersona.nombres} #{r.idPersona.apellidos}"/>

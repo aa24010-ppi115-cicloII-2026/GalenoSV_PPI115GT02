@@ -70,12 +70,14 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     private String idRolSeleccionado;
     private String idClinicaSeleccionadaRol;
     private boolean editandoRol = false;
+    private boolean capturandoRol = false;
 
     // Para la pestaña 2 (MedioContacto)
     private MedioContacto nuevoMedioContacto;
     private MedioContacto medioSeleccionado;
     private String idTipoMedioContactoSeleccionado;
     private boolean editandoMedio = false;
+    private boolean capturandoMedio = false;
 
     @Override
     protected void validarEliminacion(Persona r) {
@@ -214,6 +216,12 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
         nuevoRol.setIdPersonaRol(UUID.randomUUID());
         idRolSeleccionado = null;
         idClinicaSeleccionadaRol = null;
+        capturandoRol = false;
+    }
+
+    public void iniciarCapturaRol() {
+        prepararNuevoRol();
+        capturandoRol = true;
     }
 
     public void onRolSelect(SelectEvent<PersonaRol> event) {
@@ -232,11 +240,13 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             idClinicaSeleccionadaRol = null;
         }
         editandoRol = true;
+        capturandoRol = true;
     }
 
     public void cancelarEdicionRol() {
         rolSeleccionado = null;
         editandoRol = false;
+        capturandoRol = false;
         prepararNuevoRol();
     }
 
@@ -343,6 +353,12 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
         nuevoMedioContacto.setIdMedioContacto(UUID.randomUUID());
         nuevoMedioContacto.setFechaCreacion(java.time.OffsetDateTime.now());
         idTipoMedioContactoSeleccionado = null;
+        capturandoMedio = false;
+    }
+
+    public void iniciarCapturaMedio() {
+        prepararNuevoMedioContacto();
+        capturandoMedio = true;
     }
 
     public void onMedioSelect(SelectEvent<MedioContacto> event) {
@@ -357,11 +373,13 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             idTipoMedioContactoSeleccionado = null;
         }
         editandoMedio = true;
+        capturandoMedio = true;
     }
 
     public void cancelarEdicionMedio() {
         medioSeleccionado = null;
         editandoMedio = false;
+        capturandoMedio = false;
         prepararNuevoMedioContacto();
     }
 
@@ -514,6 +532,8 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     public void setRolSeleccionado(PersonaRol rolSeleccionado) { this.rolSeleccionado = rolSeleccionado; }
     public boolean isEditandoRol() { return editandoRol; }
     public void setEditandoRol(boolean editandoRol) { this.editandoRol = editandoRol; }
+    public boolean isCapturandoRol() { return capturandoRol; }
+    public void setCapturandoRol(boolean capturandoRol) { this.capturandoRol = capturandoRol; }
 
     public MedioContacto getNuevoMedioContacto() { return nuevoMedioContacto; }
     public void setNuevoMedioContacto(MedioContacto nuevoMedioContacto) { this.nuevoMedioContacto = nuevoMedioContacto; }
@@ -523,4 +543,6 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     public void setMedioSeleccionado(MedioContacto medioSeleccionado) { this.medioSeleccionado = medioSeleccionado; }
     public boolean isEditandoMedio() { return editandoMedio; }
     public void setEditandoMedio(boolean editandoMedio) { this.editandoMedio = editandoMedio; }
+    public boolean isCapturandoMedio() { return capturandoMedio; }
+    public void setCapturandoMedio(boolean capturandoMedio) { this.capturandoMedio = capturandoMedio; }
 }

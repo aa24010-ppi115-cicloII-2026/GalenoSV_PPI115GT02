@@ -15,15 +15,16 @@
                 <p:link value="← #{msg['detalle.volver']}: #{msg['consulta.titulo']}" outcome="/paginas/Consulta"/>
             </f:facet>
         </p:toolbar>
-        <h:panelGrid columns="1">
+        <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{consultaProcedimientoPasoModel.estado eq 'NADA'}">
                 <h:form id="frmTabla">
-                    <g:botonesTop modelo="#{consultaProcedimientoPasoModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                    <g:botonesTop modelo="#{consultaProcedimientoPasoModel}" actualizar=":pnlContenido :mensajes"/>
                     <p:dataTable id="tabla" value="#{consultaProcedimientoPasoModel.modelo}" var="r" lazy="true"
                                  paginator="true" rows="#{consultaProcedimientoPasoModel.cantidadRegistros}" paginatorPosition="bottom"
                                  emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
                                  selection="#{consultaProcedimientoPasoModel.registro}" rowKey="#{r.idConsultaProcedimientoPaso}">
-                        <p:ajax event="rowSelect" listener="#{consultaProcedimientoPasoModel.selectionHandler}" update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
+                        <p:ajax event="rowSelect" listener="#{consultaProcedimientoPasoModel.selectionHandler}"
+                                     resetValues="true" update=":pnlContenido :mensajes :avisos"/>
                         <p:column headerText="#{msg['consultaProcedimientoPaso.tabla.consultaProcedimiento']}"><h:outputText value="#{r.idConsultaProcedimiento.idConsultaProcedimiento}"/></p:column>
                         <p:column headerText="#{msg['consultaProcedimientoPaso.tabla.personaRol']}"><h:outputText value="#{r.idPersonaRol.idPersona.nombres} #{r.idPersonaRol.idPersona.apellidos} - #{r.idPersonaRol.idRol.nombre}"/></p:column>
                         <p:column headerText="#{msg['consultaProcedimientoPaso.tabla.estado']}"><h:outputText value="#{r.estado}"/></p:column>
@@ -33,7 +34,7 @@
             </h:panelGroup>
             <h:panelGroup id="pnlDetalle" layout="block">
                 <h:form id="frmDetalle" rendered="#{consultaProcedimientoPasoModel.estado ne 'NADA'}">
-                    <g:botonesTop modelo="#{consultaProcedimientoPasoModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                    <g:botonesTop modelo="#{consultaProcedimientoPasoModel}" actualizar=":pnlContenido :mensajes"/>
                     <h:panelGrid columns="2" cellpadding="5">
                         <p:outputLabel for="txtId" value="#{msg['consultaProcedimientoPaso.form.id']}"/>
                         <p:inputText id="txtId" value="#{consultaProcedimientoPasoModel.registro.idConsultaProcedimientoPaso}" size="50" disabled="true"/>
@@ -53,9 +54,9 @@
                         <p:inputText id="txtFechaInicio" value="#{consultaProcedimientoPasoModel.registro.fechaInicio}" size="50" disabled="true"/>
                     </h:panelGrid>
                     <h:panelGrid columns="#{consultaProcedimientoPasoModel.estado eq 'CREAR' ? 1 : 2}">
-                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{consultaProcedimientoPasoModel.btnGuardarHandler}" rendered="#{consultaProcedimientoPasoModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
-                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{consultaProcedimientoPasoModel.btnModificarHandler}" rendered="#{consultaProcedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
-                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{consultaProcedimientoPasoModel.btnEliminarHandler}" rendered="#{consultaProcedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
+                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{consultaProcedimientoPasoModel.btnGuardarHandler}" rendered="#{consultaProcedimientoPasoModel.estado eq 'CREAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-success"/>
+                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{consultaProcedimientoPasoModel.btnModificarHandler}" rendered="#{consultaProcedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-warning"/>
+                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{consultaProcedimientoPasoModel.btnEliminarHandler}" rendered="#{consultaProcedimientoPasoModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-danger"/>
                     </h:panelGrid>
                 </h:form>
             </h:panelGroup>

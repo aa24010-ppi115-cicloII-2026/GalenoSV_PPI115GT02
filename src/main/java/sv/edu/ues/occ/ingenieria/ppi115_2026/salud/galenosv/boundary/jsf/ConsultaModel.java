@@ -85,6 +85,7 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     private ConsultaProcedimiento procSeleccionado;
     private String idProcedimientoSeleccionado;
     private boolean editandoProc = false;
+    private boolean capturandoProc = false;
 
     // Propiedades Pestaña 2 (Paso)
     private ConsultaProcedimientoPaso nuevoConsultaProcedimientoPaso;
@@ -300,6 +301,12 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
         nuevoConsultaProcedimiento.setIdConsultaProcedimiento(UUID.randomUUID());
         nuevoConsultaProcedimiento.setFechaInicio(OffsetDateTime.now());
         idProcedimientoSeleccionado = null;
+        capturandoProc = false;
+    }
+
+    public void iniciarCapturaProc() {
+        prepararNuevoConsultaProcedimiento();
+        capturandoProc = true;
     }
 
     public void onProcSelect(SelectEvent<ConsultaProcedimiento> event) {
@@ -314,11 +321,13 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
             idProcedimientoSeleccionado = procSeleccionado.getIdProcedimiento().toString();
         }
         editandoProc = true;
+        capturandoProc = true;
     }
 
     public void cancelarEdicionProc() {
         procSeleccionado = null;
         editandoProc = false;
+        capturandoProc = false;
         prepararNuevoConsultaProcedimiento();
     }
 
@@ -843,6 +852,8 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     public void setIdProcedimientoSeleccionado(String idProcedimientoSeleccionado) { this.idProcedimientoSeleccionado = idProcedimientoSeleccionado; }
     public boolean isEditandoProc() { return editandoProc; }
     public void setEditandoProc(boolean editandoProc) { this.editandoProc = editandoProc; }
+    public boolean isCapturandoProc() { return capturandoProc; }
+    public void setCapturandoProc(boolean capturandoProc) { this.capturandoProc = capturandoProc; }
 
     public ConsultaProcedimientoPaso getNuevoConsultaProcedimientoPaso() { return nuevoConsultaProcedimientoPaso; }
     public void setNuevoConsultaProcedimientoPaso(ConsultaProcedimientoPaso nuevoConsultaProcedimientoPaso) { this.nuevoConsultaProcedimientoPaso = nuevoConsultaProcedimientoPaso; }

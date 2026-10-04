@@ -8,17 +8,18 @@
     <ui:define name="titulo">#{msg['rol.titulo']} - #{msg['sistema.titulo']}</ui:define>
     <ui:define name="encabezado">#{msg['rol.titulo']}</ui:define>
     <ui:define name="contenido">
-        <h:panelGrid columns="1">
+        <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{rolModel.estado eq 'NADA'}">
                 <h:form id="frmTabla">
                     <h:panelGrid columns="1">
-                        <g:botonesTop modelo="#{rolModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                        <g:botonesTop modelo="#{rolModel}" actualizar=":pnlContenido :mensajes"/>
                         <p:dataTable id="tabla" value="#{rolModel.modelo}" var="r" lazy="true"
                                      paginator="true" rows="#{rolModel.cantidadRegistros}"
                                      paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
                                      selectionMode="single" selection="#{rolModel.registro}" rowKey="#{r.idRol}">
                             <p:ajax event="rowSelect" listener="#{rolModel.selectionHandler}"
-                                    update=":pnlTabla :pnlDetalle :mensajes :avisos"/>
+                                     resetValues="true"
+                                    update=":pnlContenido :mensajes :avisos"/>
                             <p:column headerText="#{msg['tabla.nombre']}"><h:outputText value="#{r.nombre}"/></p:column>
                             <p:column headerText="#{msg['tabla.activo']}"><h:outputText value="#{r.activo ? msg['tabla.activo'] : msg['tabla.inactivo']}"/></p:column>
                             <p:column headerText="#{msg['tabla.observaciones']}"><h:outputText value="#{r.observaciones}"/></p:column>
@@ -29,7 +30,7 @@
             <h:panelGroup id="pnlDetalle" layout="block">
                 <h:form id="frmDetalle" rendered="#{rolModel.estado ne 'NADA'}">
                     <h:panelGrid columns="1">
-                        <g:botonesTop modelo="#{rolModel}" actualizar=":pnlTabla :pnlDetalle :mensajes"/>
+                        <g:botonesTop modelo="#{rolModel}" actualizar=":pnlContenido :mensajes"/>
                         <h:panelGrid columns="2" cellpadding="5">
                             <p:outputLabel for="txtId" value="#{msg['rol.form.id']}"/>
                             <p:inputText id="txtId" value="#{rolModel.registro.idRol}" size="50" disabled="true"/>
@@ -42,9 +43,9 @@
                             <p:inputTextarea id="txtObservaciones" value="#{rolModel.registro.observaciones}" rows="3" cols="50" maxlength="1000"/>
                         </h:panelGrid>
                         <h:panelGrid columns="#{rolModel.estado eq 'CREAR' ? 1 : 2}">
-                            <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{rolModel.btnGuardarHandler}" rendered="#{rolModel.estado eq 'CREAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-success"/>
-                            <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{rolModel.btnModificarHandler}" rendered="#{rolModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-warning"/>
-                            <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{rolModel.btnEliminarHandler}" rendered="#{rolModel.estado eq 'MODIFICAR'}" update=":pnlTabla :pnlDetalle :mensajes :avisos" styleClass="ui-button-danger"/>
+                            <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{rolModel.btnGuardarHandler}" rendered="#{rolModel.estado eq 'CREAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-success"/>
+                            <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{rolModel.btnModificarHandler}" rendered="#{rolModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-warning"/>
+                            <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{rolModel.btnEliminarHandler}" rendered="#{rolModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-danger"/>
                         </h:panelGrid>
                     </h:panelGrid>
                 </h:form>
