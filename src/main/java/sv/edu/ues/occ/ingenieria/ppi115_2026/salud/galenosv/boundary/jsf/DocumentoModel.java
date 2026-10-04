@@ -224,9 +224,6 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
         inicializarRegistros();
     }
 
-    public boolean isIntegradoEnPersona() {
-        return idPersonaMaestro != null;
-    }
 
     public List<Persona> getPersonas() {
         return personaDAO.findAll();

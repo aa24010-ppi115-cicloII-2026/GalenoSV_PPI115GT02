@@ -41,21 +41,6 @@ public class ClinicaDAO extends DefaultDAO<Clinica> {
         }
     }
 
-    public List<Clinica> buscarPorTipo(String tipo) {
-        try {
-            if (tipo == null || tipo.trim().isEmpty()) {
-                throw new IllegalArgumentException("tipo no puede ser nulo");
-            }
-            String jpql = "SELECT c FROM Clinica c WHERE c.tipo = :tipo";
-            TypedQuery<Clinica> q = getEntityManager().createQuery(jpql, Clinica.class);
-            q.setParameter("tipo", tipo.trim());
-            return q.getResultList();
-        } catch (IllegalArgumentException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new IllegalStateException("Error en buscarPorTipo", ex);
-        }
-    }
 
     public List<Clinica> findActivas() {
         return getEntityManager().createQuery(

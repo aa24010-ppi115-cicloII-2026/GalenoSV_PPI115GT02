@@ -33,7 +33,6 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.Procedimient
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Consulta;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimiento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimientoPaso;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.OrdenExamen;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.PersonaRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Procedimiento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPaso;
@@ -86,19 +85,6 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     private String idProcedimientoSeleccionado;
     private boolean editandoProc = false;
     private boolean capturandoProc = false;
-
-    // Propiedades Pestaña 2 (Paso)
-    private ConsultaProcedimientoPaso nuevoConsultaProcedimientoPaso;
-    private ConsultaProcedimientoPaso pasoSeleccionado;
-    private String idConsultaProcedimientoSeleccionado;
-    private String idPersonaRolPasoSeleccionado;
-    private boolean editandoPaso = false;
-
-    // Propiedades Pestaña 3 (Orden)
-    private OrdenExamen nuevoOrdenExamen;
-    private OrdenExamen ordenSeleccionada;
-    private String idConsultaProcedimientoPasoSeleccionado;
-    private boolean editandoOrden = false;
 
     private void refrescarListasHijas() {
         if (this.registro == null || this.registro.getIdConsulta() == null) {
@@ -238,8 +224,6 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
         refrescarListasHijas();
         sincronizarSeleccion();
         cancelarEdicionProc();
-        cancelarEdicionPaso();
-        cancelarEdicionOrden();
     }
 
     @Override
@@ -258,8 +242,6 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
         super.btnCancelarHandler(e);
         this.idPersonaRolSeleccionado = null;
         cancelarEdicionProc();
-        cancelarEdicionPaso();
-        cancelarEdicionOrden();
     }
 
     @Override
@@ -271,9 +253,7 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
                 this.estado = ESTADO_CRUD.MODIFICAR;
                 refrescarListasHijas();
                 cancelarEdicionProc();
-                cancelarEdicionPaso();
-                cancelarEdicionOrden();
-                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO,
+                                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO,
                         "Consulta guardada", "Ahora puede agregar los procedimientos de la consulta"));
             } catch (Exception e) {
                 getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", e.getMessage()));
@@ -422,291 +402,6 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
         return new ArrayList<>();
     }
 
-    // ─── PESTAÑA 2: ConsultaProcedimientoPaso ───────────────────────────────────
-
-    public void prepararNuevoConsultaProcedimientoPaso() {
-        nuevoConsultaProcedimientoPaso = new ConsultaProcedimientoPaso();
-        nuevoConsultaProcedimientoPaso.setIdConsultaProcedimientoPaso(UUID.randomUUID());
-        nuevoConsultaProcedimientoPaso.setFechaInicio(OffsetDateTime.now());
-        nuevoConsultaProcedimientoPaso.setEstado("PENDIENTE");
-        idConsultaProcedimientoSeleccionado = null;
-        idPersonaRolPasoSeleccionado = null;
-    }
-
-    public void onPasoSelect(SelectEvent<ConsultaProcedimientoPaso> event) {
-        pasoSeleccionado = event.getObject();
-        nuevoConsultaProcedimientoPaso = new ConsultaProcedimientoPaso();
-        nuevoConsultaProcedimientoPaso.setIdConsultaProcedimientoPaso(pasoSeleccionado.getIdConsultaProcedimientoPaso());
-        nuevoConsultaProcedimientoPaso.setFechaInicio(pasoSeleccionado.getFechaInicio());
-        nuevoConsultaProcedimientoPaso.setFechaFin(pasoSeleccionado.getFechaFin());
-        nuevoConsultaProcedimientoPaso.setEstado(pasoSeleccionado.getEstado());
-
-        if (pasoSeleccionado.getIdConsultaProcedimiento() != null) {
-            idConsultaProcedimientoSeleccionado = pasoSeleccionado.getIdConsultaProcedimiento().getIdConsultaProcedimiento().toString();
-        }
-        if (pasoSeleccionado.getIdPersonaRol() != null) {
-            idPersonaRolPasoSeleccionado = pasoSeleccionado.getIdPersonaRol().getIdPersonaRol().toString();
-        }
-        editandoPaso = true;
-    }
-
-    public void cancelarEdicionPaso() {
-        pasoSeleccionado = null;
-        editandoPaso = false;
-        prepararNuevoConsultaProcedimientoPaso();
-    }
-
-    public void modificarConsultaProcedimientoPaso() {
-        try {
-            if (idConsultaProcedimientoSeleccionado == null || idConsultaProcedimientoSeleccionado.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar un procedimiento principal");
-            }
-            if (idPersonaRolPasoSeleccionado == null || idPersonaRolPasoSeleccionado.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar un médico responsable");
-            }
-
-            ConsultaProcedimiento cp = null;
-            if (this.registro.getConsultaProcedimientoList() != null) {
-                for (ConsultaProcedimiento proc : this.registro.getConsultaProcedimientoList()) {
-                    if (proc.getIdConsultaProcedimiento().toString().equals(idConsultaProcedimientoSeleccionado)) {
-                        cp = proc;
-                        break;
-                    }
-                }
-            }
-            if (cp == null) {
-                cp = consultaProcedimientoDAO.find(UUID.fromString(idConsultaProcedimientoSeleccionado));
-            }
-            PersonaRol pr = personaRolDAO.find(UUID.fromString(idPersonaRolPasoSeleccionado));
-
-            nuevoConsultaProcedimientoPaso.setIdConsultaProcedimiento(cp);
-            nuevoConsultaProcedimientoPaso.setIdPersonaRol(pr);
-
-            consultaProcedimientoPasoDAO.modificar(nuevoConsultaProcedimientoPaso);
-
-            if (pasoSeleccionado != null && pasoSeleccionado.getIdConsultaProcedimiento() != null) {
-                pasoSeleccionado.getIdConsultaProcedimiento().getConsultaProcedimientoPasoList().remove(pasoSeleccionado);
-            }
-            if (cp.getConsultaProcedimientoPasoList() == null) {
-                cp.setConsultaProcedimientoPasoList(new ArrayList<>());
-            }
-            cp.getConsultaProcedimientoPasoList().add(nuevoConsultaProcedimientoPaso);
-
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Paso modificado"));
-            cancelarEdicionPaso();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
-        }
-    }
-
-    public void agregarConsultaProcedimientoPaso() {
-        if (this.registro == null || this.registro.getIdConsulta() == null) return;
-        try {
-            if (idConsultaProcedimientoSeleccionado == null || idConsultaProcedimientoSeleccionado.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar un procedimiento");
-            }
-            if (idPersonaRolPasoSeleccionado == null || idPersonaRolPasoSeleccionado.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar un médico responsable");
-            }
-            
-            ConsultaProcedimiento cp = null;
-            if (this.registro.getConsultaProcedimientoList() != null) {
-                for (ConsultaProcedimiento proc : this.registro.getConsultaProcedimientoList()) {
-                    if (proc.getIdConsultaProcedimiento().toString().equals(idConsultaProcedimientoSeleccionado)) {
-                        cp = proc;
-                        break;
-                    }
-                }
-            }
-            if (cp == null) {
-                cp = consultaProcedimientoDAO.find(UUID.fromString(idConsultaProcedimientoSeleccionado));
-            }
-            PersonaRol pr = personaRolDAO.find(UUID.fromString(idPersonaRolPasoSeleccionado));
-            
-            nuevoConsultaProcedimientoPaso.setIdConsultaProcedimiento(cp);
-            nuevoConsultaProcedimientoPaso.setIdPersonaRol(pr);
-            
-            consultaProcedimientoPasoDAO.crear(nuevoConsultaProcedimientoPaso);
-            
-            if (cp.getConsultaProcedimientoPasoList() == null) {
-                cp.setConsultaProcedimientoPasoList(new ArrayList<>());
-            }
-            cp.getConsultaProcedimientoPasoList().add(nuevoConsultaProcedimientoPaso);
-            
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Paso agregado"));
-            prepararNuevoConsultaProcedimientoPaso();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al agregar", e.getMessage()));
-        }
-    }
-
-    public void eliminarConsultaProcedimientoPaso(ConsultaProcedimientoPaso cpp) {
-        if (cpp == null) return;
-        try {
-            consultaProcedimientoPasoDAO.eliminar(cpp);
-            if (cpp.getIdConsultaProcedimiento() != null && cpp.getIdConsultaProcedimiento().getConsultaProcedimientoPasoList() != null) {
-                cpp.getIdConsultaProcedimiento().getConsultaProcedimientoPasoList().remove(cpp);
-            }
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Paso eliminado"));
-            cancelarEdicionPaso();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al eliminar", e.getMessage()));
-        }
-    }
-
-    public List<ConsultaProcedimientoPaso> getPasosDeConsulta() {
-        List<ConsultaProcedimientoPaso> pasos = new ArrayList<>();
-        if (this.registro != null && this.registro.getConsultaProcedimientoList() != null) {
-            for (ConsultaProcedimiento cp : this.registro.getConsultaProcedimientoList()) {
-                if (cp.getConsultaProcedimientoPasoList() != null) {
-                    pasos.addAll(cp.getConsultaProcedimientoPasoList());
-                }
-            }
-        }
-        return pasos;
-    }
-
-    // ─── PESTAÑA 3: OrdenExamen ─────────────────────────────────────────────────
-
-    public void prepararNuevoOrdenExamen() {
-        nuevoOrdenExamen = new OrdenExamen();
-        nuevoOrdenExamen.setIdOrdenExamen(UUID.randomUUID());
-        nuevoOrdenExamen.setFechaCreacion(OffsetDateTime.now());
-        idConsultaProcedimientoPasoSeleccionado = null;
-    }
-
-    public void onOrdenSelect(SelectEvent<OrdenExamen> event) {
-        ordenSeleccionada = event.getObject();
-        nuevoOrdenExamen = new OrdenExamen();
-        nuevoOrdenExamen.setIdOrdenExamen(ordenSeleccionada.getIdOrdenExamen());
-        nuevoOrdenExamen.setFechaCreacion(ordenSeleccionada.getFechaCreacion());
-        nuevoOrdenExamen.setIndicaciones(ordenSeleccionada.getIndicaciones());
-
-        if (ordenSeleccionada.getIdConsultaProcedimientoPaso() != null) {
-            idConsultaProcedimientoPasoSeleccionado = ordenSeleccionada.getIdConsultaProcedimientoPaso().getIdConsultaProcedimientoPaso().toString();
-        }
-        editandoOrden = true;
-    }
-
-    public void cancelarEdicionOrden() {
-        ordenSeleccionada = null;
-        editandoOrden = false;
-        prepararNuevoOrdenExamen();
-    }
-
-    public void modificarOrdenExamen() {
-        try {
-            if (idConsultaProcedimientoPasoSeleccionado == null || idConsultaProcedimientoPasoSeleccionado.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar a qué paso pertenece la orden");
-            }
-
-            ConsultaProcedimientoPaso paso = null;
-            if (this.registro.getConsultaProcedimientoList() != null) {
-                for (ConsultaProcedimiento proc : this.registro.getConsultaProcedimientoList()) {
-                    if (proc.getConsultaProcedimientoPasoList() != null) {
-                        for (ConsultaProcedimientoPaso p : proc.getConsultaProcedimientoPasoList()) {
-                            if (p.getIdConsultaProcedimientoPaso().toString().equals(idConsultaProcedimientoPasoSeleccionado)) {
-                                paso = p;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            if (paso == null) {
-                paso = consultaProcedimientoPasoDAO.find(UUID.fromString(idConsultaProcedimientoPasoSeleccionado));
-            }
-            nuevoOrdenExamen.setIdConsultaProcedimientoPaso(paso);
-
-            ordenExamenDAO.modificar(nuevoOrdenExamen);
-
-            if (ordenSeleccionada != null && ordenSeleccionada.getIdConsultaProcedimientoPaso() != null) {
-                ordenSeleccionada.getIdConsultaProcedimientoPaso().getOrdenExamenList().remove(ordenSeleccionada);
-            }
-            if (paso.getOrdenExamenList() == null) {
-                paso.setOrdenExamenList(new ArrayList<>());
-            }
-            paso.getOrdenExamenList().add(nuevoOrdenExamen);
-
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Orden modificada"));
-            cancelarEdicionOrden();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
-        }
-    }
-
-    public void agregarOrdenExamen() {
-        if (this.registro == null || this.registro.getIdConsulta() == null) return;
-        try {
-            if (idConsultaProcedimientoPasoSeleccionado == null || idConsultaProcedimientoPasoSeleccionado.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar a qué paso pertenece la orden");
-            }
-            
-            ConsultaProcedimientoPaso paso = null;
-            if (this.registro.getConsultaProcedimientoList() != null) {
-                for (ConsultaProcedimiento proc : this.registro.getConsultaProcedimientoList()) {
-                    if (proc.getConsultaProcedimientoPasoList() != null) {
-                        for (ConsultaProcedimientoPaso p : proc.getConsultaProcedimientoPasoList()) {
-                            if (p.getIdConsultaProcedimientoPaso().toString().equals(idConsultaProcedimientoPasoSeleccionado)) {
-                                paso = p;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            if (paso == null) {
-                paso = consultaProcedimientoPasoDAO.find(UUID.fromString(idConsultaProcedimientoPasoSeleccionado));
-            }
-            nuevoOrdenExamen.setIdConsultaProcedimientoPaso(paso);
-            
-            ordenExamenDAO.crear(nuevoOrdenExamen);
-            
-            if (paso.getOrdenExamenList() == null) {
-                paso.setOrdenExamenList(new ArrayList<>());
-            }
-            paso.getOrdenExamenList().add(nuevoOrdenExamen);
-            
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Orden agregada"));
-            prepararNuevoOrdenExamen();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al agregar", e.getMessage()));
-        }
-    }
-
-    public void eliminarOrdenExamen(OrdenExamen oe) {
-        if (oe == null) return;
-        try {
-            ordenExamenDAO.eliminar(oe);
-            if (oe.getIdConsultaProcedimientoPaso() != null && oe.getIdConsultaProcedimientoPaso().getOrdenExamenList() != null) {
-                oe.getIdConsultaProcedimientoPaso().getOrdenExamenList().remove(oe);
-            }
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Orden eliminada"));
-            cancelarEdicionOrden();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al eliminar", e.getMessage()));
-        }
-    }
-
-    public List<OrdenExamen> getOrdenesDeConsulta() {
-        List<OrdenExamen> ordenes = new ArrayList<>();
-        if (this.registro == null || this.registro.getIdConsulta() == null) return ordenes;
-        try {
-            if (this.registro.getConsultaProcedimientoList() != null) {
-                for (ConsultaProcedimiento cp : this.registro.getConsultaProcedimientoList()) {
-                    if (cp.getConsultaProcedimientoPasoList() != null) {
-                        for (ConsultaProcedimientoPaso paso : cp.getConsultaProcedimientoPasoList()) {
-                            if (paso.getOrdenExamenList() != null) {
-                                ordenes.addAll(paso.getOrdenExamenList());
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {}
-        return ordenes;
-    }
-
     // ─── UTILIDADES ─────────────────────────────────────────────────────────────
 
     private void prepararRelaciones() {
@@ -747,8 +442,6 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
         this.estado = ESTADO_CRUD.NADA;
         this.idPersonaRolSeleccionado = null;
         cancelarEdicionProc();
-        cancelarEdicionPaso();
-        cancelarEdicionOrden();
         inicializarRegistros();
         getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", mensaje));
     }
@@ -804,23 +497,6 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     }
     
     // Solo las personas cuyo rol sea "Médico" (o variaciones)
-    public List<PersonaRol> getPersonalMedico() {
-        List<PersonaRol> todos = personaRolDAO.findActivosByClinica(clinicaTrabajoBean.getIdClinicaActual());
-        List<PersonaRol> medicos = new java.util.ArrayList<>();
-        if (todos != null) {
-            for (PersonaRol pr : todos) {
-                if (pr.getIdRol() != null && pr.getIdRol().getNombre() != null) {
-                    String nombreRol = pr.getIdRol().getNombre().toLowerCase();
-                    if (nombreRol.contains("medic") || nombreRol.contains("médic") 
-                        || nombreRol.contains("doctor") || nombreRol.contains("enfermer") 
-                        || nombreRol.contains("especialista")) {
-                        medicos.add(pr);
-                    }
-                }
-            }
-        }
-        return medicos;
-    }
 
     public String nombreProcedimiento(UUID idProc) {
         if (idProc == null) return "N/A";
@@ -855,25 +531,7 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     public boolean isCapturandoProc() { return capturandoProc; }
     public void setCapturandoProc(boolean capturandoProc) { this.capturandoProc = capturandoProc; }
 
-    public ConsultaProcedimientoPaso getNuevoConsultaProcedimientoPaso() { return nuevoConsultaProcedimientoPaso; }
-    public void setNuevoConsultaProcedimientoPaso(ConsultaProcedimientoPaso nuevoConsultaProcedimientoPaso) { this.nuevoConsultaProcedimientoPaso = nuevoConsultaProcedimientoPaso; }
-    public ConsultaProcedimientoPaso getPasoSeleccionado() { return pasoSeleccionado; }
-    public void setPasoSeleccionado(ConsultaProcedimientoPaso pasoSeleccionado) { this.pasoSeleccionado = pasoSeleccionado; }
-    public String getIdConsultaProcedimientoSeleccionado() { return idConsultaProcedimientoSeleccionado; }
-    public void setIdConsultaProcedimientoSeleccionado(String idConsultaProcedimientoSeleccionado) { this.idConsultaProcedimientoSeleccionado = idConsultaProcedimientoSeleccionado; }
-    public String getIdPersonaRolPasoSeleccionado() { return idPersonaRolPasoSeleccionado; }
-    public void setIdPersonaRolPasoSeleccionado(String idPersonaRolPasoSeleccionado) { this.idPersonaRolPasoSeleccionado = idPersonaRolPasoSeleccionado; }
-    public boolean isEditandoPaso() { return editandoPaso; }
-    public void setEditandoPaso(boolean editandoPaso) { this.editandoPaso = editandoPaso; }
 
-    public OrdenExamen getNuevoOrdenExamen() { return nuevoOrdenExamen; }
-    public void setNuevoOrdenExamen(OrdenExamen nuevoOrdenExamen) { this.nuevoOrdenExamen = nuevoOrdenExamen; }
-    public OrdenExamen getOrdenSeleccionada() { return ordenSeleccionada; }
-    public void setOrdenSeleccionada(OrdenExamen ordenSeleccionada) { this.ordenSeleccionada = ordenSeleccionada; }
-    public String getIdConsultaProcedimientoPasoSeleccionado() { return idConsultaProcedimientoPasoSeleccionado; }
-    public void setIdConsultaProcedimientoPasoSeleccionado(String idConsultaProcedimientoPasoSeleccionado) { this.idConsultaProcedimientoPasoSeleccionado = idConsultaProcedimientoPasoSeleccionado; }
-    public boolean isEditandoOrden() { return editandoOrden; }
-    public void setEditandoOrden(boolean editandoOrden) { this.editandoOrden = editandoOrden; }
     public LocalDate getFechaDesde() { return fechaDesde; }
     public void setFechaDesde(LocalDate fechaDesde) { this.fechaDesde = fechaDesde; }
     public LocalDate getFechaHasta() { return fechaHasta; }

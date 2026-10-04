@@ -33,14 +33,6 @@ public class ProcedimientoPasoExamenDAO extends DefaultDAO<ProcedimientoPasoExam
                 .setParameter("id", id).setMaxResults(1000).getResultList();
     }
 
-    public Long countByPaso(java.util.UUID id) {
-        if (id == null) {
-            return 0L;
-        }
-        return getEntityManager().createQuery(
-                "SELECT COUNT(e) FROM ProcedimientoPasoExamen e WHERE e.idProcedimientoPaso.idProcedimientoPaso = :id", Long.class)
-                .setParameter("id", id).getSingleResult();
-    }
 
 
     public Long countByExamen(java.util.UUID idExamen) {

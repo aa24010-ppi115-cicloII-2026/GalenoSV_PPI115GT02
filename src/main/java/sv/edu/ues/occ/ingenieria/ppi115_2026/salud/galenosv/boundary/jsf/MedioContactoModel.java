@@ -227,9 +227,6 @@ public class MedioContactoModel extends AbstractModel<MedioContacto> implements 
         inicializarRegistros();
     }
 
-    public boolean isIntegradoEnPersona() {
-        return idPersonaMaestro != null;
-    }
 
     public List<Persona> getPersonas() {
         return personaDAO.findAll();

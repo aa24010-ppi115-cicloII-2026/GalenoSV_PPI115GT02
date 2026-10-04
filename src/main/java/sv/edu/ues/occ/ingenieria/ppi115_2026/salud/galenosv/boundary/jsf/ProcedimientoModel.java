@@ -71,19 +71,8 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     private transient TreeNode<ProcedimientoPaso> arbolPasos;
     private TreeNode<ProcedimientoPaso> pasoNodoSeleccionado;
 
-    // Propiedades Pestaña 2
-    private ProcedimientoPasoSecuencia nuevaSecuencia;
-    private ProcedimientoPasoSecuencia secuenciaSeleccionada;
-    private String idPasoSeleccionadoSecuencia;
     private String idPasoAnteriorSeleccionadoSecuencia;
-    private boolean editandoSecuencia = false;
-
-    // Propiedades Pestaña 3
-    private ProcedimientoPasoExamen nuevoPasoExamen;
-    private ProcedimientoPasoExamen examenSeleccionado;
-    private String idPasoSeleccionadoExamen;
-    private String idExamenSeleccionado;
-    private boolean editandoExamen = false;
+    private String idPasoSeleccionadoSecuencia;
 
     private void refrescarListasHijas() {
         arbolPasos = null;
@@ -178,8 +167,6 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         super.selectionHandler(r);
         refrescarListasHijas();
         cancelarEdicionPaso();
-        cancelarEdicionSecuencia();
-        cancelarEdicionExamen();
     }
 
     @Override
@@ -191,9 +178,7 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
                 this.estado = ESTADO_CRUD.MODIFICAR;
                 refrescarListasHijas();
                 cancelarEdicionPaso();
-                cancelarEdicionSecuencia();
-                cancelarEdicionExamen();
-                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO,
+                                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO,
                         "Procedimiento guardado", "Ahora puede configurar los pasos del procedimiento"));
             } catch (Exception e) {
                 getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", e.getMessage()));
@@ -218,8 +203,6 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         this.registro = null;
         this.estado = ESTADO_CRUD.NADA;
         cancelarEdicionPaso();
-        cancelarEdicionSecuencia();
-        cancelarEdicionExamen();
         inicializarRegistros();
         getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", mensaje));
     }
@@ -570,20 +553,6 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         }
     }
 
-    public void onPasoSelect(SelectEvent<ProcedimientoPaso> event) {
-        pasoSeleccionado = event.getObject();
-        nuevoPaso = new ProcedimientoPaso();
-        nuevoPaso.setIdProcedimientoPaso(pasoSeleccionado.getIdProcedimientoPaso());
-        nuevoPaso.setNombre(pasoSeleccionado.getNombre());
-        nuevoPaso.setIndicaFin(pasoSeleccionado.getIndicaFin());
-        nuevoPaso.setIdProcedimiento(pasoSeleccionado.getIdProcedimiento());
-        if (pasoSeleccionado.getIdRol() != null) {
-            idRolSeleccionadoPaso = pasoSeleccionado.getIdRol().getIdRol().toString();
-        } else {
-            idRolSeleccionadoPaso = null;
-        }
-        editandoPaso = true;
-    }
 
     public void cancelarEdicionPaso() {
         pasoSeleccionado = null;
@@ -591,64 +560,6 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         prepararNuevoPaso();
     }
 
-    public void modificarPaso() {
-        if (this.registro == null) return;
-        try {
-            nuevoPaso.setIdRol(obtenerRolActivoSeleccionado());
-            pasoDAO.modificar(nuevoPaso);
-
-            if (this.registro.getProcedimientoPasoList() != null) {
-                int index = -1;
-                for (int i = 0; i < this.registro.getProcedimientoPasoList().size(); i++) {
-                    if (this.registro.getProcedimientoPasoList().get(i).getIdProcedimientoPaso().equals(nuevoPaso.getIdProcedimientoPaso())) {
-                        index = i;
-                        break;
-                    }
-                }
-                if (index != -1) {
-                    this.registro.getProcedimientoPasoList().set(index, nuevoPaso);
-                }
-            }
-
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Paso modificado"));
-            cancelarEdicionPaso();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", e.getMessage()));
-        }
-    }
-
-    public void agregarPaso() {
-        if (this.registro == null) return;
-        try {
-            nuevoPaso.setIdRol(obtenerRolActivoSeleccionado());
-            nuevoPaso.setIdProcedimiento(this.registro);
-            pasoDAO.crear(nuevoPaso);
-
-            if (this.registro.getProcedimientoPasoList() == null) {
-                this.registro.setProcedimientoPasoList(new ArrayList<>());
-            }
-            this.registro.getProcedimientoPasoList().add(nuevoPaso);
-
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Paso agregado"));
-            prepararNuevoPaso();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al agregar", e.getMessage()));
-        }
-    }
-
-    public void eliminarPaso(ProcedimientoPaso p) {
-        if (p == null) return;
-        try {
-            pasoDAO.eliminar(p);
-            if (this.registro.getProcedimientoPasoList() != null) {
-                this.registro.getProcedimientoPasoList().remove(p);
-            }
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Paso eliminado"));
-            cancelarEdicionPaso();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al eliminar", e.getMessage()));
-        }
-    }
 
     public List<ProcedimientoPaso> getPasosDelProcedimiento() {
         return this.registro != null && this.registro.getProcedimientoPasoList() != null ? this.registro.getProcedimientoPasoList() : new ArrayList<>();
@@ -656,267 +567,9 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
 
     // ─── PESTAÑA 2: SECUENCIA ───────────────────────────────────────────────────
 
-    public void prepararNuevaSecuencia() {
-        nuevaSecuencia = new ProcedimientoPasoSecuencia();
-        nuevaSecuencia.setIdProcedimientoPasoSecuencia(UUID.randomUUID());
-        nuevaSecuencia.setTipoSecuencia("DESPUES_DE");
-        idPasoSeleccionadoSecuencia = null;
-        idPasoAnteriorSeleccionadoSecuencia = null;
-    }
-
-    public void onSecuenciaSelect(SelectEvent<ProcedimientoPasoSecuencia> event) {
-        secuenciaSeleccionada = event.getObject();
-        nuevaSecuencia = new ProcedimientoPasoSecuencia();
-        nuevaSecuencia.setIdProcedimientoPasoSecuencia(secuenciaSeleccionada.getIdProcedimientoPasoSecuencia());
-        nuevaSecuencia.setTipoSecuencia(secuenciaSeleccionada.getTipoSecuencia());
-        
-        if (secuenciaSeleccionada.getIdProcedimientoPaso() != null) {
-            idPasoSeleccionadoSecuencia = secuenciaSeleccionada.getIdProcedimientoPaso().getIdProcedimientoPaso().toString();
-        }
-        if (secuenciaSeleccionada.getIdProcedimientoPasoReferencia() != null) {
-            idPasoAnteriorSeleccionadoSecuencia = secuenciaSeleccionada.getIdProcedimientoPasoReferencia().toString();
-        } else {
-            idPasoAnteriorSeleccionadoSecuencia = null;
-        }
-        editandoSecuencia = true;
-    }
-
-    public void cancelarEdicionSecuencia() {
-        secuenciaSeleccionada = null;
-        editandoSecuencia = false;
-        prepararNuevaSecuencia();
-    }
-
-    public void modificarSecuencia() {
-        try {
-            if (idPasoSeleccionadoSecuencia == null || idPasoSeleccionadoSecuencia.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar un paso principal");
-            }
-            ProcedimientoPaso pasoBase = buscarPasoEnMemoria(idPasoSeleccionadoSecuencia);
-            if (pasoBase == null) throw new IllegalArgumentException("Paso no encontrado");
-
-            validarReferenciaSecuencia(pasoBase);
-
-            nuevaSecuencia.setIdProcedimientoPaso(pasoBase);
-
-            if (idPasoAnteriorSeleccionadoSecuencia != null && !idPasoAnteriorSeleccionadoSecuencia.isBlank()) {
-                nuevaSecuencia.setIdProcedimientoPasoReferencia(UUID.fromString(idPasoAnteriorSeleccionadoSecuencia));
-            } else {
-                nuevaSecuencia.setIdProcedimientoPasoReferencia(null);
-            }
-
-            secuenciaDAO.modificar(nuevaSecuencia);
-
-            if (secuenciaSeleccionada != null && secuenciaSeleccionada.getIdProcedimientoPaso() != null) {
-                secuenciaSeleccionada.getIdProcedimientoPaso().getProcedimientoPasoSecuenciaList().remove(secuenciaSeleccionada);
-            }
-            if (pasoBase.getProcedimientoPasoSecuenciaList() == null) {
-                pasoBase.setProcedimientoPasoSecuenciaList(new ArrayList<>());
-            }
-            pasoBase.getProcedimientoPasoSecuenciaList().add(nuevaSecuencia);
-
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Secuencia modificada"));
-            cancelarEdicionSecuencia();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", e.getMessage()));
-        }
-    }
-
-    public void agregarSecuencia() {
-        if (this.registro == null) return;
-        try {
-            if (idPasoSeleccionadoSecuencia == null || idPasoSeleccionadoSecuencia.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar un paso principal");
-            }
-            ProcedimientoPaso pasoBase = buscarPasoEnMemoria(idPasoSeleccionadoSecuencia);
-            if (pasoBase == null) throw new IllegalArgumentException("Paso no encontrado");
-
-            validarReferenciaSecuencia(pasoBase);
-
-            nuevaSecuencia.setIdProcedimientoPaso(pasoBase);
-
-            if (idPasoAnteriorSeleccionadoSecuencia != null && !idPasoAnteriorSeleccionadoSecuencia.isBlank()) {
-                nuevaSecuencia.setIdProcedimientoPasoReferencia(UUID.fromString(idPasoAnteriorSeleccionadoSecuencia));
-            }
-
-            secuenciaDAO.crear(nuevaSecuencia);
-
-            if (pasoBase.getProcedimientoPasoSecuenciaList() == null) {
-                pasoBase.setProcedimientoPasoSecuenciaList(new ArrayList<>());
-            }
-            pasoBase.getProcedimientoPasoSecuenciaList().add(nuevaSecuencia);
-
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Secuencia agregada"));
-            prepararNuevaSecuencia();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al agregar", e.getMessage()));
-        }
-    }
-
-    public void eliminarSecuencia(ProcedimientoPasoSecuencia pps) {
-        if (pps == null) return;
-        try {
-            secuenciaDAO.eliminar(pps);
-            if (pps.getIdProcedimientoPaso() != null && pps.getIdProcedimientoPaso().getProcedimientoPasoSecuenciaList() != null) {
-                pps.getIdProcedimientoPaso().getProcedimientoPasoSecuenciaList().remove(pps);
-            }
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Secuencia eliminada"));
-            cancelarEdicionSecuencia();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al eliminar", e.getMessage()));
-        }
-    }
-
-    public List<ProcedimientoPasoSecuencia> getSecuenciasDelProcedimiento() {
-        List<ProcedimientoPasoSecuencia> sec = new ArrayList<>();
-        if (this.registro != null && this.registro.getProcedimientoPasoList() != null) {
-            for (ProcedimientoPaso p : this.registro.getProcedimientoPasoList()) {
-                if (p.getProcedimientoPasoSecuenciaList() != null) {
-                    sec.addAll(p.getProcedimientoPasoSecuenciaList());
-                }
-            }
-        }
-        return sec;
-    }
-
-    public String nombrePaso(UUID idPaso) {
-        if (idPaso == null) return "Inicio / Ninguno";
-        ProcedimientoPaso p = buscarPasoEnMemoria(idPaso.toString());
-        if (p == null) p = pasoDAO.find(idPaso);
-        return p != null ? p.getNombre() : "Desconocido";
-    }
 
     // ─── PESTAÑA 3: EXAMENES ────────────────────────────────────────────────────
 
-    public void prepararNuevoPasoExamen() {
-        nuevoPasoExamen = new ProcedimientoPasoExamen();
-        nuevoPasoExamen.setIdProcedimientoPasoExamen(UUID.randomUUID());
-        nuevoPasoExamen.setFechaCreacion(OffsetDateTime.now());
-        nuevoPasoExamen.setActivo(true);
-        idPasoSeleccionadoExamen = null;
-        idExamenSeleccionado = null;
-    }
-
-    public void onExamenSelect(SelectEvent<ProcedimientoPasoExamen> event) {
-        examenSeleccionado = event.getObject();
-        nuevoPasoExamen = new ProcedimientoPasoExamen();
-        nuevoPasoExamen.setIdProcedimientoPasoExamen(examenSeleccionado.getIdProcedimientoPasoExamen());
-        nuevoPasoExamen.setFechaCreacion(examenSeleccionado.getFechaCreacion());
-        nuevoPasoExamen.setActivo(examenSeleccionado.getActivo());
-        nuevoPasoExamen.setObservaciones(examenSeleccionado.getObservaciones());
-
-        if (examenSeleccionado.getIdProcedimientoPaso() != null) {
-            idPasoSeleccionadoExamen = examenSeleccionado.getIdProcedimientoPaso().getIdProcedimientoPaso().toString();
-        }
-        if (examenSeleccionado.getIdExamen() != null) {
-            idExamenSeleccionado = examenSeleccionado.getIdExamen().getIdExamen().toString();
-        }
-        editandoExamen = true;
-    }
-
-    public void cancelarEdicionExamen() {
-        examenSeleccionado = null;
-        editandoExamen = false;
-        prepararNuevoPasoExamen();
-    }
-
-    public void modificarPasoExamen() {
-        try {
-            if (idPasoSeleccionadoExamen == null || idPasoSeleccionadoExamen.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar un paso principal");
-            }
-            if (idExamenSeleccionado == null || idExamenSeleccionado.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar un examen");
-            }
-
-            ProcedimientoPaso pasoBase = buscarPasoEnMemoria(idPasoSeleccionadoExamen);
-            if (pasoBase == null) throw new IllegalArgumentException("Paso no encontrado");
-
-            Examen ex = examenDAO.find(UUID.fromString(idExamenSeleccionado));
-            if (ex == null || !Boolean.TRUE.equals(ex.getActivo())) {
-                throw new IllegalArgumentException("Solo se pueden vincular exámenes activos");
-            }
-
-            nuevoPasoExamen.setIdProcedimientoPaso(pasoBase);
-            nuevoPasoExamen.setIdExamen(ex);
-
-            pasoExamenDAO.modificar(nuevoPasoExamen);
-
-            if (examenSeleccionado != null && examenSeleccionado.getIdProcedimientoPaso() != null) {
-                examenSeleccionado.getIdProcedimientoPaso().getProcedimientoPasoExamenList().remove(examenSeleccionado);
-            }
-            if (pasoBase.getProcedimientoPasoExamenList() == null) {
-                pasoBase.setProcedimientoPasoExamenList(new ArrayList<>());
-            }
-            pasoBase.getProcedimientoPasoExamenList().add(nuevoPasoExamen);
-
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Examen de paso modificado"));
-            cancelarEdicionExamen();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", e.getMessage()));
-        }
-    }
-
-    public void agregarPasoExamen() {
-        if (this.registro == null) return;
-        try {
-            if (idPasoSeleccionadoExamen == null || idPasoSeleccionadoExamen.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar un paso principal");
-            }
-            if (idExamenSeleccionado == null || idExamenSeleccionado.isBlank()) {
-                throw new IllegalArgumentException("Debe seleccionar un examen");
-            }
-
-            ProcedimientoPaso pasoBase = buscarPasoEnMemoria(idPasoSeleccionadoExamen);
-            if (pasoBase == null) throw new IllegalArgumentException("Paso no encontrado");
-
-            Examen ex = examenDAO.find(UUID.fromString(idExamenSeleccionado));
-            if (ex == null || !Boolean.TRUE.equals(ex.getActivo())) {
-                throw new IllegalArgumentException("Solo se pueden vincular exámenes activos");
-            }
-
-            nuevoPasoExamen.setIdProcedimientoPaso(pasoBase);
-            nuevoPasoExamen.setIdExamen(ex);
-
-            pasoExamenDAO.crear(nuevoPasoExamen);
-
-            if (pasoBase.getProcedimientoPasoExamenList() == null) {
-                pasoBase.setProcedimientoPasoExamenList(new ArrayList<>());
-            }
-            pasoBase.getProcedimientoPasoExamenList().add(nuevoPasoExamen);
-
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Examen agregado al paso"));
-            prepararNuevoPasoExamen();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al agregar", e.getMessage()));
-        }
-    }
-
-    public void eliminarPasoExamen(ProcedimientoPasoExamen ppe) {
-        if (ppe == null) return;
-        try {
-            pasoExamenDAO.eliminar(ppe);
-            if (ppe.getIdProcedimientoPaso() != null && ppe.getIdProcedimientoPaso().getProcedimientoPasoExamenList() != null) {
-                ppe.getIdProcedimientoPaso().getProcedimientoPasoExamenList().remove(ppe);
-            }
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Examen eliminado del paso"));
-            cancelarEdicionExamen();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al eliminar", e.getMessage()));
-        }
-    }
-
-    public List<ProcedimientoPasoExamen> getExamenesDelProcedimiento() {
-        List<ProcedimientoPasoExamen> examenes = new ArrayList<>();
-        if (this.registro != null && this.registro.getProcedimientoPasoList() != null) {
-            for (ProcedimientoPaso p : this.registro.getProcedimientoPasoList()) {
-                if (p.getProcedimientoPasoExamenList() != null) {
-                    examenes.addAll(p.getProcedimientoPasoExamenList());
-                }
-            }
-        }
-        return examenes;
-    }
 
     // ─── UTILIDADES Y LISTAS ────────────────────────────────────────────────────
 
@@ -1059,25 +712,9 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     public TreeNode<ProcedimientoPaso> getPasoNodoSeleccionado() { return pasoNodoSeleccionado; }
     public void setPasoNodoSeleccionado(TreeNode<ProcedimientoPaso> pasoNodoSeleccionado) { this.pasoNodoSeleccionado = pasoNodoSeleccionado; }
 
-    public ProcedimientoPasoSecuencia getNuevaSecuencia() { return nuevaSecuencia; }
-    public void setNuevaSecuencia(ProcedimientoPasoSecuencia nuevaSecuencia) { this.nuevaSecuencia = nuevaSecuencia; }
-    public ProcedimientoPasoSecuencia getSecuenciaSeleccionada() { return secuenciaSeleccionada; }
-    public void setSecuenciaSeleccionada(ProcedimientoPasoSecuencia secuenciaSeleccionada) { this.secuenciaSeleccionada = secuenciaSeleccionada; }
-    public String getIdPasoSeleccionadoSecuencia() { return idPasoSeleccionadoSecuencia; }
-    public void setIdPasoSeleccionadoSecuencia(String idPasoSeleccionadoSecuencia) { this.idPasoSeleccionadoSecuencia = idPasoSeleccionadoSecuencia; }
     public String getIdPasoAnteriorSeleccionadoSecuencia() { return idPasoAnteriorSeleccionadoSecuencia; }
     public void setIdPasoAnteriorSeleccionadoSecuencia(String idPasoAnteriorSeleccionadoSecuencia) { this.idPasoAnteriorSeleccionadoSecuencia = idPasoAnteriorSeleccionadoSecuencia; }
-    public boolean isEditandoSecuencia() { return editandoSecuencia; }
-    public void setEditandoSecuencia(boolean editandoSecuencia) { this.editandoSecuencia = editandoSecuencia; }
+    public String getIdPasoSeleccionadoSecuencia() { return idPasoSeleccionadoSecuencia; }
+    public void setIdPasoSeleccionadoSecuencia(String idPasoSeleccionadoSecuencia) { this.idPasoSeleccionadoSecuencia = idPasoSeleccionadoSecuencia; }
 
-    public ProcedimientoPasoExamen getNuevoPasoExamen() { return nuevoPasoExamen; }
-    public void setNuevoPasoExamen(ProcedimientoPasoExamen nuevoPasoExamen) { this.nuevoPasoExamen = nuevoPasoExamen; }
-    public ProcedimientoPasoExamen getExamenSeleccionado() { return examenSeleccionado; }
-    public void setExamenSeleccionado(ProcedimientoPasoExamen examenSeleccionado) { this.examenSeleccionado = examenSeleccionado; }
-    public String getIdPasoSeleccionadoExamen() { return idPasoSeleccionadoExamen; }
-    public void setIdPasoSeleccionadoExamen(String idPasoSeleccionadoExamen) { this.idPasoSeleccionadoExamen = idPasoSeleccionadoExamen; }
-    public String getIdExamenSeleccionado() { return idExamenSeleccionado; }
-    public void setIdExamenSeleccionado(String idExamenSeleccionado) { this.idExamenSeleccionado = idExamenSeleccionado; }
-    public boolean isEditandoExamen() { return editandoExamen; }
-    public void setEditandoExamen(boolean editandoExamen) { this.editandoExamen = editandoExamen; }
 }

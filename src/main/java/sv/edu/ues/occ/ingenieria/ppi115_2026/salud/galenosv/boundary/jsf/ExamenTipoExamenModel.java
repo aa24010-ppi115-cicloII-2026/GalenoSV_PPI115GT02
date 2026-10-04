@@ -267,29 +267,11 @@ public class ExamenTipoExamenModel extends AbstractModel<ExamenTipoExamen> imple
         }
     }
 
-    public List<Examen> getExamenes() {
-        return examenDAO.findAll();
-    }
 
-    public List<TipoExamen> getTiposExamen() {
-        return tipoExamenDAO.findActivos();
-    }
 
-    public String getIdExamenSeleccionado() {
-        return idExamenSeleccionado;
-    }
 
-    public void setIdExamenSeleccionado(String idExamenSeleccionado) {
-        this.idExamenSeleccionado = idExamenSeleccionado;
-    }
 
-    public String getIdTipoExamenSeleccionado() {
-        return idTipoExamenSeleccionado;
-    }
 
-    public void setIdTipoExamenSeleccionado(String idTipoExamenSeleccionado) {
-        this.idTipoExamenSeleccionado = idTipoExamenSeleccionado;
-    }
 
     public UUID getIdExamen() {
         return idExamen;

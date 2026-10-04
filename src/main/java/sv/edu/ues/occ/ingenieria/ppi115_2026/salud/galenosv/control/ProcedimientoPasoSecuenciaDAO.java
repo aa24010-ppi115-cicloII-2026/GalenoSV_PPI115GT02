@@ -33,14 +33,6 @@ public class ProcedimientoPasoSecuenciaDAO extends DefaultDAO<ProcedimientoPasoS
                 .setParameter("id", id).setMaxResults(1000).getResultList();
     }
 
-    public Long countByPaso(java.util.UUID id) {
-        if (id == null) {
-            return 0L;
-        }
-        return getEntityManager().createQuery(
-                "SELECT COUNT(e) FROM ProcedimientoPasoSecuencia e WHERE e.idProcedimientoPaso.idProcedimientoPaso = :id", Long.class)
-                .setParameter("id", id).getSingleResult();
-    }
 
     public java.util.List<ProcedimientoPasoSecuencia> findDependientes(java.util.UUID idPasoReferencia) {
         if (idPasoReferencia == null) {
