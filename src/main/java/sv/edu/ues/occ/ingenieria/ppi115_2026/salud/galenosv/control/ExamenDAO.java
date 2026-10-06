@@ -60,6 +60,17 @@ public class ExamenDAO extends DefaultDAO<Examen> {
                 .getResultList();
     }
 
+    public List<Examen> findActivosByNombreLike(String filtro, int first, int max) {
+        if (filtro == null || filtro.trim().length() < 3 || first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Parametros invalidos para buscar examen");
+        }
+        return getEntityManager().createQuery(
+                "SELECT e FROM Examen e WHERE e.activo = TRUE "
+                        + "AND UPPER(e.nombre) LIKE :nombre ORDER BY e.nombre", Examen.class)
+                .setParameter("nombre", "%" + filtro.trim().toUpperCase() + "%")
+                .setFirstResult(first).setMaxResults(max).getResultList();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

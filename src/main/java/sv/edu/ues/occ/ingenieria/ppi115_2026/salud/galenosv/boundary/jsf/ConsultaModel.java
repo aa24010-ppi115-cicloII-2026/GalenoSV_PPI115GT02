@@ -55,6 +55,12 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     PersonaRolDAO personaRolDAO;
 
     @Inject
+    sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DocumentoDAO documentoDAO;
+
+    @Inject
+    sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.MedioContactoDAO medioContactoDAO;
+
+    @Inject
     ConsultaProcedimientoDAO consultaProcedimientoDAO;
 
     @Inject
@@ -78,6 +84,9 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     // Selección del maestro
     private String idPersonaRolSeleccionado;
     private String filtroPaciente;
+    private String filtroDocumento;
+    private String filtroRol;
+    private String filtroMedio;
 
     // Propiedades Pestaña 1 (Procedimiento)
     private ConsultaProcedimiento nuevoConsultaProcedimiento;
@@ -458,15 +467,51 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
 
     public List<PersonaRol> getPacientesFiltrados() {
         List<PersonaRol> disponibles = getPacientes();
-        if (filtroPaciente == null || filtroPaciente.isBlank()) {
+        String buscarNombre = filtroPaciente == null ? "" : filtroPaciente.trim().toLowerCase();
+        String buscarDoc = filtroDocumento == null ? "" : filtroDocumento.trim().toLowerCase();
+        String buscarRol = filtroRol == null ? "" : filtroRol.trim().toLowerCase();
+        String buscarMedio = filtroMedio == null ? "" : filtroMedio.trim().toLowerCase();
+        if (buscarNombre.isEmpty() && buscarDoc.isEmpty() && buscarRol.isEmpty() && buscarMedio.isEmpty()) {
             return disponibles;
         }
-        String buscar = filtroPaciente.trim().toLowerCase();
         return disponibles.stream().filter(pr -> {
-            String nombre = (pr.getIdPersona().getNombres() + " "
-                    + pr.getIdPersona().getApellidos()).toLowerCase();
-            return nombre.contains(buscar);
+            if (pr.getIdPersona() == null) {
+                return false;
+            }
+            String nombre = ((pr.getIdPersona().getNombres() == null ? "" : pr.getIdPersona().getNombres()) + " "
+                    + (pr.getIdPersona().getApellidos() == null ? "" : pr.getIdPersona().getApellidos())).toLowerCase();
+            if (!buscarNombre.isEmpty() && !nombre.contains(buscarNombre)) {
+                return false;
+            }
+            if (!buscarRol.isEmpty()) {
+                String rol = pr.getIdRol() == null || pr.getIdRol().getNombre() == null ? "" : pr.getIdRol().getNombre().toLowerCase();
+                if (!rol.contains(buscarRol)) {
+                    return false;
+                }
+            }
+            if (!buscarDoc.isEmpty()) {
+                boolean match = documentosFrescos(pr).stream()
+                        .anyMatch(d -> d.getValor() != null && d.getValor().toLowerCase().contains(buscarDoc));
+                if (!match) {
+                    return false;
+                }
+            }
+            if (!buscarMedio.isEmpty()) {
+                boolean match = mediosFrescos(pr).stream()
+                        .anyMatch(m -> m.getValor() != null && m.getValor().toLowerCase().contains(buscarMedio));
+                if (!match) {
+                    return false;
+                }
+            }
+            return true;
         }).toList();
+    }
+
+    public void limpiarFiltrosPaciente() {
+        filtroPaciente = null;
+        filtroDocumento = null;
+        filtroRol = null;
+        filtroMedio = null;
     }
 
     public void seleccionarPaciente(PersonaRol personaRol) {
@@ -483,13 +528,37 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     }
 
     public String documentosPaciente(PersonaRol personaRol) {
-        if (personaRol == null || personaRol.getIdPersona() == null
-                || personaRol.getIdPersona().getDocumentoList() == null) {
-            return "";
-        }
-        return personaRol.getIdPersona().getDocumentoList().stream()
-                .map(d -> d.getIdTipoDocumento().getNombre() + ": " + d.getValor())
+        return documentosFrescos(personaRol).stream()
+                .map(d -> (d.getIdTipoDocumento() == null ? "" : d.getIdTipoDocumento().getNombre() + ": ") + d.getValor())
                 .collect(java.util.stream.Collectors.joining(", "));
+    }
+
+    public String mediosPaciente(PersonaRol personaRol) {
+        return mediosFrescos(personaRol).stream()
+                .map(m -> (m.getIdTipoMedioContacto() == null ? "" : m.getIdTipoMedioContacto().getNombre() + ": ") + m.getValor())
+                .collect(java.util.stream.Collectors.joining(", "));
+    }
+
+    private List<sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Documento> documentosFrescos(PersonaRol personaRol) {
+        try {
+            if (personaRol == null || personaRol.getIdPersona() == null || personaRol.getIdPersona().getIdPersona() == null) {
+                return List.of();
+            }
+            return documentoDAO.findByPersona(personaRol.getIdPersona().getIdPersona(), 0, 100);
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    private List<sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.MedioContacto> mediosFrescos(PersonaRol personaRol) {
+        try {
+            if (personaRol == null || personaRol.getIdPersona() == null || personaRol.getIdPersona().getIdPersona() == null) {
+                return List.of();
+            }
+            return medioContactoDAO.findByPersona(personaRol.getIdPersona().getIdPersona(), 0, 100);
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     public List<Procedimiento> getProcedimientos() {
@@ -519,6 +588,12 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     public void setIdPersonaRolSeleccionado(String idPersonaRolSeleccionado) { this.idPersonaRolSeleccionado = idPersonaRolSeleccionado; }
     public String getFiltroPaciente() { return filtroPaciente; }
     public void setFiltroPaciente(String filtroPaciente) { this.filtroPaciente = filtroPaciente; }
+    public String getFiltroDocumento() { return filtroDocumento; }
+    public void setFiltroDocumento(String filtroDocumento) { this.filtroDocumento = filtroDocumento; }
+    public String getFiltroRol() { return filtroRol; }
+    public void setFiltroRol(String filtroRol) { this.filtroRol = filtroRol; }
+    public String getFiltroMedio() { return filtroMedio; }
+    public void setFiltroMedio(String filtroMedio) { this.filtroMedio = filtroMedio; }
 
     public ConsultaProcedimiento getNuevoConsultaProcedimiento() { return nuevoConsultaProcedimiento; }
     public void setNuevoConsultaProcedimiento(ConsultaProcedimiento nuevoConsultaProcedimiento) { this.nuevoConsultaProcedimiento = nuevoConsultaProcedimiento; }

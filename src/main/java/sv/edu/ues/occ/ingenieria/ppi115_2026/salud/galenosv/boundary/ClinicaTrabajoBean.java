@@ -28,6 +28,8 @@ public class ClinicaTrabajoBean implements Serializable {
 
     private String idClinicaSeleccionada;
     private String idPersonaRolSeleccionado;
+    private String idRolSeleccionado;
+    private String idPersonaSeleccionada;
     private Clinica clinicaActual;
     private PersonaRol personaRolActual;
 
@@ -40,8 +42,54 @@ public class ClinicaTrabajoBean implements Serializable {
         return id == null ? Collections.emptyList() : personaRolDAO.findActivosByClinica(id);
     }
 
+    public List<sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Rol> getRolesDisponibles() {
+        java.util.Map<UUID, sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Rol> únicos = new java.util.LinkedHashMap<>();
+        for (PersonaRol pr : getAsignacionesDisponibles()) {
+            if (pr.getIdRol() != null && pr.getIdRol().getIdRol() != null) {
+                únicos.putIfAbsent(pr.getIdRol().getIdRol(), pr.getIdRol());
+            }
+        }
+        return new java.util.ArrayList<>(únicos.values());
+    }
+
+    public List<sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Persona> getPersonasDisponibles() {
+        if (idRolSeleccionado == null || idRolSeleccionado.isBlank()) {
+            return Collections.emptyList();
+        }
+        java.util.Map<UUID, sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Persona> únicas = new java.util.LinkedHashMap<>();
+        for (PersonaRol pr : getAsignacionesDisponibles()) {
+            if (pr.getIdRol() != null && idRolSeleccionado.equals(pr.getIdRol().getIdRol().toString())
+                    && pr.getIdPersona() != null && pr.getIdPersona().getIdPersona() != null) {
+                únicas.putIfAbsent(pr.getIdPersona().getIdPersona(), pr.getIdPersona());
+            }
+        }
+        return new java.util.ArrayList<>(únicas.values());
+    }
+
     public void alCambiarClinica() {
         idPersonaRolSeleccionado = null;
+        idRolSeleccionado = null;
+        idPersonaSeleccionada = null;
+    }
+
+    public void alCambiarRol() {
+        idPersonaSeleccionada = null;
+        idPersonaRolSeleccionado = null;
+    }
+
+    public void alCambiarPersona() {
+        idPersonaRolSeleccionado = null;
+        if (idPersonaSeleccionada == null || idPersonaSeleccionada.isBlank()
+                || idRolSeleccionado == null || idRolSeleccionado.isBlank()) {
+            return;
+        }
+        for (PersonaRol pr : getAsignacionesDisponibles()) {
+            if (pr.getIdPersona() != null && idPersonaSeleccionada.equals(pr.getIdPersona().getIdPersona().toString())
+                    && pr.getIdRol() != null && idRolSeleccionado.equals(pr.getIdRol().getIdRol().toString())) {
+                idPersonaRolSeleccionado = pr.getIdPersonaRol().toString();
+                break;
+            }
+        }
     }
 
     public String aplicar() {
@@ -114,6 +162,30 @@ public class ClinicaTrabajoBean implements Serializable {
 
     public void setIdPersonaRolSeleccionado(String idPersonaRolSeleccionado) {
         this.idPersonaRolSeleccionado = idPersonaRolSeleccionado;
+    }
+
+    public String getIdRolSeleccionado() {
+        if ((idRolSeleccionado == null || idRolSeleccionado.isBlank()) && personaRolActual != null
+                && personaRolActual.getIdRol() != null) {
+            idRolSeleccionado = personaRolActual.getIdRol().getIdRol().toString();
+        }
+        return idRolSeleccionado;
+    }
+
+    public void setIdRolSeleccionado(String idRolSeleccionado) {
+        this.idRolSeleccionado = idRolSeleccionado;
+    }
+
+    public String getIdPersonaSeleccionada() {
+        if ((idPersonaSeleccionada == null || idPersonaSeleccionada.isBlank()) && personaRolActual != null
+                && personaRolActual.getIdPersona() != null) {
+            idPersonaSeleccionada = personaRolActual.getIdPersona().getIdPersona().toString();
+        }
+        return idPersonaSeleccionada;
+    }
+
+    public void setIdPersonaSeleccionada(String idPersonaSeleccionada) {
+        this.idPersonaSeleccionada = idPersonaSeleccionada;
     }
 
     public Clinica getClinicaActual() {

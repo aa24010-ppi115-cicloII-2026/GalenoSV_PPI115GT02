@@ -12,25 +12,34 @@
             <p:messages showDetail="true" closable="true"/>
             <div class="video-compact">
                 <h:panelGrid columns="2" cellpadding="8" styleClass="video-form-grid">
-                    <p:outputLabel for="clinica" value="Clínica *"/>
+                    <p:outputLabel for="clinica" value="Clínica"/>
                     <p:selectOneMenu id="clinica" value="#{clinicaTrabajoBean.idClinicaSeleccionada}"
-                                     required="true" style="width:360px">
+                                     required="true" style="width:360px" filter="true" filterMatchMode="contains" filterPlaceholder="Buscar clínica...">
                         <f:selectItem itemLabel="Seleccione una clínica" itemValue=""/>
                         <f:selectItems value="#{clinicaTrabajoBean.clinicas}" var="c"
                                        itemLabel="#{c.nombre}" itemValue="#{c.idClinica}"/>
-                        <p:ajax listener="#{clinicaTrabajoBean.alCambiarClinica}" update="asignacion"/>
+                        <p:ajax listener="#{clinicaTrabajoBean.alCambiarClinica}" update="rol persona"/>
                     </p:selectOneMenu>
 
-                    <p:outputLabel for="asignacion" value="Rol *"/>
-                    <p:selectOneMenu id="asignacion" value="#{clinicaTrabajoBean.idPersonaRolSeleccionado}"
-                                     required="true" style="width:360px">
-                        <f:selectItem itemLabel="Seleccione una persona y rol" itemValue=""/>
-                        <f:selectItems value="#{clinicaTrabajoBean.asignacionesDisponibles}" var="pr"
-                                       itemLabel="#{pr.idPersona.nombres} #{pr.idPersona.apellidos} - #{pr.idRol.nombre}"
-                                       itemValue="#{pr.idPersonaRol}"/>
+                    <p:outputLabel for="rol" value="Rol"/>
+                    <p:selectOneMenu id="rol" value="#{clinicaTrabajoBean.idRolSeleccionado}"
+                                     required="true" style="width:360px" filter="true" filterMatchMode="contains" filterPlaceholder="Buscar rol...">
+                        <f:selectItem itemLabel="Seleccione un rol" itemValue=""/>
+                        <f:selectItems value="#{clinicaTrabajoBean.rolesDisponibles}" var="r"
+                                       itemLabel="#{r.nombre}" itemValue="#{r.idRol}"/>
+                        <p:ajax listener="#{clinicaTrabajoBean.alCambiarRol}" update="persona"/>
+                    </p:selectOneMenu>
+
+                    <p:outputLabel for="persona" value="Persona"/>
+                    <p:selectOneMenu id="persona" value="#{clinicaTrabajoBean.idPersonaSeleccionada}"
+                                     required="true" style="width:360px" filter="true" filterMatchMode="contains" filterPlaceholder="Buscar persona...">
+                        <f:selectItem itemLabel="Seleccione una persona" itemValue=""/>
+                        <f:selectItems value="#{clinicaTrabajoBean.personasDisponibles}" var="p"
+                                       itemLabel="#{p.nombres} #{p.apellidos}" itemValue="#{p.idPersona}"/>
+                        <p:ajax listener="#{clinicaTrabajoBean.alCambiarPersona}" update="@this"/>
                     </p:selectOneMenu>
                 </h:panelGrid>
-                <p:commandButton value="Cambiar de Rol" icon="pi pi-check"
+                <p:commandButton value="Aplicar" icon="pi pi-check"
                                  action="#{clinicaTrabajoBean.aplicar}" process="@form" update="@form :avisos"
                                  style="margin-left:153px"/>
             </div>

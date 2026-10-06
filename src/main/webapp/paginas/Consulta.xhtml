@@ -16,9 +16,11 @@
                             <h:outputText value="#{clinicaTrabajoBean.seleccionada ? clinicaTrabajoBean.clinicaActual.nombre : 'No seleccionada'}"
                                           styleClass="#{clinicaTrabajoBean.seleccionada ? 'context-ok' : 'context-missing'}"/>
                             <p:outputLabel for="fechaDesde" value="Fecha desde:"/>
-                            <p:datePicker id="fechaDesde" value="#{consultaModel.fechaDesde}" pattern="dd/MM/yyyy"/>
+                            <p:datePicker id="fechaDesde" value="#{consultaModel.fechaDesde}" pattern="dd/MM/yyyy"
+                                          monthNavigator="true" yearNavigator="true" yearRange="2000:2026" showButtonBar="true"/>
                             <p:outputLabel for="fechaHasta" value="Fecha hasta:"/>
-                            <p:datePicker id="fechaHasta" value="#{consultaModel.fechaHasta}" pattern="dd/MM/yyyy"/>
+                            <p:datePicker id="fechaHasta" value="#{consultaModel.fechaHasta}" pattern="dd/MM/yyyy"
+                                          monthNavigator="true" yearNavigator="true" yearRange="2000:2026" showButtonBar="true"/>
                             <p:commandButton value="Filtrar" icon="pi pi-filter"
                                              actionListener="#{consultaModel.aplicarFiltros}"
                                              process="fechaDesde fechaHasta"
@@ -61,45 +63,39 @@
                     </div>
                     <p:tabView id="tabsConsulta">
                         <p:tab title="Detalle">
-                            <h:panelGrid columns="3" cellpadding="4" styleClass="video-form-grid">
+                            <h:panelGrid columns="2" cellpadding="4" styleClass="paso-grid-left">
                                 <p:outputLabel for="consultaId" value="ID"/>
                                 <p:inputText id="consultaId" value="#{consultaModel.registro.idConsulta}"
-                                             size="52" disabled="true"/>
-                                <h:outputText/>
+                                             disabled="true"/>
 
-                                <p:outputLabel for="consultaPaciente" value="Paciente *"/>
-                                <p:inputText id="consultaPaciente" value="#{consultaModel.nombrePacienteSeleccionado}"
-                                             size="38" readonly="true" required="true"/>
-                                <p:commandButton type="button" value="Buscar paciente" icon="pi pi-search"
-                                                 onclick="PF('dlgPacientes').show()"/>
-
-                                <p:outputLabel value="Por Nombre"/>
-                                <h:outputText value="#{consultaModel.nombrePacienteSeleccionado}"/>
-                                <h:outputText/>
+                                <p:outputLabel for="consultaPaciente" value="Paciente"/>
+                                <h:panelGroup layout="block" style="display:flex;gap:8px;align-items:center">
+                                    <p:inputText id="consultaPaciente" value="#{consultaModel.nombrePacienteSeleccionado}"
+                                                 readonly="true" required="true" style="flex:1"/>
+                                    <p:commandButton type="button" value="Buscar paciente" icon="pi pi-search"
+                                                     styleClass="paso-compact"
+                                                     onclick="PF('dlgPacientes').show()"/>
+                                </h:panelGroup>
 
                                 <p:outputLabel for="consultaInicio" value="Fecha Consulta"/>
                                 <p:inputText id="consultaInicio"
                                              value="#{consultaModel.formatearFecha(consultaModel.registro.fechaInicio)}"
-                                             size="52" disabled="true"/>
-                                <h:outputText/>
+                                             disabled="true"/>
 
                                 <p:outputLabel for="consultaFin" value="Fecha Alta"/>
                                 <p:inputText id="consultaFin"
                                              value="#{consultaModel.formatearFecha(consultaModel.registro.fechaFin)}"
-                                             size="52" disabled="true"/>
-                                <h:outputText/>
+                                             disabled="true"/>
 
                                 <p:outputLabel for="consultaReferencia" value="Referencia Externa"/>
                                 <p:inputTextarea id="consultaReferencia"
                                                  value="#{consultaModel.registro.referenciaExterna}"
-                                                 rows="2" cols="50" maxlength="1000"/>
-                                <h:outputText/>
+                                                 rows="2" cols="50" maxlength="1000" style="width:100%"/>
 
                                 <p:outputLabel for="consultaIndicaciones" value="Indicaciones"/>
                                 <p:inputTextarea id="consultaIndicaciones"
                                                  value="#{consultaModel.registro.observaciones}"
-                                                 rows="4" cols="50" maxlength="1000"/>
-                                <h:outputText/>
+                                                 rows="4" cols="50" maxlength="1000" style="width:100%"/>
                             </h:panelGrid>
                             <div class="video-actions">
                                 <p:commandButton value="Guardar Consulta" icon="pi pi-save"
@@ -187,23 +183,38 @@
             </h:panelGroup>
 
             <p:dialog header="Buscar paciente" widgetVar="dlgPacientes" modal="true"
-                      width="820" responsive="true">
-                <h:panelGrid columns="3" cellpadding="4">
-                    <p:outputLabel for="filtroPaciente" value="Nombre y apellido"/>
-                    <p:inputText id="filtroPaciente" value="#{consultaModel.filtroPaciente}" size="42"/>
-                    <p:commandButton value="Buscar" icon="pi pi-search"
-                                     process="filtroPaciente" update="tablaPacientes"/>
+                      width="860" responsive="true">
+                <h:panelGrid columns="4" cellpadding="4" style="width:100%">
+                    <p:outputLabel for="filtroPaciente" value="Nombre"/>
+                    <p:inputText id="filtroPaciente" value="#{consultaModel.filtroPaciente}" size="22" placeholder="Nombre y apellido"/>
+                    <p:outputLabel for="filtroDocumento" value="Documento"/>
+                    <p:inputText id="filtroDocumento" value="#{consultaModel.filtroDocumento}" size="22" placeholder="Núm. documento"/>
+
+                    <p:outputLabel for="filtroRol" value="Rol"/>
+                    <p:inputText id="filtroRol" value="#{consultaModel.filtroRol}" size="22" placeholder="Rol"/>
+                    <p:outputLabel for="filtroMedio" value="Medio contacto"/>
+                    <p:inputText id="filtroMedio" value="#{consultaModel.filtroMedio}" size="22" placeholder="Teléfono / correo"/>
                 </h:panelGrid>
+                <div class="video-actions" style="margin-top:8px">
+                    <p:commandButton value="Buscar" icon="pi pi-search" styleClass="paso-compact"
+                                     process="filtroPaciente filtroDocumento filtroRol filtroMedio" update="tablaPacientes"/>
+                    <p:commandButton value="Limpiar" icon="pi pi-times" styleClass="ui-button-secondary paso-compact"
+                                     actionListener="#{consultaModel.limpiarFiltrosPaciente}"
+                                     process="@this" update="filtroPaciente filtroDocumento filtroRol filtroMedio tablaPacientes"/>
+                </div>
                 <p:dataTable id="tablaPacientes" value="#{consultaModel.pacientesFiltrados}" var="paciente"
                              emptyMessage="No se encontraron pacientes" paginator="true" rows="8">
                     <p:column headerText="Persona">
                         <h:outputText value="#{paciente.idPersona.nombres} #{paciente.idPersona.apellidos}"/>
                     </p:column>
-                    <p:column headerText="Fecha de nacimiento">
-                        <h:outputText value="#{fechaBean.fecha(paciente.idPersona.fechaNacimiento)}"/>
+                    <p:column headerText="Rol">
+                        <h:outputText value="#{paciente.idRol.nombre}"/>
                     </p:column>
                     <p:column headerText="Documentos">
                         <h:outputText value="#{consultaModel.documentosPaciente(paciente)}"/>
+                    </p:column>
+                    <p:column headerText="Contacto">
+                        <h:outputText value="#{consultaModel.mediosPaciente(paciente)}"/>
                     </p:column>
                     <p:column style="width:105px">
                         <p:commandButton value="Seleccionar"

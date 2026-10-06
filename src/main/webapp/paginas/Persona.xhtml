@@ -39,15 +39,20 @@
                             <h:panelGrid columns="2" cellpadding="4" styleClass="video-form-grid">
                                 <p:outputLabel for="personaId" value="ID"/>
                                 <p:inputText id="personaId" value="#{personaModel.registro.idPersona}" size="52" disabled="true"/>
-                                <p:outputLabel for="personaNombres" value="Nombres *"/>
+                                <p:outputLabel for="personaNombres" value="Nombres"/>
                                 <p:inputText id="personaNombres" value="#{personaModel.registro.nombres}"
                                              size="52" maxlength="255" required="true"/>
-                                <p:outputLabel for="personaApellidos" value="Apellidos *"/>
+                                <p:outputLabel for="personaApellidos" value="Apellidos"/>
                                 <p:inputText id="personaApellidos" value="#{personaModel.registro.apellidos}"
                                              size="52" maxlength="255" required="true"/>
-                                <p:outputLabel for="personaNacimiento" value="Fecha de nacimiento *"/>
+                                <p:outputLabel for="personaNacimiento" value="Fecha de nacimiento"/>
                                 <p:datePicker id="personaNacimiento" value="#{personaModel.fechaNacimiento}"
-                                              pattern="dd/MM/yyyy" required="true" showIcon="true"/>
+                                              pattern="dd/MM/yyyy" required="true" showIcon="true"
+                                              monthNavigator="true" yearNavigator="true" yearRange="1900:2026"
+                                              showButtonBar="true"/>
+                                <p:outputLabel for="personaCreacion" value="Fecha creación"/>
+                                <p:inputText id="personaCreacion" value="#{fechaBean.fechaHora(personaModel.registro.fechaCreacion)}"
+                                             size="52" disabled="true"/>
                             </h:panelGrid>
                             <div class="video-actions">
                                 <p:commandButton value="Guardar Persona" icon="pi pi-save"

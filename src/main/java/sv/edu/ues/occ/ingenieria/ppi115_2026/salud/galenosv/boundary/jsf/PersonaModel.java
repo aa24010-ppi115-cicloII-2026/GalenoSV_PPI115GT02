@@ -111,6 +111,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
     protected Persona nuevoRegistro() {
         Persona p = new Persona();
         p.setIdPersona(UUID.randomUUID());
+        p.setFechaCreacion(java.time.OffsetDateTime.now());
         return p;
     }
 
@@ -162,6 +163,9 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
         if (this.registro != null) {
             try {
                 validarPersona();
+                if (this.registro.getFechaCreacion() == null) {
+                    this.registro.setFechaCreacion(java.time.OffsetDateTime.now());
+                }
                 dao.crear(this.registro);
                 limpiar("Persona guardada exitosamente");
             } catch (Exception e) {

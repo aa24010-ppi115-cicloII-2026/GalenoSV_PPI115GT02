@@ -73,6 +73,10 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
 
     private String idPasoAnteriorSeleccionadoSecuencia;
     private String idPasoSeleccionadoSecuencia;
+    private String idExamenAgregar;
+    private Rol rolAutocompleteSeleccionado;
+    private Examen examenAutocompleteSeleccionado;
+    private boolean dependenciaBloqueada;
 
     private void refrescarListasHijas() {
         arbolPasos = null;
@@ -218,6 +222,10 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         idsExamenesPaso = new ArrayList<>();
         examenesTemporalesPaso = new ArrayList<>();
         examenPasoSeleccionadoTemporal = null;
+        idExamenAgregar = null;
+        rolAutocompleteSeleccionado = null;
+        examenAutocompleteSeleccionado = null;
+        dependenciaBloqueada = false;
     }
 
     public void prepararCapturaPaso() {
@@ -240,9 +248,20 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         if (pasoPadre == null || pasoPadre.getIdProcedimientoPaso() == null) {
             return;
         }
+        if (Boolean.TRUE.equals(pasoPadre.getIndicaFin())) {
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN,
+                    "Paso final", "El paso seleccionado indica el fin del procedimiento y no puede tener pasos dependientes"));
+            return;
+        }
         cancelarEdicionPaso();
         idPasoAnteriorSeleccionadoSecuencia = pasoPadre.getIdProcedimientoPaso().toString();
+        dependenciaBloqueada = true;
         capturandoPaso = true;
+    }
+
+    public boolean isPasoSeleccionadoEsFin() {
+        return pasoNodoSeleccionado != null && pasoNodoSeleccionado.getData() != null
+                && Boolean.TRUE.equals(pasoNodoSeleccionado.getData().getIndicaFin());
     }
 
     public void prepararPasoDependienteSeleccionado() {
@@ -269,6 +288,36 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
                 ? null : rol.getIdRol().toString();
     }
 
+    public List<Rol> buscarRolPorNombre(String filtro) {
+        try {
+            return rolDAO.findActivosByNombreLike(filtro, 0, 30);
+        } catch (Exception e) {
+            return java.util.Collections.emptyList();
+        }
+    }
+
+    public void confirmarRolAutocompletado() {
+        if (rolAutocompleteSeleccionado != null && rolAutocompleteSeleccionado.getIdRol() != null) {
+            seleccionarRolPaso(rolAutocompleteSeleccionado);
+            rolAutocompleteSeleccionado = null;
+        }
+    }
+
+    public List<Examen> buscarExamenPorNombre(String filtro) {
+        try {
+            return examenDAO.findActivosByNombreLike(filtro, 0, 30);
+        } catch (Exception e) {
+            return java.util.Collections.emptyList();
+        }
+    }
+
+    public void agregarExamenAutocompletado() {
+        if (examenAutocompleteSeleccionado != null) {
+            agregarExamenPaso(examenAutocompleteSeleccionado);
+            examenAutocompleteSeleccionado = null;
+        }
+    }
+
     public void agregarExamenPaso(Examen examen) {
         if (examen == null || examen.getIdExamen() == null || !Boolean.TRUE.equals(examen.getActivo())) {
             return;
@@ -279,6 +328,19 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         if (!existe) {
             examenesTemporalesPaso.add(examen);
             idsExamenesPaso.add(id);
+        }
+    }
+
+    public void agregarExamenAgregado() {
+        if (idExamenAgregar == null || idExamenAgregar.isBlank()) {
+            return;
+        }
+        try {
+            Examen examen = examenDAO.find(UUID.fromString(idExamenAgregar));
+            agregarExamenPaso(examen);
+            idExamenAgregar = null;
+        } catch (IllegalArgumentException ex) {
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Examen inválido", ex.getMessage()));
         }
     }
 
@@ -331,6 +393,7 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
                 .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
         editandoPaso = true;
         capturandoPaso = true;
+        dependenciaBloqueada = true;
     }
 
     public String getNombreRolPaso() {
@@ -565,6 +628,16 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         return this.registro != null && this.registro.getProcedimientoPasoList() != null ? this.registro.getProcedimientoPasoList() : new ArrayList<>();
     }
 
+    public List<ProcedimientoPaso> getPadresDisponibles() {
+        List<ProcedimientoPaso> todos = getPasosDelProcedimiento();
+        String selfId = nuevoPaso != null && nuevoPaso.getIdProcedimientoPaso() != null
+                ? nuevoPaso.getIdProcedimientoPaso().toString() : null;
+        return todos.stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getIndicaFin()))
+                .filter(p -> selfId == null || !selfId.equals(p.getIdProcedimientoPaso().toString()))
+                .toList();
+    }
+
     // ─── PESTAÑA 2: SECUENCIA ───────────────────────────────────────────────────
 
 
@@ -605,6 +678,9 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         ProcedimientoPaso anterior = buscarPasoEnMemoria(idPasoAnteriorSeleccionadoSecuencia);
         if (anterior == null) {
             throw new IllegalArgumentException("El paso anterior no pertenece al procedimiento");
+        }
+        if (Boolean.TRUE.equals(anterior.getIndicaFin())) {
+            throw new IllegalArgumentException("El paso '" + anterior.getNombre() + "' indica el fin y no puede tener pasos dependientes");
         }
     }
 
@@ -705,6 +781,8 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     public void setEditandoPaso(boolean editandoPaso) { this.editandoPaso = editandoPaso; }
     public boolean isCapturandoPaso() { return capturandoPaso; }
     public void setCapturandoPaso(boolean capturandoPaso) { this.capturandoPaso = capturandoPaso; }
+    public boolean isDependenciaBloqueada() { return dependenciaBloqueada; }
+    public void setDependenciaBloqueada(boolean dependenciaBloqueada) { this.dependenciaBloqueada = dependenciaBloqueada; }
     public List<String> getIdsExamenesPaso() { return idsExamenesPaso; }
     public void setIdsExamenesPaso(List<String> idsExamenesPaso) { this.idsExamenesPaso = idsExamenesPaso; }
     public Examen getExamenPasoSeleccionadoTemporal() { return examenPasoSeleccionadoTemporal; }
@@ -714,6 +792,12 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
 
     public String getIdPasoAnteriorSeleccionadoSecuencia() { return idPasoAnteriorSeleccionadoSecuencia; }
     public void setIdPasoAnteriorSeleccionadoSecuencia(String idPasoAnteriorSeleccionadoSecuencia) { this.idPasoAnteriorSeleccionadoSecuencia = idPasoAnteriorSeleccionadoSecuencia; }
+    public String getIdExamenAgregar() { return idExamenAgregar; }
+    public void setIdExamenAgregar(String idExamenAgregar) { this.idExamenAgregar = idExamenAgregar; }
+    public Rol getRolAutocompleteSeleccionado() { return rolAutocompleteSeleccionado; }
+    public void setRolAutocompleteSeleccionado(Rol rolAutocompleteSeleccionado) { this.rolAutocompleteSeleccionado = rolAutocompleteSeleccionado; }
+    public Examen getExamenAutocompleteSeleccionado() { return examenAutocompleteSeleccionado; }
+    public void setExamenAutocompleteSeleccionado(Examen examenAutocompleteSeleccionado) { this.examenAutocompleteSeleccionado = examenAutocompleteSeleccionado; }
     public String getIdPasoSeleccionadoSecuencia() { return idPasoSeleccionadoSecuencia; }
     public void setIdPasoSeleccionadoSecuencia(String idPasoSeleccionadoSecuencia) { this.idPasoSeleccionadoSecuencia = idPasoSeleccionadoSecuencia; }
 
