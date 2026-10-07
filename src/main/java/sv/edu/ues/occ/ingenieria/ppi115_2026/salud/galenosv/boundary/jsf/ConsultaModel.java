@@ -83,6 +83,7 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
 
     // Selección del maestro
     private String idPersonaRolSeleccionado;
+    private PersonaRol pacienteSeleccionado;
     private String filtroPaciente;
     private String filtroDocumento;
     private String filtroRol;
@@ -518,6 +519,10 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
         idPersonaRolSeleccionado = personaRol == null ? null : personaRol.getIdPersonaRol().toString();
     }
 
+    public void onPacienteSelect(SelectEvent<PersonaRol> event) {
+        seleccionarPaciente(event.getObject());
+    }
+
     public String getNombrePacienteSeleccionado() {
         if (idPersonaRolSeleccionado == null || idPersonaRolSeleccionado.isBlank()) {
             return "";
@@ -586,6 +591,8 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
 
     public String getIdPersonaRolSeleccionado() { return idPersonaRolSeleccionado; }
     public void setIdPersonaRolSeleccionado(String idPersonaRolSeleccionado) { this.idPersonaRolSeleccionado = idPersonaRolSeleccionado; }
+    public PersonaRol getPacienteSeleccionado() { return pacienteSeleccionado; }
+    public void setPacienteSeleccionado(PersonaRol pacienteSeleccionado) { this.pacienteSeleccionado = pacienteSeleccionado; }
     public String getFiltroPaciente() { return filtroPaciente; }
     public void setFiltroPaciente(String filtroPaciente) { this.filtroPaciente = filtroPaciente; }
     public String getFiltroDocumento() { return filtroDocumento; }

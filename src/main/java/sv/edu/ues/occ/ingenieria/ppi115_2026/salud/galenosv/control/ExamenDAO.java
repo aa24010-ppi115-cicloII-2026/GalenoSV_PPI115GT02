@@ -7,7 +7,6 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Examen;
 
@@ -24,22 +23,6 @@ public class ExamenDAO extends DefaultDAO<Examen> {
     public ExamenDAO() {
         super(Examen.class);
     }
-
-    public List<Examen> buscarPorNombre(String nombre) {
-        if (nombre == null || nombre.trim().isEmpty()) {
-            throw new IllegalArgumentException("nombre no puede ser nulo");
-        }
-
-        try {
-            String jpql = "SELECT e FROM Examen e WHERE e.nombre = :nombre";
-            TypedQuery<Examen> q = getEntityManager().createQuery(jpql, Examen.class);
-            q.setParameter("nombre", nombre.trim());
-            return q.getResultList();
-        } catch (Exception ex) {
-            throw new IllegalStateException("Error en buscarPorNombre", ex);
-        }
-    }
-
 
     public boolean existeNombre(String nombre, java.util.UUID excluirId) {
         if (nombre == null || nombre.isBlank()) {
