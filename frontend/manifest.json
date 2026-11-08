@@ -1,0 +1,47 @@
+{
+  "id": "/",
+  "name": "GalenoSV - Gestión Clínica",
+  "short_name": "GalenoSV",
+  "description": "Sistema de gestión clínica odontológica",
+  "lang": "es-SV",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f7fb",
+  "theme_color": "#2c4a63",
+  "icons": [
+    {
+      "src": "recursos/imagenes/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "recursos/imagenes/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "recursos/imagenes/icono-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "recursos/imagenes/captura-escritorio.png",
+      "sizes": "1200x670",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "recursos/imagenes/captura-movil.png",
+      "sizes": "800x1635",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}

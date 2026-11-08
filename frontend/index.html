@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GalenoSV</title>
+  <meta name="theme-color" content="#2c4a63">
+  <meta name="description" content="Sistema de gestión clínica odontológica">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="recursos/imagenes/icono-192.png">
+  <link rel="apple-touch-icon" href="recursos/imagenes/icono-192.png">
+  <link rel="stylesheet" href="css/principal.css">
+</head>
+<body>
+  <header id="cabecera">
+    <div class="marca">
+      <h1>GalenoSV</h1>
+      <p>Gestión clínica odontológica</p>
+    </div>
+    <button type="button" id="instalar" hidden>Instalar aplicación</button>
+  </header>
+
+  <nav id="menu" aria-label="Recursos de la API">
+    <h2>Módulos</h2>
+    <div id="navegacion"></div>
+  </nav>
+
+  <main id="centro">
+    <section id="panel" aria-live="polite">
+      <p class="aviso">Cargando recursos...</p>
+    </section>
+  </main>
+
+  <footer id="pie">
+    <p>PPI115 2026 &middot; GalenoSV</p>
+  </footer>
+
+  <div id="notificacion" role="status" aria-live="polite"></div>
+
+  <dialog id="dialogo">
+    <form id="formulario" method="dialog">
+      <h2 id="titulo-formulario"></h2>
+      <div id="campos"></div>
+      <menu>
+        <button type="button" id="cancelar" class="secundario">Cancelar</button>
+        <button type="submit" id="guardar">Guardar</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/pwa.js"></script>
+</body>
+</html>
