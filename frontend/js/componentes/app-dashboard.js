@@ -8,6 +8,12 @@ export class AppDashboard extends Vista {
       .cabecera { display: grid; gap: 0.3rem; margin-bottom: 1rem; }
       .cabecera h2 { font-size: 1.4rem; }
       .filtros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem; align-items: end; }
+      .rangos { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.7rem; flex-wrap: wrap; }
+      .rangos .rango {
+        background: #fff; color: var(--mate); border: 1px solid var(--borde);
+        border-radius: 999px; padding: 0.25rem 0.8rem; font-size: 0.78rem;
+      }
+      .rangos .rango.activo { background: var(--mate); color: #fff; border-color: var(--mate); }
       .acciones-filtros { display: flex; gap: 0.5rem; }
       #resumen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem; margin: 1.1rem 0; }
       .indicador {
@@ -60,6 +66,12 @@ export class AppDashboard extends Vista {
           <input id="paciente" placeholder="Nombre o apellido" />
         </div>
       </form>
+      <div class="rangos" role="group" aria-label="Rango de fechas rapido">
+        <button type="button" class="rango" data-rango="hoy">Hoy</button>
+        <button type="button" class="rango" data-rango="pasado">Pasado</button>
+        <button type="button" class="rango" data-rango="futuro">Futuro</button>
+        <span class="aviso" id="rango-aviso"></span>
+      </div>
       <section id="resumen" aria-label="Resumen de consultas"></section>
       <section id="lista" aria-live="polite" aria-label="Consultas del día"><div class="vacio">Cargando agenda…</div></section>
       <p class="nota">Los pasos se muestran en orden; el paso resaltado es el siguiente a registrar.</p>
@@ -71,6 +83,11 @@ export class AppDashboard extends Vista {
     this.q("#rol").addEventListener("change", () => this.aplicar());
     this.q("#fecha").addEventListener("change", () => this.aplicar());
     this.q("#paciente").addEventListener("input", () => this.aplicar());
+    this.shadowRoot.addEventListener("click", (evento) => {
+      const boton = evento.target.closest("button[data-rango]");
+      if (!boton) return;
+      this.aplicarRango(boton.dataset.rango);
+    });
     this.shadowRoot.addEventListener("ver-ticket", (evento) => this.abrirTicket(evento.detail));
     this.cargarRoles();
     this.cargar();
@@ -92,6 +109,30 @@ export class AppDashboard extends Vista {
     } else {
       select.disabled = false;
     }
+  }
+
+  /** Aplica el rango rapido de fechas: hoy, ayer o la agenda futura. */
+  aplicarRango(rango) {
+    const hoy = new Date();
+    const iso = (fecha) =>
+      `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
+    const ayer = new Date(hoy.getTime() - 86400000);
+    const manana = new Date(hoy.getTime() + 86400000);
+    const aviso = this.q("#rango-aviso");
+    for (const boton of this.qa("button[data-rango]")) {
+      boton.classList.toggle("activo", boton.dataset.rango === rango);
+    }
+    if (rango === "hoy") {
+      this.q("#fecha").value = iso(hoy);
+      aviso.textContent = "Mostrando las consultas de hoy.";
+    } else if (rango === "pasado") {
+      this.q("#fecha").value = iso(ayer);
+      aviso.textContent = "Mostrando las consultas de ayer.";
+    } else {
+      this.q("#fecha").value = iso(manana);
+      aviso.textContent = "Mostrando las consultas de manana; puede cambiar la fecha para ver otras.";
+    }
+    this.aplicar();
   }
 
   async cargar() {
