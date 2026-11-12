@@ -33,13 +33,13 @@
   "screenshots": [
     {
       "src": "recursos/imagenes/captura-escritorio.png",
-      "sizes": "1200x670",
+      "sizes": "1200x527",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
       "src": "recursos/imagenes/captura-movil.png",
-      "sizes": "800x1635",
+      "sizes": "800x1492",
       "type": "image/png",
       "form_factor": "narrow"
     }

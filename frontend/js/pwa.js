@@ -1,29 +1,18 @@
-const botonInstalar = document.querySelector("#instalar");
-let eventoInstalacion = null;
+const REGISTRO = "./service-worker.js";
 
-window.addEventListener("beforeinstallprompt", (evento) => {
-  evento.preventDefault();
-  eventoInstalacion = evento;
-  botonInstalar.hidden = false;
-});
-
-botonInstalar.addEventListener("click", async () => {
-  if (!eventoInstalacion) return;
-  eventoInstalacion.prompt();
-  await eventoInstalacion.userChoice;
-  eventoInstalacion = null;
-  botonInstalar.hidden = true;
-});
-
-window.addEventListener("appinstalled", () => {
-  eventoInstalacion = null;
-  botonInstalar.hidden = true;
-});
+async function registrar() {
+  if (!("serviceWorker" in navigator)) return null;
+  try {
+    const registro = await navigator.serviceWorker.register(REGISTRO, { scope: "./" });
+    return registro;
+  } catch (error) {
+    console.error("No se pudo registrar el service worker", error);
+    return null;
+  }
+}
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch((error) => {
-      console.error("No se pudo registrar el service worker", error);
-    });
-  });
+  registrar();
+  if (document.readyState === "complete") registrar();
+  else window.addEventListener("load", registrar, { once: true });
 }

@@ -52,6 +52,18 @@ public class ConsultaProcedimientoPasoDAO extends DefaultDAO<ConsultaProcedimien
                 .setParameter("id", idPersonaRol).getSingleResult();
     }
 
+    /** Registros de los pasos de un procedimiento de consulta. */
+    public java.util.List<ConsultaProcedimientoPaso> findByConsultaProcedimiento(java.util.UUID id) {
+        if (id == null) {
+            return java.util.Collections.emptyList();
+        }
+        return getEntityManager().createQuery(
+                "SELECT e FROM ConsultaProcedimientoPaso e LEFT JOIN FETCH e.idPersonaRol pr LEFT JOIN FETCH pr.idPersona"
+                        + " WHERE e.idConsultaProcedimiento.idConsultaProcedimiento = :id"
+                        + " ORDER BY e.fechaInicio", ConsultaProcedimientoPaso.class)
+                .setParameter("id", id).setMaxResults(1000).getResultList();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;

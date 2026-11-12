@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { expect } from "chai";
 
 const manifest = JSON.parse(readFileSync(new URL("../manifest.json", import.meta.url), "utf8"));
+const serviceWorker = readFileSync(new URL("../service-worker.js", import.meta.url), "utf8");
+const index = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 
 describe("manifest PWA", () => {
   it("declara nombre, nombre corto e identificador", () => {
@@ -32,6 +34,21 @@ describe("manifest PWA", () => {
     for (const captura of manifest.screenshots) {
       expect(existsSync(new URL(`../${captura.src}`, import.meta.url)), captura.src).to.be.true;
     }
+  });
+
+  it("registra el service worker y precarga los módulos de la SPA", () => {
+    expect(index).to.contain('type="module" src="js/app.js"');
+    expect(index).to.contain("<app-shell>");
+    expect(index).to.contain("<pwa-instalar>");
+    expect(serviceWorker).to.match(/const CACHE = "galenosv-v\d+"/);
+    expect(serviceWorker).to.contain('"./js/componentes/app-shell.js"');
+    expect(serviceWorker).to.contain('"./js/datos.js"');
+    expect(serviceWorker).to.contain('"./js/pdf.js"');
+    expect(serviceWorker).to.contain('"./js/pendientes.js"');
+    expect(serviceWorker).to.contain('addEventListener("fetch"');
+    expect(serviceWorker).to.contain('datosPrimero');
+    expect(serviceWorker).to.contain('self.skipWaiting()');
+    expect(serviceWorker).to.contain('clients.claim()');
   });
 
   it("tiene colores y orientación definidos", () => {

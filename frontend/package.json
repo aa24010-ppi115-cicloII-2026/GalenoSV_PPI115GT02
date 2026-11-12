@@ -3,13 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Frontend ES6 de GalenoSV que consume la API REST",
+  "description": "PWA de GalenoSV con Web Components y JavaScript est\u00e1ndar",
   "scripts": {
-    "start": "browser-sync start --server --files \"index.html, css/*.css, js/*.js\" --port 3000 --no-notify --no-open",
-    "test": "mocha \"test/**/*.test.js\""
+    "start": "browser-sync start --server --files \"index.html, css/*.css, js/**/*.js\" --port 3000 --no-notify --no-open",
+    "test": "mocha \"test/**/*.test.js\"",
+    "coverage": "c8 --reporter=text --reporter=html mocha \"test/**/*.test.js\""
   },
   "devDependencies": {
     "browser-sync": "^3.0.3",
+    "c8": "^12.0.0",
     "chai": "^5.1.2",
     "jsdom": "^29.1.1",
     "mocha": "^11.0.1",

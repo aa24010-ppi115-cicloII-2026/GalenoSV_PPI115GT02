@@ -34,6 +34,18 @@ public class OrdenExamenDAO extends DefaultDAO<OrdenExamen> {
     }
 
 
+    /** Ordenes de examen de un paso de atencion. */
+    public java.util.List<OrdenExamen> findByConsultaProcedimientoPaso(java.util.UUID id) {
+        if (id == null) {
+            return java.util.Collections.emptyList();
+        }
+        return getEntityManager().createQuery(
+                "SELECT e FROM OrdenExamen e"
+                        + " WHERE e.idConsultaProcedimientoPaso.idConsultaProcedimientoPaso = :id"
+                        + " ORDER BY e.fechaCreacion", OrdenExamen.class)
+                .setParameter("id", id).setMaxResults(1000).getResultList();
+    }
+
     @Override
     public EntityManager getEntityManager() {
         return em;
