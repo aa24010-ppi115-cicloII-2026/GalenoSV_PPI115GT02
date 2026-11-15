@@ -1,11 +1,14 @@
 export const estilosBase = `
   :host {
+    --icono-alerta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7.5v5.5M12 16.5h.01'/%3E%3C/svg%3E");
     display: block;
     color: var(--texto, #14202b);
     font-family: var(--fuente, system-ui, sans-serif);
     line-height: 1.5;
   }
   * { box-sizing: border-box; }
+  /* Ningún display de componente debe ganarle al atributo hidden. */
+  [hidden] { display: none !important; }
   ::selection { background: color-mix(in srgb, var(--acento, #0f7b6c) 22%, transparent); }
   h1, h2, h3, p { margin: 0; }
   h1, h2, h3 { text-wrap: balance; letter-spacing: -0.01em; }
@@ -59,7 +62,7 @@ export const estilosBase = `
     accent-color: var(--acento, #0f7b6c);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
-  .campo input::placeholder, .campo textarea::placeholder { color: var(--texto-tenue, #6b7f93); }
+  .campo input::placeholder, .campo textarea::placeholder { color: var(--texto-tenue, #5f7387); }
   .campo input:hover, .campo select:hover, .campo textarea:hover { border-color: var(--mate, #2c4a63); }
   .campo textarea { min-height: 88px; resize: vertical; }
   .campo input:focus, .campo select:focus, .campo textarea:focus {
@@ -86,6 +89,16 @@ export const estilosBase = `
   }
   .aviso { color: var(--texto-suave, #4d6378); font-size: 0.9rem; }
   .error { color: var(--peligro, #b42318); font-size: 0.85rem; }
+  /* Aviso de error de formulario: recuadro con ícono, compartido por todas las vistas. */
+  .error[role="alert"] {
+    display: flex; align-items: flex-start; gap: 0.55rem;
+    padding: 0.7rem 0.85rem; border-radius: var(--radio, 10px);
+    background: var(--peligro-suave, #fdeceb); font-size: 0.88rem; font-weight: 500;
+  }
+  .error[role="alert"]::before {
+    content: ""; flex: none; width: 1.1rem; height: 1.1rem; margin-top: 0.08rem; background: currentColor;
+    -webkit-mask: var(--icono-alerta) center / contain no-repeat; mask: var(--icono-alerta) center / contain no-repeat;
+  }
   .rejilla { display: grid; gap: 0.85rem; }
   .rejilla.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .rejilla.tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }

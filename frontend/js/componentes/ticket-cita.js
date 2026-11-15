@@ -144,7 +144,7 @@ export class TicketCita extends Vista {
       h2 { font-size: 1.2rem; }
       .codigo { color: var(--acento-fuerte, #0b6155); font-weight: 700; font-variant-numeric: tabular-nums; word-break: break-all; }
       .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem 1.25rem; font-size: 0.92rem; margin: 0 0 1.1rem; }
-      .datos span { color: var(--texto-tenue, #6b7f93); display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.1rem; }
+      .datos span { color: var(--texto-tenue, #5f7387); display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.1rem; }
       table { width: 100%; border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
       th, td { text-align: left; border-bottom: 1px solid var(--borde, #d6dee7); padding: 0.5rem 0.55rem; vertical-align: top; }
       th { background: var(--superficie-suave, #f7f9fb); color: var(--mate, #2c4a63); font-size: 0.74rem; font-weight: 600; }

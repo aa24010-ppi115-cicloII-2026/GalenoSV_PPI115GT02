@@ -76,7 +76,7 @@ export class AppShell extends Vista {
         background: transparent; border: 1px solid var(--alerta, #85570a); color: var(--alerta, #85570a);
         border-radius: 8px; padding: 0.15rem 0.6rem; font-size: 0.75rem;
       }
-      footer { padding-block: 1.25rem 1.5rem; color: var(--texto-tenue, #6b7f93); font-size: 0.75rem; text-align: center; border-top: 1px solid var(--borde, #d6dee7); }
+      footer { padding-block: 1.25rem 1.5rem; color: var(--texto-tenue, #5f7387); font-size: 0.75rem; text-align: center; border-top: 1px solid var(--borde, #d6dee7); }
       @media (max-width: 620px) {
         .barra { gap: 0.4rem 0.5rem; }
         .contenedor { padding: 0 0.75rem; }
@@ -110,7 +110,7 @@ export class AppShell extends Vista {
           </div>
           <nav aria-label="Navegación principal">
             <button class="enlace" data-ruta="buscar" type="button" aria-current="page">Buscar citas</button>
-            <button class="enlace" data-ruta="acceso" type="button">Acceso empleados</button>
+            <button class="enlace" id="acceso" data-ruta="acceso" type="button">Acceso empleados</button>
           </nav>
           <div class="usuario"></div>
         </div>
@@ -178,7 +178,8 @@ export class AppShell extends Vista {
   actualizarSesion() {
     const sesion = leerSesion();
     const usuario = this.q(".usuario");
-    const botonAcceso = this.q('[data-ruta="acceso"]');
+    // Por id: data-ruta cambia entre "acceso" y "dashboard" según haya sesión.
+    const botonAcceso = this.q("#acceso");
     if (!usuario || !botonAcceso) return;
     if (sesion) {
       botonAcceso.textContent = "Mi panel";
@@ -210,9 +211,12 @@ export class AppShell extends Vista {
     const vista = document.createElement(VISTAS[nombre]);
     if (parametro) vista.setAttribute("id-consulta", parametro);
     contenedor.replaceChildren(vista);
-    for (const boton of this.qa('nav button[data-ruta="buscar"], nav button[data-ruta="dashboard"]')) {
+    for (const boton of this.qa("nav button[data-ruta]")) {
       const rutaBoton = boton.dataset.ruta;
-      const activo = rutaBoton === nombre || (nombre === "consulta" && rutaBoton === "dashboard");
+      const activo =
+        rutaBoton === nombre ||
+        (nombre === "consulta" && rutaBoton === "dashboard") ||
+        (nombre === "login" && rutaBoton === "acceso");
       boton.classList.toggle("activo", activo);
       if (activo) boton.setAttribute("aria-current", "page");
       else boton.removeAttribute("aria-current");

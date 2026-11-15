@@ -1,33 +1,52 @@
-import { Vista, escapar, hoyISO } from "../base.js";
-import { cargarTodo, citasDeEmpleado, estadoDeCita } from "../datos.js";
+import { Vista, escapar, hoyISO, fechaCalendario } from "../base.js";
+import { cargarTodo, citasDeEmpleado, documentoDePersona, estadoDeCita, pacientesDeClinica } from "../datos.js";
 import { leerSesion, actualizarSesion } from "../estado.js";
+import "./ui-autocompletar.js";
+
+/** Atajos de fechas [desde, hasta]: hoy, todo lo anterior a hoy o todo desde mañana ("" = sin límite). */
+function atajosDeFecha() {
+  const dia = (desplazamiento) => {
+    const fecha = new Date();
+    fecha.setDate(fecha.getDate() + desplazamiento);
+    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
+  };
+  return { hoy: [dia(0), dia(0)], pasadas: ["", dia(-1)], proximas: [dia(1), ""] };
+}
 
 export class AppDashboard extends Vista {
   get estilos() {
     return `
       .cabecera { display: grid; gap: 0.3rem; margin-bottom: 1rem; }
-      .cabecera h2 { font-size: 1.4rem; }
-      .filtros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem; align-items: end; }
-      .rangos { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.7rem; flex-wrap: wrap; }
-      .rangos .rango {
-        background: #fff; color: var(--mate); border: 1px solid var(--borde);
-        border-radius: 999px; padding: 0.25rem 0.8rem; font-size: 0.78rem;
+      .cabecera h2 { font-size: 1.4rem; letter-spacing: -0.015em; }
+      .filtros { display: grid; gap: 0.9rem; }
+      .datos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
+      .fechas { display: grid; grid-template-columns: repeat(2, minmax(0, 11rem)) 1fr; gap: 0.8rem; align-items: end; }
+      .rangos { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; }
+      .rangos button {
+        min-height: 2.25rem; padding: 0.3rem 0.9rem; font-size: 0.82rem; border-radius: 999px;
+        background: var(--superficie); color: var(--mate); border: 1px solid var(--borde-fuerte); box-shadow: none;
       }
-      .rangos .rango.activo { background: var(--mate); color: #fff; border-color: var(--mate); }
-      .acciones-filtros { display: flex; gap: 0.5rem; }
-      #resumen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem; margin: 1.1rem 0; }
+      .rangos button:hover { background: var(--mate-suave); }
+      .rangos button[aria-pressed="true"] { background: var(--mate); color: #fff; border-color: var(--mate); }
+      #rango-aviso { font-size: 0.85rem; color: var(--texto-suave); margin: 1rem 0 0; }
+      #resumen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem; margin: 0.6rem 0 1.1rem; }
       .indicador {
-        background: #fff; border: 1px solid #cbd5e1; border-radius: 14px; padding: 0.7rem 0.85rem;
-        display: grid; gap: 0.1rem;
+        background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio-grande);
+        padding: 0.7rem 0.85rem; display: grid; gap: 0.1rem;
       }
-      .indicador span { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #587089; }
-      .indicador strong { font-size: 1.5rem; color: #2c4a63; }
-      .indicador.proceso strong { color: #8a5a00; }
-      .indicador.completada strong { color: #1e6b3a; }
+      .indicador span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--texto-suave); }
+      .indicador strong { font-size: 1.5rem; color: var(--mate); font-variant-numeric: tabular-nums; }
+      .indicador.proceso strong { color: var(--alerta); }
+      .indicador.completada strong { color: var(--exito); }
       #lista { display: grid; gap: 0.85rem; }
-      .nota { font-size: 0.8rem; color: #587089; }
-      @media (max-width: 900px) { .filtros { grid-template-columns: 1fr 1fr; } #resumen { grid-template-columns: 1fr 1fr; } }
-      @media (max-width: 520px) { .filtros { grid-template-columns: 1fr; } }
+      @media (max-width: 900px) {
+        .datos { grid-template-columns: 1fr 1fr; }
+        .datos #paciente { grid-column: 1 / -1; }
+        .fechas { grid-template-columns: 1fr 1fr; }
+        .rangos { grid-column: 1 / -1; justify-content: flex-start; }
+        #resumen { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 520px) { .datos { grid-template-columns: 1fr; } }
     `;
   }
 
@@ -37,52 +56,47 @@ export class AppDashboard extends Vista {
     const clinicaActual = sesion?.idClinica ?? clinicas[0]?.idClinica ?? "";
     this.render(`
       <section class="cabecera">
-        <span class="etiqueta">Empleados</span>
-        <h2>Consultas del día</h2>
-        <p class="aviso">${escapar(sesion?.nombre ?? "")} · filtre por clínica y rol para revisar la agenda y abrir el registro de atención.</p>
+        <h2>Agenda de consultas</h2>
+        <p class="aviso">${escapar(sesion?.nombre ?? "")} · elija clínica y rol para ver las consultas que le toca atender.</p>
       </section>
-      <form class="tarjeta filtros" id="filtros">
-        <div class="campo">
-          <label for="clinica">Clínica</label>
-          <select id="clinica">
-            ${clinicas
-              .map(
-                (clinica) =>
-                  `<option value="${escapar(clinica.idClinica)}" ${String(clinica.idClinica) === String(clinicaActual) ? "selected" : ""}>${escapar(clinica.nombre)}</option>`
-              )
-              .join("")}
-          </select>
+      <form class="tarjeta filtros" id="filtros" aria-label="Filtros de la agenda">
+        <div class="datos">
+          <ui-autocompletar id="clinica" etiqueta="Clínica"></ui-autocompletar>
+          <ui-autocompletar id="rol" etiqueta="Rol"></ui-autocompletar>
+          <ui-autocompletar id="paciente" etiqueta="Paciente (opcional)"></ui-autocompletar>
         </div>
-        <div class="campo">
-          <label for="rol">Rol</label>
-          <select id="rol"></select>
-        </div>
-        <div class="campo">
-          <label for="fecha">Fecha</label>
-          <input type="date" id="fecha" value="${hoyISO()}" />
-        </div>
-        <div class="campo">
-          <label for="paciente">Paciente</label>
-          <input id="paciente" placeholder="Nombre o apellido" />
+        <div class="fechas">
+          <div class="campo">
+            <label for="desde">Desde</label>
+            <input type="date" id="desde" />
+          </div>
+          <div class="campo">
+            <label for="hasta">Hasta</label>
+            <input type="date" id="hasta" />
+          </div>
+          <div class="rangos" role="group" aria-label="Atajos de fechas">
+            <button type="button" data-rango="pasadas" aria-pressed="false">Pasadas</button>
+            <button type="button" data-rango="hoy" aria-pressed="false">Hoy</button>
+            <button type="button" data-rango="proximas" aria-pressed="false">Próximas</button>
+          </div>
         </div>
       </form>
-      <div class="rangos" role="group" aria-label="Rango de fechas rapido">
-        <button type="button" class="rango" data-rango="hoy">Hoy</button>
-        <button type="button" class="rango" data-rango="pasado">Pasado</button>
-        <button type="button" class="rango" data-rango="futuro">Futuro</button>
-        <span class="aviso" id="rango-aviso"></span>
-      </div>
+      <p id="rango-aviso" role="status"></p>
       <section id="resumen" aria-label="Resumen de consultas"></section>
-      <section id="lista" aria-live="polite" aria-label="Consultas del día"><div class="vacio">Cargando agenda…</div></section>
-      <p class="nota">Los pasos se muestran en orden; el paso resaltado es el siguiente a registrar.</p>
+      <section id="lista" aria-live="polite" aria-label="Consultas"><div class="vacio">Cargando agenda…</div></section>
     `);
-    this.q("#clinica").addEventListener("change", () => {
+    const campoClinica = this.q("#clinica");
+    campoClinica.opciones = clinicas.map((clinica) => ({ valor: clinica.idClinica, texto: clinica.nombre }));
+    campoClinica.value = clinicaActual;
+    campoClinica.addEventListener("change", () => {
       this.cargarRoles();
+      this.cargarPacientes();
       this.aplicar();
     });
     this.q("#rol").addEventListener("change", () => this.aplicar());
-    this.q("#fecha").addEventListener("change", () => this.aplicar());
-    this.q("#paciente").addEventListener("input", () => this.aplicar());
+    this.q("#desde").addEventListener("change", () => this.aplicar());
+    this.q("#hasta").addEventListener("change", () => this.aplicar());
+    this.q("#paciente").addEventListener("change", () => this.aplicar());
     this.shadowRoot.addEventListener("click", (evento) => {
       const boton = evento.target.closest("button[data-rango]");
       if (!boton) return;
@@ -90,6 +104,7 @@ export class AppDashboard extends Vista {
     });
     this.shadowRoot.addEventListener("ver-ticket", (evento) => this.abrirTicket(evento.detail));
     this.cargarRoles();
+    this.ponerRango("hoy");
     this.cargar();
   }
 
@@ -99,46 +114,70 @@ export class AppDashboard extends Vista {
     const roles = (sesion?.roles ?? []).filter(
       (rol) => String(rol.idClinica) === String(idClinica)
     );
-    const select = this.q("#rol");
-    select.innerHTML =
-      `<option value="">Todos mis roles</option>` +
-      roles.map((rol) => `<option value="${escapar(rol.idRol)}">${escapar(rol.nombreRol)}</option>`).join("");
+    const campo = this.q("#rol");
+    campo.opciones = roles.map((rol) => ({ valor: rol.idRol, texto: rol.nombreRol }));
     if (roles.length === 0) {
-      select.innerHTML = `<option value="">Sin roles en esta clínica</option>`;
-      select.disabled = true;
-    } else {
-      select.disabled = false;
+      campo.mensaje = "Sin roles en esta clínica";
+      return;
     }
+    // Se trabaja con un rol a la vez: el de la sesión si pertenece a esta clínica, o el primero.
+    const enClinica = roles.some((rol) => String(rol.idRol) === String(sesion.idRol));
+    campo.value = enClinica ? sesion.idRol : roles[0].idRol;
   }
 
-  /** Aplica el rango rapido de fechas: hoy, ayer o la agenda futura. */
+  /** Opciones del buscador de pacientes: los registrados en la clínica elegida. */
+  cargarPacientes() {
+    if (!this._datos) return;
+    const campo = this.q("#paciente");
+    const pacientes = pacientesDeClinica(this._datos, this.q("#clinica").value);
+    campo.opciones = pacientes.map((persona) => {
+      const documento = documentoDePersona(this._datos, persona.idPersona);
+      return {
+        valor: persona.idPersona,
+        texto: [`${persona.nombres} ${persona.apellidos}`.trim(), documento && `${documento.tipo} ${documento.valor}`]
+          .filter(Boolean)
+          .join(" · "),
+      };
+    });
+    if (pacientes.length === 0) campo.mensaje = "Sin pacientes en esta clínica";
+  }
+
+  ponerRango(rango) {
+    const [desde, hasta] = atajosDeFecha()[rango];
+    this.q("#desde").value = desde;
+    this.q("#hasta").value = hasta;
+  }
+
   aplicarRango(rango) {
-    const hoy = new Date();
-    const iso = (fecha) =>
-      `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
-    const ayer = new Date(hoy.getTime() - 86400000);
-    const manana = new Date(hoy.getTime() + 86400000);
-    const aviso = this.q("#rango-aviso");
-    for (const boton of this.qa("button[data-rango]")) {
-      boton.classList.toggle("activo", boton.dataset.rango === rango);
-    }
-    if (rango === "hoy") {
-      this.q("#fecha").value = iso(hoy);
-      aviso.textContent = "Mostrando las consultas de hoy.";
-    } else if (rango === "pasado") {
-      this.q("#fecha").value = iso(ayer);
-      aviso.textContent = "Mostrando las consultas de ayer.";
-    } else {
-      this.q("#fecha").value = iso(manana);
-      aviso.textContent = "Mostrando las consultas de manana; puede cambiar la fecha para ver otras.";
-    }
+    this.ponerRango(rango);
     this.aplicar();
+  }
+
+  /** Marca el atajo que coincide con las fechas elegidas y describe el rango en texto. */
+  describirRango(desde, hasta) {
+    const hoy = hoyISO();
+    const atajos = atajosDeFecha();
+    for (const boton of this.qa("button[data-rango]")) {
+      const [d, h] = atajos[boton.dataset.rango];
+      boton.setAttribute("aria-pressed", String(d === desde && h === hasta));
+    }
+    const texto = (iso) => fechaCalendario(iso);
+    let descripcion;
+    if (desde === hoy && hasta === hoy) descripcion = `Consultas de hoy, ${texto(hoy)}.`;
+    else if (desde && hasta && desde === hasta) descripcion = `Consultas del ${texto(desde)}.`;
+    else if (desde && hasta) descripcion = `Consultas del ${texto(desde)} al ${texto(hasta)}.`;
+    else if (desde) descripcion = `Consultas desde el ${texto(desde)}.`;
+    else if (hasta) descripcion = `Consultas hasta el ${texto(hasta)}, la más reciente primero.`;
+    else descripcion = "Consultas de todas las fechas.";
+    this.q("#rango-aviso").textContent = descripcion;
   }
 
   async cargar() {
     try {
       this._datos = await cargarTodo();
-      if (this.isConnected) this.aplicar();
+      if (!this.isConnected) return;
+      this.cargarPacientes();
+      this.aplicar();
     } catch {
       this.q("#lista").innerHTML = `<div class="vacio">No se pudo cargar la agenda. Intente de nuevo.</div>`;
     }
@@ -150,10 +189,20 @@ export class AppDashboard extends Vista {
     if (!sesion) return;
     const idClinica = this.q("#clinica").value || null;
     const idRol = this.q("#rol").value || null;
-    const fecha = this.q("#fecha").value || hoyISO();
-    const paciente = this.q("#paciente").value.trim();
+    const desde = this.q("#desde").value;
+    const hasta = this.q("#hasta").value;
+    const idPaciente = this.q("#paciente").value || null;
     actualizarSesion({ idClinica: idClinica ?? sesion.idClinica, idRol });
-    const citas = citasDeEmpleado(this._datos, { idClinica, idRol, desde: fecha, hasta: fecha, paciente });
+    this.describirRango(desde, hasta);
+    const lista = this.q("#lista");
+    if (desde && hasta && desde > hasta) {
+      this.q("#resumen").innerHTML = "";
+      lista.innerHTML = `<p class="error" role="alert">La fecha «Desde» es posterior a «Hasta». Corrija el rango.</p>`;
+      return;
+    }
+    const citas = citasDeEmpleado(this._datos, { idClinica, idRol, desde: desde || null, hasta: hasta || null, idPaciente });
+    // Sin fecha inicial solo se ven consultas pasadas: primero la más reciente.
+    if (!desde && hasta) citas.reverse();
     const conteos = { total: citas.length, programada: 0, proceso: 0, completada: 0 };
     for (const cita of citas) {
       const { clave } = estadoDeCita(cita);
@@ -165,10 +214,9 @@ export class AppDashboard extends Vista {
       <div class="indicador proceso"><span>En proceso</span><strong>${conteos.proceso}</strong></div>
       <div class="indicador completada"><span>Completadas</span><strong>${conteos.completada}</strong></div>
     `;
-    const lista = this.q("#lista");
     lista.innerHTML = "";
     if (citas.length === 0) {
-      lista.innerHTML = `<div class="vacio">No hay consultas para la fecha y filtros seleccionados.</div>`;
+      lista.innerHTML = `<div class="vacio">No hay consultas para las fechas y filtros seleccionados.</div>`;
       return;
     }
     for (const cita of citas) {

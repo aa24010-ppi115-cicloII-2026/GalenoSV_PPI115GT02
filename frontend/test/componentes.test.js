@@ -41,6 +41,7 @@ describe("componentes Web Components", () => {
     dom.window.confirm = () => true;
     globalThis.confirm = dom.window.confirm;
     await import("../js/componentes/ui-toast.js");
+    await import("../js/componentes/ui-autocompletar.js");
     ({ documentoImprimible, lineasTicket } = await import("../js/componentes/ticket-cita.js"));
     await import("../js/componentes/cita-card.js");
     await import("../js/componentes/app-login.js");
@@ -86,35 +87,197 @@ describe("componentes Web Components", () => {
     return elemento;
   }
 
-  it("app-login valida el documento y crea la sesión sin autorregistro", async () => {
-    const login = montar("app-login");
-    const navegaciones = [];
-    login.addEventListener("navegar", (evento) => navegaciones.push(evento.detail));
-    await esperar(() => login.shadowRoot.querySelectorAll("#tipo option").length > 1);
-    login.shadowRoot.querySelector("#tipo").value = "1";
-    login.shadowRoot.querySelector("#numero").value = " 33333333-3 ";
-    login.shadowRoot.querySelector("#formulario").dispatchEvent(
-      new dom.window.Event("submit", { bubbles: true, cancelable: true })
-    );
-    await esperar(() => sessionStorage.getItem("galenosv.sesion") && navegaciones.length > 0);
-    const sesion = JSON.parse(sessionStorage.getItem("galenosv.sesion"));
-    expect(sesion.idPersona).to.equal(300);
-    expect(sesion.nombre).to.equal("Elena Martínez");
-    expect(sesion.roles[0].nombreRol).to.equal("Enfermero");
-    expect(navegaciones).to.include("dashboard");
+  describe("ui-autocompletar · buscador de datos del catálogo", () => {
+    const OPCIONES = [
+      { valor: 10, texto: "Clínica Central" },
+      { valor: 20, texto: "Clínica Municipal Chalchuapa" },
+      { valor: 30, texto: "Policlínica Oeste" },
+    ];
+    function abrirCampo() {
+      const campo = montar("ui-autocompletar", { opciones: OPCIONES });
+      campo.setAttribute("etiqueta", "Clínica");
+      const entrada = campo.shadowRoot.querySelector("input");
+      const escribir = (texto) => {
+        entrada.value = texto;
+        entrada.dispatchEvent(new dom.window.Event("input"));
+      };
+      const tecla = (key) => {
+        const evento = new dom.window.KeyboardEvent("keydown", { key, bubbles: true, composed: true, cancelable: true });
+        entrada.dispatchEvent(evento);
+        return evento;
+      };
+      const visibles = () => [...campo.shadowRoot.querySelectorAll("li[role=option]")].map((li) => li.textContent);
+      return { campo, entrada, escribir, tecla, visibles };
+    }
+
+    it("filtra mientras se escribe, sin distinguir mayúsculas ni acentos, y resalta la coincidencia", () => {
+      const { campo, escribir, visibles } = abrirCampo();
+      escribir("CLINICA");
+      expect(visibles()).to.deep.equal(["Clínica Central", "Clínica Municipal Chalchuapa", "Policlínica Oeste"]);
+      escribir("chal");
+      expect(visibles()).to.deep.equal(["Clínica Municipal Chalchuapa"]);
+      expect(campo.shadowRoot.querySelector("mark").textContent).to.equal("Chal");
+      escribir("zzz");
+      expect(visibles()).to.deep.equal(["Sin resultados"]);
+    });
+
+    it("se elige con flechas y Enter, emite change y Enter no llega al formulario", () => {
+      const { campo, entrada, escribir, tecla } = abrirCampo();
+      const cambios = [];
+      const enFormulario = [];
+      campo.addEventListener("change", () => cambios.push(campo.value));
+      document.body.addEventListener("keydown", (evento) => enFormulario.push(evento.key));
+      escribir("clinica");
+      tecla("ArrowDown");
+      tecla("ArrowDown");
+      expect(entrada.getAttribute("aria-activedescendant")).to.equal("op-1");
+      tecla("Enter");
+      expect(campo.value).to.equal(20);
+      expect(campo.textoElegido).to.equal("Clínica Municipal Chalchuapa");
+      expect(entrada.value).to.equal("Clínica Municipal Chalchuapa");
+      expect(entrada.getAttribute("aria-expanded")).to.equal("false");
+      expect(cambios).to.deep.equal([20]);
+      expect(enFormulario).to.not.include("Enter");
+    });
+
+    it("Escape cierra la lista y conserva la opción elegida", () => {
+      const { campo, entrada, escribir, tecla } = abrirCampo();
+      campo.value = 10;
+      escribir("poli");
+      tecla("Escape");
+      expect(entrada.getAttribute("aria-expanded")).to.equal("false");
+      expect(entrada.value).to.equal("Clínica Central");
+      expect(campo.value).to.equal(10);
+    });
+
+    it("al salir acepta un texto exacto, restaura uno incompleto y vacía el valor si se borra", () => {
+      const { campo, entrada, escribir } = abrirCampo();
+      const salir = () => entrada.dispatchEvent(new dom.window.FocusEvent("blur"));
+      escribir("policlinica oeste");
+      salir();
+      expect(campo.value).to.equal(30);
+
+      escribir("muni");
+      salir();
+      expect(campo.value).to.equal(30);
+      expect(entrada.value).to.equal("Policlínica Oeste");
+
+      escribir("");
+      salir();
+      expect(campo.value).to.equal("");
+    });
+
+    it("muestra un aviso y se deshabilita mientras no hay opciones", () => {
+      const campo = montar("ui-autocompletar");
+      const entrada = campo.shadowRoot.querySelector("input");
+      expect(entrada.disabled).to.be.true;
+      expect(entrada.placeholder).to.equal("Cargando…");
+      campo.opciones = OPCIONES;
+      expect(entrada.disabled).to.be.false;
+      campo.mensaje = "No disponible";
+      expect(entrada.disabled).to.be.true;
+      expect(entrada.placeholder).to.equal("No disponible");
+    });
   });
 
-  it("app-login rechaza documentos desconocidos y muestra el error", async () => {
-    const login = montar("app-login");
-    await esperar(() => login.shadowRoot.querySelectorAll("#tipo option").length > 1);
-    login.shadowRoot.querySelector("#tipo").value = "1";
-    login.shadowRoot.querySelector("#numero").value = "99999999-9";
-    login.shadowRoot.querySelector("#formulario").dispatchEvent(
-      new dom.window.Event("submit", { bubbles: true, cancelable: true })
-    );
-    await esperar(() => !login.shadowRoot.querySelector("#error").hidden);
-    expect(login.shadowRoot.querySelector("#error").textContent).to.contain("No existe");
-    expect(sessionStorage.getItem("galenosv.sesion")).to.be.null;
+  describe("HU2 · Login", () => {
+    async function abrirLogin() {
+      const login = montar("app-login");
+      await esperar(() => login.shadowRoot.querySelector("#tipo").opciones.length > 0);
+      return login;
+    }
+    function enviar(login, tipo, numero) {
+      login.shadowRoot.querySelector("#tipo").value = tipo;
+      login.shadowRoot.querySelector("#numero").value = numero;
+      login.shadowRoot.querySelector("#formulario").dispatchEvent(
+        new dom.window.Event("submit", { bubbles: true, cancelable: true })
+      );
+    }
+    const errorLogin = (login) => login.shadowRoot.querySelector("#error");
+
+    it("app-login valida el documento y crea la sesión sin autorregistro", async () => {
+      const login = montar("app-login");
+      const navegaciones = [];
+      login.addEventListener("navegar", (evento) => navegaciones.push(evento.detail));
+      await esperar(() => login.shadowRoot.querySelector("#tipo").opciones.length > 0);
+      login.shadowRoot.querySelector("#tipo").value = "1";
+      login.shadowRoot.querySelector("#numero").value = " 33333333-3 ";
+      login.shadowRoot.querySelector("#formulario").dispatchEvent(
+        new dom.window.Event("submit", { bubbles: true, cancelable: true })
+      );
+      await esperar(() => sessionStorage.getItem("galenosv.sesion") && navegaciones.length > 0);
+      const sesion = JSON.parse(sessionStorage.getItem("galenosv.sesion"));
+      expect(sesion.idPersona).to.equal(300);
+      expect(sesion.nombre).to.equal("Elena Martínez");
+      expect(sesion.roles[0].nombreRol).to.equal("Enfermero");
+      expect(navegaciones).to.include("dashboard");
+    });
+
+    it("app-login rechaza documentos desconocidos y muestra el error", async () => {
+      const login = montar("app-login");
+      await esperar(() => login.shadowRoot.querySelector("#tipo").opciones.length > 0);
+      login.shadowRoot.querySelector("#tipo").value = "1";
+      login.shadowRoot.querySelector("#numero").value = "99999999-9";
+      login.shadowRoot.querySelector("#formulario").dispatchEvent(
+        new dom.window.Event("submit", { bubbles: true, cancelable: true })
+      );
+      await esperar(() => !login.shadowRoot.querySelector("#error").hidden);
+      expect(login.shadowRoot.querySelector("#error").textContent).to.contain("No existe");
+      expect(sessionStorage.getItem("galenosv.sesion")).to.be.null;
+    });
+
+    it("app-login rechaza a quien solo está registrado como paciente", async () => {
+      const login = await abrirLogin();
+      enviar(login, "1", "11111111-1");
+      await esperar(() => !errorLogin(login).hidden);
+      expect(errorLogin(login).textContent).to.contain("no tiene un rol de empleado");
+      expect(sessionStorage.getItem("galenosv.sesion")).to.be.null;
+    });
+
+    it("app-login pide tipo y número, y valida el formato antes de buscar al empleado", async () => {
+      datos.tiposDocumento[0].expresionRegular = "^[0-9]{8}-[0-9]$";
+      datos.tiposDocumento[0].indicaciones = "8 dígitos, guion y dígito verificador";
+      const login = await abrirLogin();
+      enviar(login, "", "");
+      expect(errorLogin(login).textContent).to.equal("Seleccione el tipo de documento e ingrese el número.");
+      expect(errorLogin(login).getAttribute("role")).to.equal("alert");
+
+      enviar(login, "1", "123");
+      await esperar(() => errorLogin(login).textContent.includes("formato"));
+      expect(errorLogin(login).textContent).to.contain("8 dígitos, guion y dígito verificador");
+      expect(sessionStorage.getItem("galenosv.sesion")).to.be.null;
+    });
+
+    it("app-login avisa cuando no puede cargar los datos del servicio", async () => {
+      fetch.rejects(new TypeError("Failed to fetch"));
+      const login = montar("app-login");
+      await esperar(() => !errorLogin(login).hidden);
+      expect(errorLogin(login).textContent).to.contain("No se pudo conectar con el servicio");
+      expect(login.shadowRoot.querySelector("#tipo").mensaje).to.equal("No se pudo cargar");
+    });
+
+    it("app-login no ofrece recuperar contraseña ni autorregistro", async () => {
+      const login = await abrirLogin();
+      expect(login.shadowRoot.textContent).to.not.match(/contraseña|Solicitar acceso/i);
+      expect(login.shadowRoot.querySelector("#ir-buscar")).to.not.be.null;
+    });
+
+    it("app-shell actualiza el encabezado al entrar, salir y entrar con otro empleado", async () => {
+      dom.window.location.hash = "#/login";
+      const shell = montar("app-shell");
+      const encabezado = () => shell.shadowRoot.querySelector("header").textContent.replace(/\s+/g, " ");
+      await esperar(() => shell.shadowRoot.querySelector("app-login"));
+      expect(shell.shadowRoot.querySelector("#acceso").getAttribute("aria-current")).to.equal("page");
+      guardarSesion(SESION_ENFERMERO);
+      expect(encabezado()).to.contain("Elena Martínez").and.contain("Mi panel");
+
+      shell.shadowRoot.querySelector("#salir").click();
+      expect(sessionStorage.getItem("galenosv.sesion")).to.be.null;
+      expect(encabezado()).to.contain("Acceso empleados").and.not.contain("Elena Martínez");
+
+      guardarSesion({ ...SESION_ENFERMERO, idPersona: 100, nombre: "Ana López" });
+      expect(encabezado()).to.contain("Ana López").and.not.contain("Elena Martínez");
+    });
   });
 
   describe("HU1 · Búsqueda de citas", () => {
@@ -122,7 +285,7 @@ describe("componentes Web Components", () => {
       // El asistente vive dentro de app-busqueda; estas ayudas lo recorren como lo haría el paciente.
       async function abrirAsistente() {
         const busqueda = montar("app-busqueda");
-        await esperar(() => busqueda.shadowRoot.querySelector("asistente-citas")?.shadowRoot?.querySelectorAll("#tipo option").length > 1);
+        await esperar(() => busqueda.shadowRoot.querySelector("asistente-citas")?.shadowRoot?.querySelector("#tipo").opciones.length > 0);
         return { busqueda, raiz: busqueda.shadowRoot.querySelector("asistente-citas").shadowRoot };
       }
       const pasoVisible = (raiz) => raiz.querySelector("section[data-paso]:not([hidden])").dataset.paso;
@@ -171,7 +334,7 @@ describe("componentes Web Components", () => {
         const { raiz } = await abrirAsistente();
         await completarDocumento(raiz, "11111111-1");
         await hastaPaso(raiz, "3");
-        const clinicas = [...raiz.querySelectorAll('input[name="clinica"]')].map((radio) => radio.closest("label").textContent.trim());
+        const clinicas = raiz.querySelector("#clinica").opciones.map((opcion) => opcion.texto);
         expect(clinicas).to.deep.equal(["Clínica Central", "Clínica Oeste"]);
 
         clic(raiz, "#siguiente");
@@ -187,7 +350,7 @@ describe("componentes Web Components", () => {
         const { busqueda, raiz } = await abrirAsistente();
         await completarDocumento(raiz, "11111111-1");
         await hastaPaso(raiz, "3");
-        expect(raiz.querySelector('input[name="clinica"]').checked).to.be.true;
+        expect(raiz.querySelector("#clinica").textoElegido).to.equal("Clínica Central");
         clic(raiz, "#siguiente");
         expect(pasoVisible(raiz)).to.equal("4");
         expect(raiz.querySelector("#desde").value).to.equal("");
@@ -249,7 +412,7 @@ describe("componentes Web Components", () => {
         const raiz = busqueda.shadowRoot.querySelector("asistente-citas").shadowRoot;
         await esperar(() => !raiz.querySelector("#error").hidden);
         expect(error(raiz)).to.contain("No se pudo conectar con el servicio");
-        expect(raiz.querySelector("#tipo").textContent).to.equal("No disponible");
+        expect(raiz.querySelector("#tipo").mensaje).to.equal("No disponible");
       });
 
       it("abre el ticket de una cita encontrada y permite iniciar una nueva búsqueda", async () => {
@@ -284,15 +447,28 @@ describe("componentes Web Components", () => {
         expect(navegaciones[0]).to.equal("consulta/5000");
       });
 
-      it("cita-card muestra el registro de cada paso con quién y cuándo", () => {
+      it("cita-card muestra los pasos en jerarquía: procedimiento, pasos en orden y lo registrado en cada uno", () => {
         sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
-        const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
-        const tarjeta = montar("cita-card", { cita });
-        const texto = tarjeta.shadowRoot.textContent;
-        expect(texto).to.contain("Ana López");
-        expect(texto).to.contain("Evaluación");
-        expect(texto).to.contain("Elena Martínez");
-        expect(texto).to.contain("Ver qué se registró en cada paso");
+        const base = datosBase();
+        base.consultasProcedimiento[0].observaciones = JSON.stringify({ notas: "", pasos: { 7000: { notas: "Encía sana" } } });
+        const indice = indizar(base);
+        const raiz = montar("cita-card", { cita: resumenCita(indice, indice.porId.consultas.get(5000)) }).shadowRoot;
+
+        const procedimiento = raiz.querySelector(".procedimiento");
+        expect(procedimiento.querySelector(".nombre-procedimiento").textContent).to.equal("Limpieza dental");
+        const pasos = [...procedimiento.querySelectorAll("ol.pasos > li.paso")];
+        expect(pasos.map((paso) => paso.querySelector(".nombre").textContent)).to.deep.equal(["Evaluación", "Profilaxis", "Alta"]);
+
+        const [hecho, actual, pendiente] = pasos;
+        expect(hecho.querySelector(".quien").textContent).to.contain("Elena Martínez");
+        expect(hecho.querySelector(".quien").textContent).to.contain("12 nov");
+        const registro = hecho.querySelector("details.registro");
+        expect(registro.querySelector("summary").textContent).to.equal("Ver registro");
+        expect(registro.textContent).to.contain("Encía sana");
+        // Sin registro todavía no hay nada que ver: solo se indica el estado.
+        expect(actual.querySelector("details.registro")).to.be.null;
+        expect(actual.querySelector(".quien").textContent).to.contain("En curso");
+        expect(pendiente.querySelector("details.registro")).to.be.null;
       });
 
       it("cita-card marca el paso actual como «En curso» y muestra la fecha de nacimiento correcta", () => {
@@ -431,17 +607,93 @@ describe("componentes Web Components", () => {
     });
   });
 
-  it("app-dashboard muestra la agenda del día y filtra por rol", async () => {
-    sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
-    const panel = montar("app-dashboard");
-    await esperar(() => panel.shadowRoot.querySelectorAll("#resumen .indicador").length === 4);
-    panel.shadowRoot.querySelector("#fecha").value = "2026-11-12";
-    panel.shadowRoot.querySelector("#fecha").dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    await esperar(() => panel.shadowRoot.querySelectorAll("#lista cita-card").length === 2);
-    panel.shadowRoot.querySelector("#rol").value = "2";
-    panel.shadowRoot.querySelector("#rol").dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    await esperar(() => panel.shadowRoot.querySelectorAll("#lista cita-card").length === 1);
-    expect(panel.shadowRoot.querySelector("#lista cita-card").shadowRoot.textContent).to.contain("Limpieza dental");
+  describe("HU3 · Dashboard", () => {
+    const tarjetas = (raiz) => [...raiz.querySelectorAll("#lista cita-card")];
+    const idsDe = (raiz) => tarjetas(raiz).map((tarjeta) => tarjeta.cita.consulta.idConsulta);
+    const cambiar = (campo, valor) => {
+      campo.value = valor;
+      campo.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    };
+    const rango = (raiz, desde, hasta) => {
+      raiz.querySelector("#desde").value = desde;
+      cambiar(raiz.querySelector("#hasta"), hasta);
+    };
+    async function abrirPanel(hoy = "2026-11-12T08:00:00-06:00") {
+      // Solo se congela la fecha: los temporizadores siguen reales para esperar el render.
+      reloj = sinon.useFakeTimers({ now: new Date(hoy), toFake: ["Date"] });
+      sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
+      const panel = montar("app-dashboard");
+      await esperar(() => panel.shadowRoot.querySelectorAll("#resumen .indicador").length === 4);
+      return panel.shadowRoot;
+    }
+    let reloj;
+    afterEach(() => reloj?.restore());
+
+    it("muestra por defecto las consultas de hoy del rol elegido", async () => {
+      const raiz = await abrirPanel();
+      expect(raiz.querySelector("#desde").value).to.equal("2026-11-12");
+      expect(raiz.querySelector("#hasta").value).to.equal("2026-11-12");
+      expect(raiz.querySelector('[data-rango="hoy"]').getAttribute("aria-pressed")).to.equal("true");
+      expect(raiz.querySelector("#rango-aviso").textContent).to.contain("hoy");
+      await esperar(() => tarjetas(raiz).length === 2);
+      expect(idsDe(raiz)).to.deep.equal([5000, 5002]);
+    });
+
+    it("cambia de rol y muestra solo las consultas con pasos de ese rol", async () => {
+      const raiz = await abrirPanel();
+      await esperar(() => tarjetas(raiz).length === 2);
+      cambiar(raiz.querySelector("#rol"), "2");
+      await esperar(() => tarjetas(raiz).length === 1);
+      expect(tarjetas(raiz)[0].shadowRoot.textContent).to.contain("Limpieza dental");
+    });
+
+    it("filtra consultas pasadas, la más reciente primero", async () => {
+      const raiz = await abrirPanel("2026-11-20T08:00:00-06:00");
+      await esperar(() => raiz.querySelector("#lista .vacio"));
+      raiz.querySelector('[data-rango="pasadas"]').click();
+      await esperar(() => tarjetas(raiz).length === 2);
+      expect(raiz.querySelector("#desde").value).to.equal("");
+      expect(raiz.querySelector("#hasta").value).to.equal("2026-11-19");
+      expect(idsDe(raiz)).to.deep.equal([5002, 5000]);
+      expect(raiz.querySelector('[data-rango="pasadas"]').getAttribute("aria-pressed")).to.equal("true");
+    });
+
+    it("filtra consultas próximas desde mañana sin límite final", async () => {
+      const raiz = await abrirPanel("2026-11-01T08:00:00-06:00");
+      raiz.querySelector('[data-rango="proximas"]').click();
+      await esperar(() => tarjetas(raiz).length === 2);
+      expect(raiz.querySelector("#desde").value).to.equal("2026-11-02");
+      expect(raiz.querySelector("#hasta").value).to.equal("");
+      expect(idsDe(raiz)).to.deep.equal([5000, 5002]);
+    });
+
+    it("permite un rango libre de fechas y avisa si el inicio es posterior al fin", async () => {
+      const raiz = await abrirPanel("2026-12-01T08:00:00-06:00");
+      rango(raiz, "2026-11-01", "2026-11-30");
+      await esperar(() => tarjetas(raiz).length === 2);
+      expect(raiz.querySelector('[aria-pressed="true"]')).to.be.null;
+      expect(raiz.querySelector("#rango-aviso").textContent).to.contain("01 nov 2026");
+
+      rango(raiz, "2026-11-30", "2026-11-01");
+      await esperar(() => raiz.querySelector("#lista [role=alert]"));
+      expect(tarjetas(raiz)).to.have.length(0);
+      expect(raiz.querySelector("#lista").textContent).to.contain("posterior");
+    });
+
+    it("usa buscadores para clínica, rol y paciente, y filtra por el paciente elegido", async () => {
+      const raiz = await abrirPanel();
+      await esperar(() => raiz.querySelector("#paciente").opciones.length > 0);
+      expect(raiz.querySelector("#clinica").textoElegido).to.equal("Clínica Central");
+      expect(raiz.querySelector("#rol").textoElegido).to.equal("Enfermero");
+      expect(raiz.querySelector("#paciente").opciones.map((opcion) => opcion.texto)).to.deep.equal([
+        "Ana López · DUI 11111111-1",
+        "Carlos Pérez · DUI 22222222-2",
+      ]);
+      await esperar(() => tarjetas(raiz).length === 2);
+      cambiar(raiz.querySelector("#paciente"), 200);
+      await esperar(() => tarjetas(raiz).length === 1);
+      expect(tarjetas(raiz)[0].shadowRoot.textContent).to.contain("Carlos Pérez");
+    });
   });
 
   it("ui-toast muestra las notificaciones recibidas del documento", async () => {
