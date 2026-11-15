@@ -1,7 +1,7 @@
 import { Vista, escapar } from "../base.js";
 import { leerSesion, cerrarSesion, alCambiarSesion } from "../estado.js";
 import { estaConectado, sincronizar, listarPendientes } from "../pendientes.js";
-import { ejecutarPendiente } from "../api.js";
+import { ejecutarPendiente, API } from "../api.js";
 
 const VISTAS = {
   buscar: "app-busqueda",
@@ -139,9 +139,12 @@ export class AppShell extends Vista {
     window.addEventListener("online", () => {
       this.actualizarConexion();
       this.sincronizarPendientes();
+      this.comprobarServicio();
     });
     window.addEventListener("offline", () => this.actualizarConexion());
+    this._servicioDisponible = true;
     this.actualizarConexion();
+    this.comprobarServicio();
     this._quitarEscucha = alCambiarSesion(() => this.actualizarSesion());
     this.actualizarSesion();
     this.montar();
@@ -155,15 +158,50 @@ export class AppShell extends Vista {
     const aviso = this.q("#estado-conexion");
     if (!aviso) return;
     const pendientes = listarPendientes().length;
-    if (estaConectado()) {
+    const sinRed = !estaConectado();
+    const sinServicio = estaConectado() && this._servicioDisponible === false;
+    if (!sinRed && !sinServicio) {
       aviso.hidden = true;
       aviso.innerHTML = "";
       return;
     }
     aviso.hidden = false;
-    aviso.innerHTML = `<span>Sin conexión: los datos mostrados son los guardados en este dispositivo${
+    const motivo = sinRed
+      ? "Sin conexión a internet"
+      : "El servidor de GalenoSV no responde";
+    aviso.innerHTML = `<span>${motivo}: se muestran los datos guardados en este dispositivo${
       pendientes > 0 ? ` y hay ${pendientes} cambio(s) pendiente(s) por enviar` : ""
     }.</span>`;
+  }
+
+  /**
+   * Comprueba que la API REST responda. Si hay internet pero el backend esta
+   * caido, la app sigue funcionando con la cache del service worker, pero debe
+   * avisarle al usuario que esta trabajando con datos guardados.
+   */
+  async comprobarServicio() {
+    if (!estaConectado()) {
+      this._servicioDisponible = false;
+      this.actualizarConexion();
+      return false;
+    }
+    try {
+      const control = new AbortController();
+      const temporizador = setTimeout(() => control.abort(), 3000);
+      // URL unica: no esta en la cache del service worker, asi que llega a la red.
+      const respuesta = await fetch(`${API}/roles?first=0&max=1&sondeo=${Date.now()}`, {
+        signal: control.signal,
+        cache: "no-store",
+      });
+      clearTimeout(temporizador);
+      // El service worker marca con X-Sin-Conexion cuando no pudo alcanzar la API.
+      const sinConexion = respuesta.headers.get("X-Sin-Conexion") === "true";
+      this._servicioDisponible = respuesta.ok && !sinConexion;
+    } catch {
+      this._servicioDisponible = false;
+    }
+    this.actualizarConexion();
+    return this._servicioDisponible;
   }
 
   async sincronizarPendientes() {
@@ -207,6 +245,7 @@ export class AppShell extends Vista {
       window.location.hash = "#/dashboard";
       return;
     }
+    this.comprobarServicio();
     const contenedor = this.q("#vista");
     const vista = document.createElement(VISTAS[nombre]);
     if (parametro) vista.setAttribute("id-consulta", parametro);

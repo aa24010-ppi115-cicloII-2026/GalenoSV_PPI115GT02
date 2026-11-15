@@ -733,6 +733,26 @@ describe("componentes Web Components", () => {
     await esperar(() => shell.shadowRoot.querySelector("#estado-conexion").hidden);
   });
 
+  it("app-shell avisa cuando el servidor de la API no responde", async () => {
+    const shell = montar("app-shell");
+    await esperar(() => shell.shadowRoot.querySelector("#estado-conexion"));
+    const original = globalThis.fetch;
+    globalThis.fetch = async () => {
+      throw new Error("sin conexion");
+    };
+    try {
+      await shell.comprobarServicio();
+      const aviso = shell.shadowRoot.querySelector("#estado-conexion");
+      expect(aviso.hidden).to.be.false;
+      expect(aviso.textContent).to.contain("no responde");
+      expect(aviso.textContent).to.contain("datos guardados");
+    } finally {
+      globalThis.fetch = original;
+      await shell.comprobarServicio();
+    }
+    expect(shell.shadowRoot.querySelector("#estado-conexion").hidden).to.be.true;
+  });
+
   it("app-shell enruta las vistas y protege las rutas de empleados", async () => {
     dom.window.location.hash = "#/buscar";
     const shell = montar("app-shell");
