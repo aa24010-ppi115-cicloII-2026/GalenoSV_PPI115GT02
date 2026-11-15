@@ -84,6 +84,19 @@ export function documentoDe(datos, idTipoDocumento, valor) {
   );
 }
 
+/**
+ * Valida el número contra la expresión regular del tipo de documento.
+ * Un tipo sin expresión, o con una mal escrita en el catálogo, no bloquea al usuario.
+ */
+export function cumpleFormato(tipo, valor) {
+  if (!tipo?.expresionRegular) return true;
+  try {
+    return new RegExp(tipo.expresionRegular).test(valor);
+  } catch {
+    return true;
+  }
+}
+
 export function personaDeDocumento(datos, idTipoDocumento, valor) {
   const documento = documentoDe(datos, idTipoDocumento, valor);
   return documento ? datos.porId.personas.get(documento.idPersona) ?? null : null;
@@ -279,17 +292,13 @@ export function citasDePaciente(datos, { idPersona, idClinica = null, desde = nu
     .map((consulta) => resumenCita(datos, consulta));
 }
 
-export function citasDeEmpleado(datos, { idClinica, idRol, desde = null, hasta = null, paciente = "" }) {
-  const filtroPaciente = normalizar(paciente);
+export function citasDeEmpleado(datos, { idClinica, idRol, desde = null, hasta = null, idPaciente = null }) {
   return datos.consultas
     .map((consulta) => resumenCita(datos, consulta))
     .filter((cita) => {
       if (idClinica && String(cita.clinica?.idClinica) !== String(idClinica)) return false;
       if (!dentroDeRango(cita.consulta.fechaInicio, desde, hasta)) return false;
-      if (filtroPaciente) {
-        const nombre = normalizar(`${cita.paciente?.nombres ?? ""} ${cita.paciente?.apellidos ?? ""}`);
-        if (!nombre.includes(filtroPaciente)) return false;
-      }
+      if (idPaciente && String(cita.paciente?.idPersona) !== String(idPaciente)) return false;
       if (idRol) {
         const tieneRol = cita.procedimientos.some(({ pasos }) =>
           pasos.some(({ paso }) => String(paso.idRol) === String(idRol))
@@ -332,13 +341,14 @@ export function examenesAsignables(datos, idProcedimiento) {
 export function pacientesDeClinica(datos, idClinica) {
   const vistos = new Map();
   for (const personaRol of datos.personasRol) {
-    if (personaRol.idClinica !== idClinica) continue;
+    if (String(personaRol.idClinica) !== String(idClinica)) continue;
     const rol = datos.porId.roles.get(personaRol.idRol);
     if (normalizar(rol?.nombre) !== "paciente") continue;
     const persona = datos.porId.personas.get(personaRol.idPersona);
     if (persona) vistos.set(persona.idPersona, persona);
   }
-  return [...vistos.values()];
+  const nombre = (persona) => `${persona.nombres ?? ""} ${persona.apellidos ?? ""}`.trim();
+  return [...vistos.values()].sort((a, b) => nombre(a).localeCompare(nombre(b)));
 }
 
 export function leerObservaciones(valor) {

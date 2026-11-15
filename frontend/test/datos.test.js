@@ -5,6 +5,7 @@ import { cargarTodo, limpiarCache } from "../js/datos.js";
 import {
   personaDeDocumento,
   documentoDe,
+  cumpleFormato,
   clinicasDePaciente,
   empleadoDePersona,
   pasosDeProcedimiento,
@@ -12,6 +13,7 @@ import {
   resumenCita,
   citasDePaciente,
   citasDeEmpleado,
+  pacientesDeClinica,
   examenesAsignables,
   estadoDeCita,
   edadDe,
@@ -25,6 +27,15 @@ describe("datos.js", () => {
 
   beforeEach(() => {
     datos = indizar(datosBase());
+  });
+
+  it("cumpleFormato valida con la expresión del tipo y no bloquea si el catálogo no la trae o está mal escrita", () => {
+    const dui = { expresionRegular: "^[0-9]{8}-[0-9]$" };
+    expect(cumpleFormato(dui, "01234567-8")).to.be.true;
+    expect(cumpleFormato(dui, "123")).to.be.false;
+    expect(cumpleFormato({ expresionRegular: "" }, "A123")).to.be.true;
+    expect(cumpleFormato({ expresionRegular: "([" }, "A123")).to.be.true;
+    expect(cumpleFormato(null, "A123")).to.be.true;
   });
 
   it("encuentra una persona por tipo y número de documento, sin distinguir espacios", () => {
@@ -119,15 +130,15 @@ describe("datos.js", () => {
     expect(enfermero.map((cita) => cita.consulta.idConsulta)).to.deep.equal([5000, 5002]);
   });
 
-  it("busca pacientes por nombre en la agenda del empleado", () => {
-    const citas = citasDeEmpleado(datos, {
-      idClinica: 10,
-      desde: "2026-11-12",
-      hasta: "2026-11-12",
-      paciente: "carlos",
-    });
+  it("filtra la agenda del empleado por el paciente elegido", () => {
+    const citas = citasDeEmpleado(datos, { idClinica: 10, desde: "2026-11-12", hasta: "2026-11-12", idPaciente: 200 });
     expect(citas).to.have.length(1);
     expect(citas[0].paciente.nombres).to.equal("Carlos");
+  });
+
+  it("lista los pacientes registrados en la clínica sin repetir y ordenados por nombre", () => {
+    expect(pacientesDeClinica(datos, "10").map((persona) => persona.nombres)).to.deep.equal(["Ana", "Carlos"]);
+    expect(pacientesDeClinica(datos, 99)).to.deep.equal([]);
   });
 
   it("calcula el estado de la cita segun los pasos realizados", () => {
