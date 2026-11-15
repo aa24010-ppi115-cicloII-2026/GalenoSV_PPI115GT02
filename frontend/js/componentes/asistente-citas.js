@@ -11,52 +11,98 @@ const PASOS = ["Tipo de documento", "Número de documento", "Clínica", "Rango d
  */
 export class AsistenteCitas extends Vista {
   get estilos() {
+    const check = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E\")";
+    const alerta = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7.5v5.5M12 16.5h.01'/%3E%3C/svg%3E\")";
     return `
-      form { display: grid; gap: 1rem; }
+      form { display: grid; gap: 1.1rem; padding: 1.35rem 1.5rem 1.25rem; }
       ol.pasos {
-        list-style: none; margin: 0; padding: 0;
+        list-style: none; margin: 0 0 0.25rem; padding: 0;
         display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem;
         counter-reset: paso;
       }
       ol.pasos li {
-        counter-increment: paso;
-        display: flex; align-items: center; gap: 0.45rem;
-        font-size: 0.78rem; color: #587089;
-        padding-bottom: 0.55rem; border-bottom: 3px solid var(--borde, #cbd5e1);
+        counter-increment: paso; position: relative;
+        display: flex; align-items: center; gap: 0.5rem;
+        font-size: 0.8rem; font-weight: 500; color: var(--texto-tenue, #6b7f93);
+        padding-bottom: 0.65rem;
+      }
+      ol.pasos li::after {
+        content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 3px;
+        background: var(--borde, #d6dee7); transition: background-color 0.25s ease;
       }
       ol.pasos li::before {
         content: counter(paso);
-        flex: none; width: 1.6rem; height: 1.6rem; border-radius: 999px;
-        display: grid; place-items: center; font-weight: 700;
-        background: #eef2f6; color: var(--mate, #2c4a63);
+        flex: none; width: 1.65rem; height: 1.65rem; border-radius: 999px;
+        display: grid; place-items: center; font-weight: 700; font-size: 0.78rem;
+        font-variant-numeric: tabular-nums;
+        background: var(--superficie, #fff); color: var(--texto-tenue, #6b7f93);
+        box-shadow: inset 0 0 0 1.5px var(--borde-fuerte, #b5c3d1);
+        transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
       }
-      ol.pasos li.hecho { color: var(--acento, #0f7b6c); border-color: var(--acento, #0f7b6c); }
-      ol.pasos li.hecho::before { content: "✓"; background: var(--acento, #0f7b6c); color: #fff; }
-      ol.pasos li[aria-current="step"] { color: var(--texto, #14202b); font-weight: 700; border-color: var(--mate, #2c4a63); }
-      ol.pasos li[aria-current="step"]::before { background: var(--mate, #2c4a63); color: #fff; }
+      ol.pasos li.hecho { color: var(--acento, #0f7b6c); }
+      ol.pasos li.hecho::after { background: var(--acento, #0f7b6c); }
+      ol.pasos li.hecho::before { content: ""; background: var(--acento, #0f7b6c); box-shadow: none; }
+      ol.pasos li.hecho .marca { display: block; }
+      ol.pasos li[aria-current="step"] { color: var(--texto, #14202b); font-weight: 700; }
+      ol.pasos li[aria-current="step"]::after { background: var(--mate, #2c4a63); }
+      ol.pasos li[aria-current="step"]::before {
+        background: var(--mate, #2c4a63); color: #fff;
+        box-shadow: 0 0 0 4px var(--mate-suave, #e9eff4);
+      }
+      .marca {
+        display: none; position: absolute; left: 0.4rem; top: 0.42rem; width: 0.85rem; height: 0.85rem;
+        background: #fff; -webkit-mask: ${check} center / contain no-repeat; mask: ${check} center / contain no-repeat;
+      }
       [hidden] { display: none !important; }
-      section[data-paso] { display: grid; gap: 0.6rem; }
-      section[data-paso] h3 { font-size: 1.05rem; }
-      .ayuda { font-size: 0.82rem; color: #587089; }
-      fieldset { border: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
-      legend { font-size: 0.8rem; font-weight: 600; color: var(--mate, #2c4a63); margin-bottom: 0.3rem; }
+      section[data-paso] { display: grid; gap: 0.75rem; animation: entrar 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+      section[data-paso] h3 { font-size: 1.12rem; line-height: 1.3; }
+      @keyframes entrar { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+      .ayuda { font-size: 0.82rem; color: var(--texto-suave, #4d6378); }
+      fieldset { border: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+      legend { font-size: 0.82rem; font-weight: 600; color: var(--mate, #2c4a63); margin-bottom: 0.35rem; padding: 0; }
       .opcion {
-        display: flex; align-items: center; gap: 0.6rem; cursor: pointer;
-        padding: 0.7rem 0.85rem; border: 1px solid var(--borde, #cbd5e1); border-radius: 12px; background: #fff;
+        display: flex; align-items: center; gap: 0.7rem; cursor: pointer; min-height: 3rem;
+        padding: 0.7rem 0.95rem; border: 1px solid var(--borde-fuerte, #b5c3d1); border-radius: var(--radio, 10px);
+        background: var(--superficie, #fff); font-weight: 500;
+        transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
       }
-      .opcion:has(input:checked) { border-color: var(--acento, #0f7b6c); background: #f0f8f6; }
-      .opcion input { accent-color: var(--acento, #0f7b6c); width: 1.05rem; height: 1.05rem; }
-      .rango { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+      .opcion:hover { border-color: var(--mate, #2c4a63); background: var(--superficie-suave, #f7f9fb); }
+      .opcion:has(input:checked) {
+        border-color: var(--acento, #0f7b6c); background: var(--acento-suave, #e6f3f0);
+        box-shadow: inset 0 0 0 1px var(--acento, #0f7b6c);
+      }
+      .opcion input { accent-color: var(--acento, #0f7b6c); width: 1.1rem; height: 1.1rem; margin: 0; }
+      .rango { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+      .rango input { font-variant-numeric: tabular-nums; }
       .eleccion { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+      .eleccion:empty { display: none; }
       .eleccion span {
-        font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 999px;
-        background: #eef5f2; color: var(--acento, #0f7b6c);
+        font-size: 0.78rem; font-weight: 500; padding: 0.22rem 0.65rem; border-radius: 999px;
+        background: var(--acento-suave, #e6f3f0); color: var(--acento-fuerte, #0b6155);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acento, #0f7b6c) 20%, transparent);
       }
-      .acciones { display: flex; gap: 0.6rem; justify-content: flex-end; flex-wrap: wrap; }
-      button:focus-visible, .opcion:focus-within { outline: 3px solid color-mix(in srgb, var(--acento, #0f7b6c) 45%, white); outline-offset: 2px; }
+      .error {
+        display: flex; align-items: flex-start; gap: 0.55rem;
+        padding: 0.7rem 0.85rem; border-radius: var(--radio, 10px);
+        background: var(--peligro-suave, #fdeceb); color: var(--peligro, #b42318); font-weight: 500;
+      }
+      .error::before {
+        content: ""; flex: none; width: 1.1rem; height: 1.1rem; margin-top: 0.08rem; background: currentColor;
+        -webkit-mask: ${alerta} center / contain no-repeat; mask: ${alerta} center / contain no-repeat;
+      }
+      .acciones {
+        display: flex; gap: 0.6rem; justify-content: flex-end; flex-wrap: wrap;
+        padding-top: 1rem; border-top: 1px solid var(--borde, #d6dee7);
+      }
+      .opcion:focus-within { box-shadow: var(--anillo); }
+      @media (prefers-reduced-motion: reduce) {
+        section[data-paso] { animation: none; }
+      }
       @media (max-width: 620px) {
+        form { padding: 1.1rem 1rem 1rem; }
         ol.pasos li { font-size: 0; gap: 0; justify-content: center; }
-        ol.pasos li[aria-current="step"] { font-size: 0.75rem; gap: 0.4rem; }
+        ol.pasos li[aria-current="step"] { font-size: 0.75rem; gap: 0.4rem; justify-content: flex-start; }
+        .marca { left: 50%; margin-left: -0.425rem; }
         .rango { grid-template-columns: 1fr; }
         .acciones button { flex: 1; }
       }
@@ -69,7 +115,7 @@ export class AsistenteCitas extends Vista {
     this.paso = 1;
     this.render(`
       <form class="tarjeta" novalidate aria-label="Asistente de búsqueda de citas">
-        <ol class="pasos">${PASOS.map((nombre) => `<li>${nombre}</li>`).join("")}</ol>
+        <ol class="pasos">${PASOS.map((nombre) => `<li><span class="marca" aria-hidden="true"></span>${nombre}</li>`).join("")}</ol>
         <div class="eleccion" aria-label="Datos elegidos"></div>
 
         <section data-paso="1">
