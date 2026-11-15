@@ -141,6 +141,17 @@ export function fechaCorta(valor) {
   return fecha.toLocaleDateString("es-SV", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+/**
+ * Fecha sin hora (nacimiento): la API la guarda a medianoche UTC, así que se
+ * formatea en UTC para no mostrar el día anterior en zonas horarias negativas.
+ */
+export function fechaCalendario(valor) {
+  if (!valor) return "—";
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return "—";
+  return fecha.toLocaleDateString("es-SV", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+}
+
 export function hoyISO() {
   const fecha = new Date();
   const mes = String(fecha.getMonth() + 1).padStart(2, "0");

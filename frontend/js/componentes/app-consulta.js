@@ -1,4 +1,4 @@
-import { Vista, escapar, fechaHora, fechaCorta, ahoraISO } from "../base.js";
+import { Vista, escapar, fechaHora, fechaCorta, fechaCalendario, ahoraISO } from "../base.js";
 import {
   cargarTodo,
   consultaCompleta,
@@ -132,7 +132,7 @@ export class AppConsulta extends Vista {
               <span>${escapar(estadoGeneral)}</span>
               ${
                 paciente?.fechaNacimiento
-                  ? `<span>Nac. ${escapar(fechaCorta(paciente.fechaNacimiento))}${
+                  ? `<span>Nac. ${escapar(fechaCalendario(paciente.fechaNacimiento))}${
                       paciente.edad !== null && paciente.edad !== undefined
                         ? ` (${paciente.edad} años)`
                         : ""

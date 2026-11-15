@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,11 +75,20 @@ public class TicketService {
             Procedimiento definicion = procedimiento.getIdProcedimiento() == null
                     ? null : procedimientoDAO.find(procedimiento.getIdProcedimiento());
             lineas.add("- " + (definicion == null ? "Procedimiento" : definicion.getNombre()));
+            boolean actualAsignado = false;
             for (Object[] paso : pasosDe(procedimiento)) {
                 ProcedimientoPaso definicionPaso = (ProcedimientoPaso) paso[0];
                 ConsultaProcedimientoPaso registro = (ConsultaProcedimientoPaso) paso[1];
+                // Mismas etiquetas que la tarjeta de la cita en el frontend.
+                String etiqueta = "Pendiente";
+                if (finalizado(registro)) {
+                    etiqueta = "Completado";
+                } else if (registro != null || !actualAsignado) {
+                    etiqueta = "En curso";
+                    actualAsignado = true;
+                }
                 lineas.add("   " + (definicionPaso == null ? "Paso" : definicionPaso.getNombre())
-                        + " | " + (registro == null ? "Pendiente" : registro.getEstado())
+                        + " | " + etiqueta
                         + " | " + (registro == null ? "Sin fecha" : fecha(registro.getFechaInicio()))
                         + " | " + quien(registro));
             }
@@ -97,8 +107,11 @@ public class TicketService {
                 ? new ArrayList<>()
                 : procedimientoPasoDAO.findByProcedimiento(procedimiento.getIdProcedimiento());
         List<ProcedimientoPaso> ordenados = ordenar(definiciones);
-        List<ConsultaProcedimientoPaso> registros = consultaProcedimientoPasoDAO
-                .findByConsultaProcedimiento(procedimiento.getIdConsultaProcedimiento());
+        // El DAO ordena por UUID; los registros se emparejan con los pasos en el orden en que se atendieron.
+        List<ConsultaProcedimientoPaso> registros = new ArrayList<>(consultaProcedimientoPasoDAO
+                .findByConsultaProcedimiento(procedimiento.getIdConsultaProcedimiento()));
+        registros.sort(Comparator.comparing(ConsultaProcedimientoPaso::getFechaInicio,
+                Comparator.nullsFirst(Comparator.naturalOrder())));
 
         List<Object[]> resultado = new ArrayList<>();
         for (int indice = 0; indice < ordenados.size(); indice++) {
@@ -130,10 +143,19 @@ public class TicketService {
         for (ProcedimientoPaso definicion : definiciones) {
             porId.put(definicion.getIdProcedimientoPaso(), definicion);
         }
+        java.util.Set<UUID> conPredecesor = new java.util.HashSet<>();
+        for (Map.Entry<UUID, UUID> enlace : siguiente.entrySet()) {
+            if (porId.containsKey(enlace.getKey())) {
+                conPredecesor.add(enlace.getValue());
+            }
+        }
         List<ProcedimientoPaso> resultado = new ArrayList<>();
         java.util.Set<UUID> visitados = new java.util.HashSet<>();
+        // Primero se recorre desde los pasos que no van después de otro.
         for (ProcedimientoPaso definicion : definiciones) {
-            recorrer(porId, siguiente, definicion.getIdProcedimientoPaso(), visitados, resultado);
+            if (!conPredecesor.contains(definicion.getIdProcedimientoPaso())) {
+                recorrer(porId, siguiente, definicion.getIdProcedimientoPaso(), visitados, resultado);
+            }
         }
         for (ProcedimientoPaso definicion : definiciones) {
             recorrer(porId, siguiente, definicion.getIdProcedimientoPaso(), visitados, resultado);
@@ -165,20 +187,28 @@ public class TicketService {
         return ordenes;
     }
 
+    /** La cita está completada solo cuando cada paso definido tiene un registro finalizado. */
     private String estado(Consulta consulta) {
-        List<ConsultaProcedimientoPaso> registros = new ArrayList<>();
+        boolean hayRegistros = false;
+        boolean todosFinalizados = true;
         for (ConsultaProcedimiento procedimiento : consultaProcedimientoDAO.findByConsulta(consulta.getIdConsulta())) {
-            registros.addAll(consultaProcedimientoPasoDAO.findByConsultaProcedimiento(procedimiento.getIdConsultaProcedimiento()));
-        }
-        if (registros.isEmpty()) {
-            return "Programada";
-        }
-        for (ConsultaProcedimientoPaso registro : registros) {
-            if (!"FINALIZADO".equalsIgnoreCase(String.valueOf(registro.getEstado()))) {
-                return "En proceso";
+            for (Object[] paso : pasosDe(procedimiento)) {
+                ConsultaProcedimientoPaso registro = (ConsultaProcedimientoPaso) paso[1];
+                hayRegistros |= registro != null;
+                todosFinalizados &= finalizado(registro);
             }
         }
+        if (!hayRegistros) {
+            return "Programada";
+        }
+        if (!todosFinalizados) {
+            return "En proceso";
+        }
         return consulta.getFechaFin() != null ? "Finalizada" : "Completada";
+    }
+
+    private static boolean finalizado(ConsultaProcedimientoPaso registro) {
+        return registro != null && "FINALIZADO".equalsIgnoreCase(String.valueOf(registro.getEstado()));
     }
 
     private String quien(ConsultaProcedimientoPaso registro) {

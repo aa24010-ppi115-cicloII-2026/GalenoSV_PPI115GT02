@@ -134,7 +134,10 @@ export function stubApi(datos) {
     const ruta = limpia.split("/api/")[1] ?? "";
     const [recurso, id] = ruta.split("/");
 
-    if (recurso === "consultas" && id && String(url).includes("/ticket")) {
+    if (recurso === "tickets" && id === "consultas") {
+      // Igual que el backend real: @Produces("application/pdf") responde 406 a otro Accept.
+      const acepta = String(opciones.headers?.Accept ?? "");
+      if (!acepta.includes("application/pdf")) return new Response(null, { status: 406 });
       return new Response("%PDF-1.4 fake", {
         status: 200,
         headers: { "Content-Type": "application/pdf" },

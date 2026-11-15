@@ -102,9 +102,8 @@ export function rolesDePersona(datos, idPersona) {
 export function clinicasDePaciente(datos, idPersona) {
   const asignaciones = rolesDePersona(datos, idPersona);
   const pacientes = asignaciones.filter(({ rol }) => normalizar(rol?.nombre) === "paciente");
-  const base = pacientes.length > 0 ? pacientes : asignaciones;
   const unicas = new Map();
-  for (const { clinica } of base) {
+  for (const { clinica } of pacientes) {
     if (clinica) unicas.set(clinica.idClinica, clinica);
   }
   return [...unicas.values()];
@@ -129,11 +128,20 @@ export function edadDe(persona) {
   if (!persona?.fechaNacimiento) return null;
   const nacimiento = new Date(persona.fechaNacimiento);
   if (Number.isNaN(nacimiento.getTime())) return null;
-  const hoy = new Date();
-  let edad = hoy.getFullYear() - nacimiento.getFullYear();
-  const mes = hoy.getMonth() - nacimiento.getMonth();
-  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) edad -= 1;
+  // La fecha de nacimiento llega a medianoche UTC: se compara con el día local de hoy en UTC.
+  const ahora = new Date();
+  const hoy = new Date(Date.UTC(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()));
+  let edad = hoy.getUTCFullYear() - nacimiento.getUTCFullYear();
+  const mes = hoy.getUTCMonth() - nacimiento.getUTCMonth();
+  if (mes < 0 || (mes === 0 && hoy.getUTCDate() < nacimiento.getUTCDate())) edad -= 1;
   return edad >= 0 ? edad : null;
+}
+
+const ETIQUETAS_PASO = { completado: "Completado", actual: "En curso", pendiente: "Pendiente" };
+
+/** Texto legible del estado interno de un paso (completado, actual, pendiente). */
+export function etiquetaPaso(estado) {
+  return ETIQUETAS_PASO[estado] ?? String(estado ?? "");
 }
 
 export function motivoDe(consulta) {

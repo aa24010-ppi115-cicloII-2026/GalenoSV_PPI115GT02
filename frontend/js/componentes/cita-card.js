@@ -1,6 +1,6 @@
-import { Vista, escapar, fechaHora, fechaCorta } from "../base.js";
+import { Vista, escapar, fechaHora, fechaCorta, fechaCalendario } from "../base.js";
 import { leerSesion } from "../estado.js";
-import { motivoDe, estadoDeCita } from "../datos.js";
+import { motivoDe, estadoDeCita, etiquetaPaso } from "../datos.js";
 
 export class CitaCard extends Vista {
   get estilos() {
@@ -70,12 +70,12 @@ export class CitaCard extends Vista {
             .map(
               ({ paso, estado, persona, registro, notas, indice }) => `
                 <li>
-                  ${indice + 1}. ${escapar(paso.nombre)} — ${escapar(estado)} ${
+                  ${indice + 1}. ${escapar(paso.nombre)} — ${escapar(etiquetaPaso(estado))} ${
                     registro
                       ? `· ${escapar(fechaHora(registro.fechaInicio))} · ${escapar(
                           persona ? `${persona.nombres} ${persona.apellidos}` : "Sin asignar"
                         )}`
-                      : "· pendiente"
+                      : "· sin registro"
                   }${
                     notas?.notas ? `<br />Notas: ${escapar(notas.notas)}` : ""
                   }${notas?.diagnostico ? `<br />CIE-10: ${escapar(notas.diagnostico)}` : ""}
@@ -134,7 +134,7 @@ export class CitaCard extends Vista {
           <span><b>Documento:</b> ${escapar(documentoPaciente ?? "No registrado")}</span>
           ${
             cita.paciente?.fechaNacimiento
-              ? `<span><b>Nacimiento:</b> ${escapar(fechaCorta(cita.paciente.fechaNacimiento))}${
+              ? `<span><b>Nacimiento:</b> ${escapar(fechaCalendario(cita.paciente.fechaNacimiento))}${
                   cita.paciente.edad !== null && cita.paciente.edad !== undefined
                     ? ` (${cita.paciente.edad} años)`
                     : ""
@@ -157,11 +157,14 @@ export class CitaCard extends Vista {
                           <div class="paso ${escapar(estadoPaso)}">
                             <span class="num">${indice + 1}</span>
                             <span class="nombre">${escapar(paso.nombre)}</span>
-                            <span class="quien">${
+                            <span class="quien">${[
+                              estadoPaso === "completado" ? "" : etiquetaPaso(estadoPaso),
                               registro
                                 ? `${escapar(persona ? `${persona.nombres} ${persona.apellidos}` : "Sin asignar")} · ${escapar(fechaCorta(registro.fechaInicio))}`
-                                : "Pendiente"
-                            }</span>
+                                : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}</span>
                           </div>`
                       )
                       .join("") || '<span class="aviso">Sin pasos definidos.</span>'}

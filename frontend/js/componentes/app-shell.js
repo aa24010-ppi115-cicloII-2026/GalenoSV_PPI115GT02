@@ -25,7 +25,7 @@ export class AppShell extends Vista {
         min-height: 100vh;
         background: var(--fondo, #f4f7fb);
       }
-      .contenedor { max-width: 1120px; margin: 0 auto; padding: 0 1rem; }
+      .contenedor { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 1rem; }
       header {
         background: linear-gradient(120deg, #14202b, #2c4a63 60%, #0f7b6c);
         color: #f4f7fb;
