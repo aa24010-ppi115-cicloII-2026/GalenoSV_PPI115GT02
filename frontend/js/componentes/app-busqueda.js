@@ -8,19 +8,20 @@ const SIN_RESULTADOS = `<div class="vacio">Complete los pasos del asistente para
 export class AppBusqueda extends Vista {
   get estilos() {
     return `
-      .encabezado { display: grid; gap: 0.25rem; margin: 0.5rem 0 1rem; }
-      .encabezado h2 { font-size: 1.4rem; }
-      #resultados { margin-top: 1.4rem; display: grid; gap: 0.9rem; }
-      .resumen { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
-      .resumen strong { font-size: 1.05rem; }
-      .lista { display: grid; gap: 0.85rem; }
+      .encabezado { display: grid; gap: 0.4rem; margin: 0 0 1.25rem; }
+      .encabezado h2 { font-size: clamp(1.45rem, 1.2rem + 1vw, 1.85rem); line-height: 1.2; letter-spacing: -0.02em; }
+      .encabezado .aviso { max-width: 60ch; }
+      #resultados { margin-top: 2rem; display: grid; gap: 1rem; }
+      .resumen { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.75rem; border-bottom: 1px solid var(--borde, #d6dee7); }
+      .resumen > div { display: grid; gap: 0.1rem; }
+      .resumen strong { font-size: 1.15rem; letter-spacing: -0.01em; }
+      .lista { display: grid; gap: 1rem; }
     `;
   }
 
   connectedCallback() {
     this.render(`
       <section class="encabezado">
-        <span class="etiqueta">Pacientes</span>
         <h2>Buscar mis citas</h2>
         <p class="aviso">Siga los pasos para consultar sus citas y descargar el ticket de cada una.</p>
       </section>
@@ -52,8 +53,10 @@ export class AppBusqueda extends Vista {
     const contenedor = this.q("#resultados");
     contenedor.innerHTML = `
       <div class="resumen">
-        <strong>${escapar(nombre)}</strong>
-        <span class="aviso">${total} en ${escapar(clinica?.nombre ?? "la clínica elegida")}</span>
+        <div>
+          <strong>${escapar(nombre)}</strong>
+          <span class="aviso">${total} en ${escapar(clinica?.nombre ?? "la clínica elegida")}</span>
+        </div>
         <span class="separador"></span>
         <button type="button" class="secundario" id="nueva">Nueva búsqueda</button>
       </div>
@@ -67,6 +70,7 @@ export class AppBusqueda extends Vista {
     }
     for (const cita of citas) {
       const tarjeta = document.createElement("cita-card");
+      tarjeta.setAttribute("vista", "paciente");
       tarjeta.cita = cita;
       lista.append(tarjeta);
     }

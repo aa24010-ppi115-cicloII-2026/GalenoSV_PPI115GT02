@@ -117,126 +117,318 @@ describe("componentes Web Components", () => {
     expect(sessionStorage.getItem("galenosv.sesion")).to.be.null;
   });
 
-  describe("HU1 · asistente de búsqueda de citas", () => {
-    // El asistente vive dentro de app-busqueda; estas ayudas lo recorren como lo haría el paciente.
-    async function abrirAsistente() {
-      const busqueda = montar("app-busqueda");
-      await esperar(() => busqueda.shadowRoot.querySelector("asistente-citas")?.shadowRoot?.querySelectorAll("#tipo option").length > 1);
-      return { busqueda, raiz: busqueda.shadowRoot.querySelector("asistente-citas").shadowRoot };
-    }
-    const pasoVisible = (raiz) => raiz.querySelector("section[data-paso]:not([hidden])").dataset.paso;
-    const error = (raiz) => (raiz.querySelector("#error").hidden ? "" : raiz.querySelector("#error").textContent);
-    const clic = (raiz, selector) => raiz.querySelector(selector).click();
-    async function hastaPaso(raiz, paso) {
-      await esperar(() => pasoVisible(raiz) === paso);
-    }
-    async function completarDocumento(raiz, numero) {
-      raiz.querySelector("#tipo").value = "1";
-      clic(raiz, "#siguiente");
-      await hastaPaso(raiz, "2");
-      raiz.querySelector("#numero").value = numero;
-      clic(raiz, "#siguiente");
-    }
+  describe("HU1 · Búsqueda de citas", () => {
+    describe("asistente de búsqueda", () => {
+      // El asistente vive dentro de app-busqueda; estas ayudas lo recorren como lo haría el paciente.
+      async function abrirAsistente() {
+        const busqueda = montar("app-busqueda");
+        await esperar(() => busqueda.shadowRoot.querySelector("asistente-citas")?.shadowRoot?.querySelectorAll("#tipo option").length > 1);
+        return { busqueda, raiz: busqueda.shadowRoot.querySelector("asistente-citas").shadowRoot };
+      }
+      const pasoVisible = (raiz) => raiz.querySelector("section[data-paso]:not([hidden])").dataset.paso;
+      const error = (raiz) => (raiz.querySelector("#error").hidden ? "" : raiz.querySelector("#error").textContent);
+      const clic = (raiz, selector) => raiz.querySelector(selector).click();
+      async function hastaPaso(raiz, paso) {
+        await esperar(() => pasoVisible(raiz) === paso);
+      }
+      async function completarDocumento(raiz, numero) {
+        raiz.querySelector("#tipo").value = "1";
+        clic(raiz, "#siguiente");
+        await hastaPaso(raiz, "2");
+        raiz.querySelector("#numero").value = numero;
+        clic(raiz, "#siguiente");
+      }
 
-    it("empieza en el paso 1 y no avanza sin elegir el tipo de documento", async () => {
-      const { raiz } = await abrirAsistente();
-      expect(pasoVisible(raiz)).to.equal("1");
-      expect(raiz.querySelector('ol.pasos li[aria-current="step"]').textContent).to.contain("Tipo de documento");
-      clic(raiz, "#siguiente");
-      expect(pasoVisible(raiz)).to.equal("1");
-      expect(error(raiz)).to.contain("tipo de documento");
+      it("empieza en el paso 1 y no avanza sin elegir el tipo de documento", async () => {
+        const { raiz } = await abrirAsistente();
+        expect(pasoVisible(raiz)).to.equal("1");
+        expect(raiz.querySelector('ol.pasos li[aria-current="step"]').textContent).to.contain("Tipo de documento");
+        clic(raiz, "#siguiente");
+        expect(pasoVisible(raiz)).to.equal("1");
+        expect(error(raiz)).to.contain("tipo de documento");
+      });
+
+      it("valida el número con el formato del tipo de documento y que esté registrado", async () => {
+        datos.tiposDocumento[0].expresionRegular = "^[0-9]{8}-[0-9]$";
+        datos.tiposDocumento[0].indicaciones = "8 dígitos, guion y dígito verificador";
+        const { raiz } = await abrirAsistente();
+        await completarDocumento(raiz, "123");
+        expect(pasoVisible(raiz)).to.equal("2");
+        expect(error(raiz)).to.contain("8 dígitos, guion y dígito verificador");
+
+        raiz.querySelector("#numero").value = "99999999-9";
+        clic(raiz, "#siguiente");
+        expect(pasoVisible(raiz)).to.equal("2");
+        expect(error(raiz)).to.contain("no está registrado");
+      });
+
+      it("lista solo las clínicas donde es paciente y permite volver al paso anterior", async () => {
+        datos.clinicas.push({ idClinica: 20, nombre: "Clínica Norte" }, { idClinica: 30, nombre: "Clínica Oeste" });
+        datos.personasRol.push(
+          { idPersonaRol: 1001, idPersona: 100, idRol: 2, idClinica: 20 },
+          { idPersonaRol: 1002, idPersona: 100, idRol: 1, idClinica: 30 }
+        );
+        const { raiz } = await abrirAsistente();
+        await completarDocumento(raiz, "11111111-1");
+        await hastaPaso(raiz, "3");
+        const clinicas = [...raiz.querySelectorAll('input[name="clinica"]')].map((radio) => radio.closest("label").textContent.trim());
+        expect(clinicas).to.deep.equal(["Clínica Central", "Clínica Oeste"]);
+
+        clic(raiz, "#siguiente");
+        expect(pasoVisible(raiz)).to.equal("3");
+        expect(error(raiz)).to.contain("clínica");
+
+        clic(raiz, "#atras");
+        expect(pasoVisible(raiz)).to.equal("2");
+        expect(raiz.querySelector("#numero").value).to.equal("11111111-1");
+      });
+
+      it("busca por clínica y rango de fechas, sin ocultar citas futuras por defecto", async () => {
+        const { busqueda, raiz } = await abrirAsistente();
+        await completarDocumento(raiz, "11111111-1");
+        await hastaPaso(raiz, "3");
+        expect(raiz.querySelector('input[name="clinica"]').checked).to.be.true;
+        clic(raiz, "#siguiente");
+        expect(pasoVisible(raiz)).to.equal("4");
+        expect(raiz.querySelector("#desde").value).to.equal("");
+        expect(raiz.querySelector("#hasta").value).to.equal("");
+
+        raiz.querySelector("#desde").value = "2026-12-01";
+        raiz.querySelector("#hasta").value = "2026-11-01";
+        clic(raiz, "#buscar");
+        expect(error(raiz)).to.contain("fecha inicial");
+        expect(busqueda.shadowRoot.querySelectorAll("cita-card")).to.have.length(0);
+
+        raiz.querySelector("#desde").value = "";
+        raiz.querySelector("#hasta").value = "";
+        clic(raiz, "#buscar");
+        await esperar(() => busqueda.shadowRoot.querySelectorAll("cita-card").length === 2);
+
+        raiz.querySelector("#desde").value = "2026-11-01";
+        clic(raiz, "#buscar");
+        await esperar(() => busqueda.shadowRoot.querySelectorAll("cita-card").length === 1);
+        const tarjeta = busqueda.shadowRoot.querySelector("cita-card").shadowRoot;
+        expect(tarjeta.textContent).to.contain("Clínica Central");
+        expect(tarjeta.textContent).to.contain("Limpieza dental");
+        expect(tarjeta.querySelector(".fecha").getAttribute("aria-label")).to.contain("12 nov 2026");
+      });
+
+      it("informa cuando no hay citas en la clínica y las fechas elegidas", async () => {
+        const { busqueda, raiz } = await abrirAsistente();
+        await completarDocumento(raiz, "11111111-1");
+        await hastaPaso(raiz, "3");
+        clic(raiz, "#siguiente");
+        raiz.querySelector("#desde").value = "2027-01-01";
+        clic(raiz, "#buscar");
+        await esperar(() => busqueda.shadowRoot.querySelector(".resumen"));
+        expect(busqueda.shadowRoot.querySelector(".resumen").textContent).to.contain("0 citas");
+        expect(busqueda.shadowRoot.querySelector("#lista-citas").textContent).to.contain("No hay citas para la clínica y las fechas elegidas");
+        expect(busqueda.shadowRoot.querySelectorAll("cita-card")).to.have.length(0);
+      });
+
+      it("avanza con Enter y pide el número cuando se deja vacío", async () => {
+        const { raiz } = await abrirAsistente();
+        const enter = (selector) =>
+          raiz.querySelector(selector).dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        raiz.querySelector("#tipo").value = "1";
+        enter("#tipo");
+        expect(pasoVisible(raiz)).to.equal("2");
+
+        enter("#numero");
+        expect(pasoVisible(raiz)).to.equal("2");
+        expect(error(raiz)).to.equal("Escriba el número de documento.");
+
+        raiz.querySelector("#numero").value = "11111111-1";
+        enter("#numero");
+        expect(pasoVisible(raiz)).to.equal("3");
+      });
+
+      it("avisa al paciente cuando no se pueden cargar los datos del servicio", async () => {
+        fetch.rejects(new TypeError("Failed to fetch"));
+        const busqueda = montar("app-busqueda");
+        const raiz = busqueda.shadowRoot.querySelector("asistente-citas").shadowRoot;
+        await esperar(() => !raiz.querySelector("#error").hidden);
+        expect(error(raiz)).to.contain("No se pudo conectar con el servicio");
+        expect(raiz.querySelector("#tipo").textContent).to.equal("No disponible");
+      });
+
+      it("abre el ticket de una cita encontrada y permite iniciar una nueva búsqueda", async () => {
+        const { busqueda, raiz } = await abrirAsistente();
+        await completarDocumento(raiz, "11111111-1");
+        await hastaPaso(raiz, "3");
+        clic(raiz, "#siguiente");
+        clic(raiz, "#buscar");
+        await esperar(() => busqueda.shadowRoot.querySelectorAll("cita-card").length === 2);
+        busqueda.shadowRoot.querySelector("cita-card").shadowRoot.querySelector('button[data-accion="ticket"]').click();
+        await esperar(() => busqueda.shadowRoot.querySelector("ticket-cita"));
+        expect(busqueda.shadowRoot.querySelector("ticket-cita").shadowRoot.textContent).to.contain("Comprobante de cita");
+
+        busqueda.shadowRoot.querySelector("#nueva").click();
+        expect(pasoVisible(raiz)).to.equal("1");
+        expect(busqueda.shadowRoot.querySelectorAll("cita-card")).to.have.length(0);
+      });
     });
 
-    it("valida el número con el formato del tipo de documento y que esté registrado", async () => {
-      datos.tiposDocumento[0].expresionRegular = "^[0-9]{8}-[0-9]$";
-      datos.tiposDocumento[0].indicaciones = "8 dígitos, guion y dígito verificador";
-      const { raiz } = await abrirAsistente();
-      await completarDocumento(raiz, "123");
-      expect(pasoVisible(raiz)).to.equal("2");
-      expect(error(raiz)).to.contain("8 dígitos, guion y dígito verificador");
+    describe("cards de citas", () => {
+      it("cita-card emite ver-ticket y navega al registro de atención", () => {
+        sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
+        const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
+        const tarjeta = montar("cita-card", { cita });
+        const tickets = [];
+        const navegaciones = [];
+        tarjeta.addEventListener("ver-ticket", (evento) => tickets.push(evento.detail));
+        tarjeta.addEventListener("navegar", (evento) => navegaciones.push(evento.detail));
+        tarjeta.shadowRoot.querySelector('[data-accion="ticket"]').click();
+        tarjeta.shadowRoot.querySelector('[data-accion="atender"]').click();
+        expect(tickets[0].consulta.idConsulta).to.equal(5000);
+        expect(navegaciones[0]).to.equal("consulta/5000");
+      });
 
-      raiz.querySelector("#numero").value = "99999999-9";
-      clic(raiz, "#siguiente");
-      expect(pasoVisible(raiz)).to.equal("2");
-      expect(error(raiz)).to.contain("no está registrado");
+      it("cita-card muestra el registro de cada paso con quién y cuándo", () => {
+        sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
+        const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
+        const tarjeta = montar("cita-card", { cita });
+        const texto = tarjeta.shadowRoot.textContent;
+        expect(texto).to.contain("Ana López");
+        expect(texto).to.contain("Evaluación");
+        expect(texto).to.contain("Elena Martínez");
+        expect(texto).to.contain("Ver qué se registró en cada paso");
+      });
+
+      it("cita-card marca el paso actual como «En curso» y muestra la fecha de nacimiento correcta", () => {
+        const base = datosBase();
+        base.personas[0].fechaNacimiento = "1992-09-30T00:00:00Z";
+        const indice = indizar(base);
+        const tarjeta = montar("cita-card", { cita: resumenCita(indice, indice.porId.consultas.get(5000)) });
+        const actual = tarjeta.shadowRoot.querySelector(".paso.actual .quien").textContent;
+        expect(actual).to.contain("En curso");
+        expect(tarjeta.shadowRoot.textContent).to.contain("30 sept 1992");
+      });
+
+      it("en la búsqueda del paciente titula con el motivo y no repite datos de la cita", () => {
+        const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
+        const tarjeta = document.createElement("cita-card");
+        tarjeta.setAttribute("vista", "paciente");
+        tarjeta.cita = cita;
+        document.body.append(tarjeta);
+        const raiz = tarjeta.shadowRoot;
+        expect(raiz.querySelector("h3").textContent).to.equal("Limpieza");
+        expect(raiz.querySelector(".paciente p").textContent).to.equal("Clínica Central");
+        expect(raiz.querySelector(".general").textContent).to.not.match(/Inicio:|Clínica:/);
+
+        const enDashboard = montar("cita-card", { cita }).shadowRoot;
+        expect(enDashboard.querySelector("h3").textContent).to.equal("Ana López");
+      });
+
+      it("fechaCalendario muestra una fecha sin hora guardada en UTC con el día correcto", async () => {
+        const { fechaCalendario } = await import("../js/base.js");
+        expect(fechaCalendario("1992-09-30T00:00:00Z")).to.match(/^30 /);
+        expect(fechaCalendario("1992-09-30")).to.match(/^30 /);
+        expect(fechaCalendario(null)).to.equal("—");
+        expect(fechaCalendario("no es fecha")).to.equal("—");
+      });
     });
 
-    it("lista solo las clínicas donde es paciente y permite volver al paso anterior", async () => {
-      datos.clinicas.push({ idClinica: 20, nombre: "Clínica Norte" }, { idClinica: 30, nombre: "Clínica Oeste" });
-      datos.personasRol.push(
-        { idPersonaRol: 1001, idPersona: 100, idRol: 2, idClinica: 20 },
-        { idPersonaRol: 1002, idPersona: 100, idRol: 1, idClinica: 30 }
-      );
-      const { raiz } = await abrirAsistente();
-      await completarDocumento(raiz, "11111111-1");
-      await hastaPaso(raiz, "3");
-      const clinicas = [...raiz.querySelectorAll('input[name="clinica"]')].map((radio) => radio.closest("label").textContent.trim());
-      expect(clinicas).to.deep.equal(["Clínica Central", "Clínica Oeste"]);
+    describe("ticket PDF", () => {
+      const citaDePrueba = () => resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
 
-      clic(raiz, "#siguiente");
-      expect(pasoVisible(raiz)).to.equal("3");
-      expect(error(raiz)).to.contain("clínica");
+      // jsdom no descarga archivos: se interceptan los enlaces <a download> y los avisos del componente.
+      function capturarDescargas(ticket) {
+        const descargas = [];
+        const avisos = [];
+        const crear = globalThis.document.createElement.bind(globalThis.document);
+        sinon.stub(globalThis.document, "createElement").callsFake((etiqueta) => {
+          const elemento = crear(etiqueta);
+          if (etiqueta === "a") elemento.click = () => descargas.push(elemento.download);
+          return elemento;
+        });
+        globalThis.URL.createObjectURL = () => "blob:prueba";
+        globalThis.URL.revokeObjectURL = () => {};
+        ticket.addEventListener("notificar", (evento) => avisos.push(evento.detail.mensaje));
+        return { descargas, avisos };
+      }
+      const peticionesTicket = () => fetch.getCalls().filter((llamada) => llamada.args[0].includes("/tickets/consultas/"));
 
-      clic(raiz, "#atras");
-      expect(pasoVisible(raiz)).to.equal("2");
-      expect(raiz.querySelector("#numero").value).to.equal("11111111-1");
+      it("documentoImprimible incluye datos, pasos y notas de atención", () => {
+        const cita = consultaCompleta(indizar(datosBase()), 5000);
+        const html = documentoImprimible(cita);
+        expect(html).to.contain("Ana López");
+        expect(html).to.contain("#5000");
+        expect(html).to.contain("Evaluación");
+        expect(html).to.contain("Caries de la dentina");
+        expect(html).to.contain("Guardar como PDF");
+      });
+
+      it("ticket-cita ofrece descargar el PDF y genera un archivo válido", () => {
+        const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
+        const ticket = montar("ticket-cita", { cita });
+        expect(ticket.shadowRoot.querySelector("[data-accion='descargar']")).to.not.be.null;
+        const lineas = lineasTicket(cita);
+        expect(lineas.join("\n")).to.contain("Paciente: Ana López");
+        expect(lineas.join("\n")).to.contain("PROCEDIMIENTOS Y PASOS");
+        expect(lineas.join("\n")).to.contain("Caries de la dentina");
+        const bytes = construirPdf("GalenoSV - Comprobante de cita", lineas);
+        expect(Buffer.from(bytes).toString("latin1")).to.contain("(Paciente: Ana López) Tj");
+      });
+
+      it("ticket-cita descarga el PDF desde el backend", async () => {
+        const ticket = montar("ticket-cita", { cita: citaDePrueba() });
+        const { descargas, avisos } = capturarDescargas(ticket);
+        ticket.shadowRoot.querySelector("[data-accion='descargar']").click();
+        await esperar(() => descargas.length > 0 && avisos.length > 0);
+        expect(descargas[0]).to.equal("ticket-5000.pdf");
+        expect(peticionesTicket()[0].args[1].headers.Accept).to.equal("application/pdf");
+        expect(avisos[0]).to.match(/^Ticket PDF descargado/);
+      });
+
+      it("ticket-cita genera el PDF en el dispositivo cuando el backend falla", async () => {
+        fetch.withArgs(sinon.match(/\/tickets\/consultas\//)).resolves(new Response(null, { status: 500 }));
+        const ticket = montar("ticket-cita", { cita: citaDePrueba() });
+        const { descargas, avisos } = capturarDescargas(ticket);
+        ticket.shadowRoot.querySelector("[data-accion='descargar']").click();
+        await esperar(() => descargas.length > 0 && avisos.length > 0);
+        expect(peticionesTicket()).to.have.length(1);
+        expect(descargas[0]).to.equal("ticket-5000.pdf");
+        expect(avisos[0]).to.match(/^Ticket PDF generado en el dispositivo/);
+      });
+
+      it("ticket-cita genera el PDF sin conexión sin llamar al backend", async () => {
+        Object.defineProperty(globalThis.navigator, "onLine", { value: false, configurable: true });
+        try {
+          const ticket = montar("ticket-cita", { cita: citaDePrueba() });
+          const { descargas, avisos } = capturarDescargas(ticket);
+          ticket.shadowRoot.querySelector("[data-accion='descargar']").click();
+          await esperar(() => descargas.length > 0 && avisos.length > 0);
+          expect(peticionesTicket()).to.have.length(0);
+          expect(avisos[0]).to.match(/^Ticket PDF generado sin conexión/);
+        } finally {
+          Object.defineProperty(globalThis.navigator, "onLine", { value: true, configurable: true });
+        }
+      });
+
+      it("ticket-cita imprime el comprobante en una ventana nueva y avisa si el navegador la bloquea", () => {
+        const ventana = { document: { write: sinon.spy(), close: sinon.spy() }, focus: sinon.spy(), print: sinon.spy() };
+        const abrir = sinon.stub(dom.window, "open").returns(ventana);
+        const ticket = montar("ticket-cita", { cita: citaDePrueba() });
+        const avisos = [];
+        ticket.addEventListener("notificar", (evento) => avisos.push(evento.detail.mensaje));
+        ticket.shadowRoot.querySelector("[data-accion='imprimir']").click();
+        expect(ventana.document.write.firstCall.args[0]).to.contain("GalenoSV · Comprobante de cita");
+        expect(ventana.print.calledOnce).to.be.true;
+
+        abrir.returns(null);
+        ticket.shadowRoot.querySelector("[data-accion='imprimir']").click();
+        expect(avisos).to.deep.equal(["Permita las ventanas emergentes para imprimir el ticket."]);
+      });
+
+      it("ticket-cita muestra los estados de los pasos con texto legible", () => {
+        const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
+        const ticket = montar("ticket-cita", { cita });
+        const estados = [...ticket.shadowRoot.querySelectorAll("tbody td:nth-child(3)")].map((td) => td.textContent);
+        expect(estados).to.deep.equal(["Completado", "En curso", "Pendiente"]);
+        expect(ticket.shadowRoot.textContent).to.not.contain("Guardar como PDF");
+      });
     });
-
-    it("busca por clínica y rango de fechas, sin ocultar citas futuras por defecto", async () => {
-      const { busqueda, raiz } = await abrirAsistente();
-      await completarDocumento(raiz, "11111111-1");
-      await hastaPaso(raiz, "3");
-      expect(raiz.querySelector('input[name="clinica"]').checked).to.be.true;
-      clic(raiz, "#siguiente");
-      expect(pasoVisible(raiz)).to.equal("4");
-      expect(raiz.querySelector("#desde").value).to.equal("");
-      expect(raiz.querySelector("#hasta").value).to.equal("");
-
-      raiz.querySelector("#desde").value = "2026-12-01";
-      raiz.querySelector("#hasta").value = "2026-11-01";
-      clic(raiz, "#buscar");
-      expect(error(raiz)).to.contain("fecha inicial");
-      expect(busqueda.shadowRoot.querySelectorAll("cita-card")).to.have.length(0);
-
-      raiz.querySelector("#desde").value = "";
-      raiz.querySelector("#hasta").value = "";
-      clic(raiz, "#buscar");
-      await esperar(() => busqueda.shadowRoot.querySelectorAll("cita-card").length === 2);
-
-      raiz.querySelector("#desde").value = "2026-11-01";
-      clic(raiz, "#buscar");
-      await esperar(() => busqueda.shadowRoot.querySelectorAll("cita-card").length === 1);
-      const tarjeta = busqueda.shadowRoot.querySelector("cita-card").shadowRoot;
-      expect(tarjeta.textContent).to.contain("Clínica Central");
-      expect(tarjeta.textContent).to.contain("Limpieza dental");
-      expect(tarjeta.textContent).to.contain("12 nov 2026");
-    });
-
-    it("abre el ticket de una cita encontrada y permite iniciar una nueva búsqueda", async () => {
-      const { busqueda, raiz } = await abrirAsistente();
-      await completarDocumento(raiz, "11111111-1");
-      await hastaPaso(raiz, "3");
-      clic(raiz, "#siguiente");
-      clic(raiz, "#buscar");
-      await esperar(() => busqueda.shadowRoot.querySelectorAll("cita-card").length === 2);
-      busqueda.shadowRoot.querySelector("cita-card").shadowRoot.querySelector('button[data-accion="ticket"]').click();
-      await esperar(() => busqueda.shadowRoot.querySelector("ticket-cita"));
-      expect(busqueda.shadowRoot.querySelector("ticket-cita").shadowRoot.textContent).to.contain("Comprobante de cita");
-
-      busqueda.shadowRoot.querySelector("#nueva").click();
-      expect(pasoVisible(raiz)).to.equal("1");
-      expect(busqueda.shadowRoot.querySelectorAll("cita-card")).to.have.length(0);
-    });
-  });
-
-  it("documentoImprimible incluye datos, pasos y notas de atención", () => {
-    const cita = consultaCompleta(indizar(datosBase()), 5000);
-    const html = documentoImprimible(cita);
-    expect(html).to.contain("Ana López");
-    expect(html).to.contain("#5000");
-    expect(html).to.contain("Evaluación");
-    expect(html).to.contain("Caries de la dentina");
-    expect(html).to.contain("Guardar como PDF");
   });
 
   it("app-dashboard muestra la agenda del día y filtra por rol", async () => {
@@ -250,14 +442,6 @@ describe("componentes Web Components", () => {
     panel.shadowRoot.querySelector("#rol").dispatchEvent(new dom.window.Event("change", { bubbles: true }));
     await esperar(() => panel.shadowRoot.querySelectorAll("#lista cita-card").length === 1);
     expect(panel.shadowRoot.querySelector("#lista cita-card").shadowRoot.textContent).to.contain("Limpieza dental");
-  });
-
-  it("fechaCalendario muestra una fecha sin hora guardada en UTC con el día correcto", async () => {
-    const { fechaCalendario } = await import("../js/base.js");
-    expect(fechaCalendario("1992-09-30T00:00:00Z")).to.match(/^30 /);
-    expect(fechaCalendario("1992-09-30")).to.match(/^30 /);
-    expect(fechaCalendario(null)).to.equal("—");
-    expect(fechaCalendario("no es fecha")).to.equal("—");
   });
 
   it("ui-toast muestra las notificaciones recibidas del documento", async () => {
@@ -295,20 +479,6 @@ describe("componentes Web Components", () => {
     Object.defineProperty(globalThis.navigator, "onLine", { value: true, configurable: true });
     dom.window.dispatchEvent(new dom.window.Event("online"));
     await esperar(() => shell.shadowRoot.querySelector("#estado-conexion").hidden);
-  });
-
-  it("cita-card emite ver-ticket y navega al registro de atención", () => {
-    sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
-    const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
-    const tarjeta = montar("cita-card", { cita });
-    const tickets = [];
-    const navegaciones = [];
-    tarjeta.addEventListener("ver-ticket", (evento) => tickets.push(evento.detail));
-    tarjeta.addEventListener("navegar", (evento) => navegaciones.push(evento.detail));
-    tarjeta.shadowRoot.querySelector('[data-accion="ticket"]').click();
-    tarjeta.shadowRoot.querySelector('[data-accion="atender"]').click();
-    expect(tickets[0].consulta.idConsulta).to.equal(5000);
-    expect(navegaciones[0]).to.equal("consulta/5000");
   });
 
   it("app-shell enruta las vistas y protege las rutas de empleados", async () => {
@@ -382,71 +552,6 @@ describe("componentes Web Components", () => {
       .getCalls()
       .find((item) => item.args[1]?.method === "PUT" && item.args[0].includes("/consultas/"));
     expect(JSON.parse(llamada.args[1].body).fechaFin).to.be.a("string");
-  });
-
-  it("ticket-cita ofrece descargar el PDF y genera un archivo válido", () => {
-    const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
-    const ticket = montar("ticket-cita", { cita });
-    expect(ticket.shadowRoot.querySelector("[data-accion='descargar']")).to.not.be.null;
-    const lineas = lineasTicket(cita);
-    expect(lineas.join("\n")).to.contain("Paciente: Ana López");
-    expect(lineas.join("\n")).to.contain("PROCEDIMIENTOS Y PASOS");
-    expect(lineas.join("\n")).to.contain("Caries de la dentina");
-    const bytes = construirPdf("GalenoSV - Comprobante de cita", lineas);
-    expect(Buffer.from(bytes).toString("latin1")).to.contain("(Paciente: Ana López) Tj");
-  });
-
-  it("ticket-cita descarga el PDF desde el backend", async () => {
-    const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
-    const ticket = montar("ticket-cita", { cita });
-    const descargas = [];
-    const crear = globalThis.document.createElement.bind(globalThis.document);
-    sinon.stub(globalThis.document, "createElement").callsFake((etiqueta) => {
-      const elemento = crear(etiqueta);
-      if (etiqueta === "a") {
-        elemento.click = () => descargas.push(elemento.download);
-      }
-      return elemento;
-    });
-    globalThis.URL.createObjectURL = () => "blob:prueba";
-    globalThis.URL.revokeObjectURL = () => {};
-    const avisos = [];
-    ticket.addEventListener("notificar", (evento) => avisos.push(evento.detail.mensaje));
-    ticket.shadowRoot.querySelector("[data-accion='descargar']").click();
-    await esperar(() => descargas.length > 0 && avisos.length > 0);
-    expect(descargas[0]).to.equal("ticket-5000.pdf");
-    const peticion = fetch.getCalls().find((llamada) => llamada.args[0].includes("/tickets/consultas/5000"));
-    expect(peticion.args[1].headers.Accept).to.equal("application/pdf");
-    expect(avisos[0]).to.match(/^Ticket PDF descargado/);
-  });
-
-  it("ticket-cita muestra los estados de los pasos con texto legible", () => {
-    const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
-    const ticket = montar("ticket-cita", { cita });
-    const estados = [...ticket.shadowRoot.querySelectorAll("tbody td:nth-child(3)")].map((td) => td.textContent);
-    expect(estados).to.deep.equal(["Completado", "En curso", "Pendiente"]);
-    expect(ticket.shadowRoot.textContent).to.not.contain("Guardar como PDF");
-  });
-
-  it("cita-card muestra el registro de cada paso con quién y cuándo", () => {
-    sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
-    const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
-    const tarjeta = montar("cita-card", { cita });
-    const texto = tarjeta.shadowRoot.textContent;
-    expect(texto).to.contain("Ana López");
-    expect(texto).to.contain("Evaluación");
-    expect(texto).to.contain("Elena Martínez");
-    expect(texto).to.contain("Ver qué se registró en cada paso");
-  });
-
-  it("cita-card marca el paso actual como «En curso» y muestra la fecha de nacimiento correcta", () => {
-    const base = datosBase();
-    base.personas[0].fechaNacimiento = "1992-09-30T00:00:00Z";
-    const indice = indizar(base);
-    const tarjeta = montar("cita-card", { cita: resumenCita(indice, indice.porId.consultas.get(5000)) });
-    const actual = tarjeta.shadowRoot.querySelector(".paso.actual .quien").textContent;
-    expect(actual).to.contain("En curso");
-    expect(tarjeta.shadowRoot.textContent).to.contain("30 sept 1992");
   });
 
   it("app-consulta muestra qué se registró en cada paso", async () => {

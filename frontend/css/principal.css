@@ -1,9 +1,47 @@
+/*
+ * Tokens de diseño de GalenoSV. Las variables CSS atraviesan el Shadow DOM,
+ * así que todos los componentes las leen desde aquí.
+ */
 :root {
-  --fondo: #f4f7fb;
+  /* Superficies */
+  --fondo: #f3f6f9;
+  --superficie: #ffffff;
+  --superficie-suave: #f7f9fb;
+
+  /* Texto */
   --texto: #14202b;
+  --texto-suave: #4d6378;
+  --texto-tenue: #6b7f93;
+
+  /* Marca: pizarra clínica + verde azulado */
   --mate: #2c4a63;
+  --mate-fuerte: #1f3a50;
+  --mate-suave: #e9eff4;
   --acento: #0f7b6c;
-  --borde: #cbd5e1;
+  --acento-fuerte: #0b6155;
+  --acento-suave: #e6f3f0;
+
+  /* Bordes */
+  --borde: #d6dee7;
+  --borde-fuerte: #b5c3d1;
+
+  /* Estados */
+  --exito: #1e6b3a;
+  --exito-suave: #e8f4ec;
+  --exito-borde: #c3e2cd;
+  --alerta: #85570a;
+  --alerta-suave: #fdf3e1;
+  --peligro: #b42318;
+  --peligro-suave: #fdeceb;
+
+  /* Forma y profundidad */
+  --radio: 10px;
+  --radio-grande: 14px;
+  --sombra: 0 1px 2px rgba(20, 32, 43, 0.05), 0 6px 18px rgba(20, 32, 43, 0.06);
+  --sombra-alta: 0 2px 6px rgba(20, 32, 43, 0.08), 0 24px 56px rgba(20, 32, 43, 0.22);
+  --anillo: 0 0 0 3px color-mix(in srgb, var(--acento) 32%, transparent);
+
+  --fuente: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   color-scheme: light;
 }
 
@@ -11,23 +49,25 @@
 
 html, body { margin: 0; padding: 0; }
 
+html { scrollbar-color: var(--borde-fuerte) transparent; }
+
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(1200px 500px at 10% -10%, #dff1ec 0%, transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, #e3edf7 0%, transparent 50%),
-    var(--fondo);
+  background: var(--fondo);
   color: var(--texto);
-  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--fuente);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+::selection { background: color-mix(in srgb, var(--acento) 22%, transparent); color: var(--texto); }
 
 noscript {
   display: block;
   padding: 1rem;
   text-align: center;
-  background: #fff3cd;
-  color: #664d03;
+  background: var(--alerta-suave);
+  color: var(--alerta);
 }
 
 [hidden] { display: none !important; }

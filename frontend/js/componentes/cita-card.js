@@ -5,48 +5,74 @@ import { motivoDe, estadoDeCita, etiquetaPaso } from "../datos.js";
 export class CitaCard extends Vista {
   get estilos() {
     return `
-      article { display: grid; gap: 0.55rem; }
-      .cabecera { display: flex; align-items: flex-start; gap: 0.6rem; }
+      article { display: grid; gap: 0.85rem; }
+      .cabecera { display: flex; align-items: flex-start; gap: 0.9rem; }
       .fecha {
-        background: #eef5f2; color: #0f7b6c; border-radius: 12px; padding: 0.5rem 0.7rem;
-        font-weight: 700; text-align: center; min-width: 74px; font-size: 0.78rem; line-height: 1.2;
+        flex: none; display: grid; justify-items: center; align-content: center; gap: 0.05rem;
+        min-width: 4.6rem; padding: 0.5rem 0.6rem; border-radius: var(--radio, 10px);
+        background: var(--acento-suave, #e6f3f0); color: var(--acento-fuerte, #0b6155);
+        font-variant-numeric: tabular-nums; line-height: 1.1; text-align: center;
       }
-      .paciente { display: grid; gap: 0.1rem; }
-      .paciente h3 { font-size: 1.02rem; }
-      .paciente p { font-size: 0.82rem; color: #587089; }
+      .fecha .mes { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+      .fecha .dia { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.02em; color: var(--texto, #14202b); }
+      .fecha .hora { font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
+      .fecha.sin { font-size: 0.75rem; font-weight: 600; }
+      .paciente { display: grid; gap: 0.15rem; min-width: 0; padding-top: 0.15rem; }
+      .paciente h3 { font-size: 1.08rem; line-height: 1.3; }
+      .paciente p { font-size: 0.85rem; color: var(--texto-suave, #4d6378); }
       .estado {
-        margin-left: auto; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-        padding: 0.22rem 0.55rem; border-radius: 999px; background: #eef2f6; color: #2c4a63;
-        white-space: nowrap;
+        margin-left: auto; display: inline-flex; align-items: center; gap: 0.4rem;
+        font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em;
+        padding: 0.25rem 0.65rem; border-radius: 999px; white-space: nowrap;
+        background: var(--mate-suave, #e9eff4); color: var(--mate, #2c4a63);
       }
-      .estado.completada { background: #e6f4ea; color: #1e6b3a; }
-      .estado.proceso { background: #fff4e0; color: #8a5a00; }
-      .procedimientos { display: grid; gap: 0.35rem; }
-      .procedimiento { font-size: 0.85rem; }
-      .procedimiento strong { color: #2c4a63; }
-      .pasos { display: grid; gap: 0.3rem; margin-top: 0.35rem; }
+      .estado::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 999px; background: currentColor; }
+      .estado.completada { background: var(--exito-suave, #e8f4ec); color: var(--exito, #1e6b3a); }
+      .estado.proceso { background: var(--alerta-suave, #fdf3e1); color: var(--alerta, #85570a); }
+      .general {
+        display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; font-size: 0.8rem; color: var(--texto-suave, #4d6378);
+        padding: 0.6rem 0.8rem; border-radius: var(--radio, 10px); background: var(--superficie-suave, #f7f9fb);
+        font-variant-numeric: tabular-nums;
+      }
+      .general b { color: var(--mate, #2c4a63); font-weight: 600; }
+      .procedimientos { display: grid; gap: 0.6rem; }
+      .procedimiento { font-size: 0.88rem; }
+      .procedimiento strong { color: var(--texto, #14202b); font-weight: 650; }
+      .pasos { display: grid; gap: 0.35rem; margin-top: 0.45rem; }
       .paso {
-        display: flex; align-items: baseline; gap: 0.4rem; font-size: 0.76rem;
-        padding: 0.25rem 0.5rem; border-radius: 10px; border: 1px solid #cbd5e1; color: #587089;
-        background: #fff;
+        display: flex; align-items: center; gap: 0.55rem; font-size: 0.8rem; min-height: 2.25rem;
+        padding: 0.35rem 0.65rem; border-radius: var(--radio, 10px);
+        border: 1px solid var(--borde, #d6dee7); color: var(--texto-suave, #4d6378); background: var(--superficie, #fff);
       }
       .paso .num {
-        width: 18px; height: 18px; border-radius: 999px; display: inline-grid; place-items: center;
-        background: #eef2f6; color: #2c4a63; font-size: 0.66rem; font-weight: 700; flex: none;
+        width: 1.3rem; height: 1.3rem; border-radius: 999px; display: inline-grid; place-items: center; flex: none;
+        font-size: 0.68rem; font-weight: 700; font-variant-numeric: tabular-nums;
+        background: var(--superficie, #fff); color: var(--texto-tenue, #6b7f93);
+        box-shadow: inset 0 0 0 1.5px var(--borde-fuerte, #b5c3d1);
       }
-      .paso .nombre { font-weight: 600; color: #2c4a63; }
-      .paso .quien { margin-left: auto; font-size: 0.7rem; text-align: right; }
-      .paso.completado { background: #f2faf4; border-color: #c3e6cc; }
-      .paso.completado .num { background: #1e6b3a; color: #fff; }
-      .paso.actual { border-color: #2c4a63; background: #eef2f6; }
-      .paso.actual .num { background: #2c4a63; color: #fff; }
-      .general { display: flex; flex-wrap: wrap; gap: 0.35rem 0.8rem; font-size: 0.76rem; color: #587089; }
-      .general b { color: #2c4a63; font-weight: 600; }
-      .acciones { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.25rem; }
-      .acciones button { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
-      details.registro { font-size: 0.78rem; }
-      details.registro summary { cursor: pointer; color: #0f7b6c; font-weight: 600; }
-      details.registro ul { margin: 0.4rem 0 0; padding-left: 1rem; color: #587089; display: grid; gap: 0.2rem; }
+      .paso .nombre { font-weight: 600; color: var(--texto, #14202b); }
+      .paso .quien { margin-left: auto; font-size: 0.74rem; text-align: right; font-variant-numeric: tabular-nums; }
+      .paso.pendiente .nombre { color: var(--texto-suave, #4d6378); font-weight: 500; }
+      .paso.completado { background: var(--exito-suave, #e8f4ec); border-color: var(--exito-borde, #c3e2cd); }
+      .paso.completado .num { background: var(--exito, #1e6b3a); color: #fff; box-shadow: none; }
+      .paso.actual { border-color: var(--mate, #2c4a63); background: var(--mate-suave, #e9eff4); box-shadow: inset 0 0 0 1px var(--mate, #2c4a63); }
+      .paso.actual .num { background: var(--mate, #2c4a63); color: #fff; box-shadow: none; }
+      .paso.actual .quien { color: var(--mate, #2c4a63); font-weight: 600; }
+      .acciones { display: flex; gap: 0.5rem; flex-wrap: wrap; padding-top: 0.85rem; border-top: 1px solid var(--borde, #d6dee7); }
+      .acciones button { min-height: 2.35rem; padding: 0.4rem 0.9rem; font-size: 0.84rem; }
+      details.registro { font-size: 0.82rem; }
+      details.registro summary {
+        cursor: pointer; color: var(--acento, #0f7b6c); font-weight: 600; width: fit-content;
+        border-radius: 6px; padding: 0.1rem 0.2rem; margin-left: -0.2rem;
+      }
+      details.registro summary:hover { color: var(--acento-fuerte, #0b6155); }
+      details.registro summary:focus-visible { outline: none; box-shadow: var(--anillo); }
+      details.registro ul { margin: 0.5rem 0 0; padding-left: 1.1rem; color: var(--texto-suave, #4d6378); display: grid; gap: 0.3rem; }
+      @media (max-width: 620px) {
+        .cabecera { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.6rem 0.85rem; }
+        .estado { grid-column: 1 / -1; justify-self: start; margin-left: 0; }
+        .paso { flex-wrap: wrap; row-gap: 0.1rem; }
+      }
     `;
   }
 
@@ -57,6 +83,18 @@ export class CitaCard extends Vista {
 
   get cita() {
     return this._cita;
+  }
+
+  /** Fecha de la cita como bloque de calendario: mes, día y hora. */
+  bloqueFecha(valor, textoCompleto) {
+    const fecha = valor ? new Date(valor) : null;
+    if (!fecha || Number.isNaN(fecha.getTime())) return `<div class="fecha sin">Sin fecha</div>`;
+    const mes = fecha.toLocaleDateString("es-SV", { month: "short" }).replace(".", "");
+    const dia = fecha.toLocaleDateString("es-SV", { day: "2-digit" });
+    const hora = fecha.toLocaleTimeString("es-SV", { hour: "2-digit", minute: "2-digit" });
+    return `<div class="fecha" role="img" aria-label="${escapar(textoCompleto)}">
+      <span class="mes">${escapar(mes)}</span><span class="dia">${escapar(dia)}</span><span class="hora">${escapar(hora)}</span>
+    </div>`;
   }
 
   pintarRegistro(cita) {
@@ -120,13 +158,18 @@ export class CitaCard extends Vista {
       </div>
     `;
     const etiquetaPaciente = `${paciente?.nombres ?? "Paciente"} ${paciente?.apellidos ?? ""}`.trim();
+    const nombreClinica = clinica?.nombre ?? "Clínica no disponible";
+    // En la búsqueda del propio paciente su nombre sobra: el título es el motivo de la cita.
+    const paraPaciente = this.getAttribute("vista") === "paciente";
+    const titulo = paraPaciente ? motivoDe(consulta) : etiquetaPaciente;
+    const subtitulo = paraPaciente ? nombreClinica : `${nombreClinica} · ${motivoDe(consulta)}`;
     this.render(`
       <article class="tarjeta" aria-label="Cita de ${escapar(etiquetaPaciente)}">
         <div class="cabecera">
-          <div class="fecha">${escapar(fecha)}</div>
+          ${this.bloqueFecha(consulta.fechaInicio, fecha)}
           <div class="paciente">
-            <h3>${escapar(`${paciente?.nombres ?? "Paciente"} ${paciente?.apellidos ?? ""}`)}</h3>
-            <p>${escapar(clinica?.nombre ?? "Clínica no disponible")} · ${escapar(motivoDe(consulta))}</p>
+            <h3>${escapar(titulo)}</h3>
+            <p>${escapar(subtitulo)}</p>
           </div>
           <span class="estado ${estado}">${textoEstado}</span>
         </div>
@@ -141,8 +184,6 @@ export class CitaCard extends Vista {
                 }</span>`
               : ""
           }
-          <span><b>Inicio:</b> ${escapar(fechaHora(consulta.fechaInicio))}</span>
-          ${cita.clinica ? `<span><b>Clínica:</b> ${escapar(cita.clinica.nombre)}</span>` : ""}
         </div>
         <div class="procedimientos">
           ${procedimientos
