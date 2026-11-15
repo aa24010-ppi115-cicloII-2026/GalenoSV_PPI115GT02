@@ -27,7 +27,8 @@ async function pedir(ruta, opciones = {}) {
 
 /** Descarga un recurso binario, por ejemplo el ticket en PDF. */
 export async function pedirBinario(ruta, nombreArchivo) {
-  const respuesta = await pedir(ruta);
+  // El endpoint del ticket solo produce application/pdf: con Accept JSON respondería 406.
+  const respuesta = await pedir(ruta, { headers: { Accept: "application/pdf" } });
   const blob = await respuesta.blob();
   const url = URL.createObjectURL(blob);
   const enlace = document.createElement("a");

@@ -42,6 +42,7 @@ describe("manifest PWA", () => {
     expect(index).to.contain("<pwa-instalar>");
     expect(serviceWorker).to.match(/const CACHE = "galenosv-v\d+"/);
     expect(serviceWorker).to.contain('"./js/componentes/app-shell.js"');
+    expect(serviceWorker).to.contain('"./js/componentes/asistente-citas.js"');
     expect(serviceWorker).to.contain('"./js/datos.js"');
     expect(serviceWorker).to.contain('"./js/pdf.js"');
     expect(serviceWorker).to.contain('"./js/pendientes.js"');

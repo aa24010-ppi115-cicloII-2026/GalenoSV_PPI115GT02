@@ -1,5 +1,5 @@
 import { Vista, escapar, fechaHora } from "../base.js";
-import { leerObservaciones, motivoDe, estadoDeCita } from "../datos.js";
+import { leerObservaciones, motivoDe, estadoDeCita, etiquetaPaso } from "../datos.js";
 import { descargarPdf } from "../pdf.js";
 import { pedirBinario, estaConectado } from "../api.js";
 
@@ -8,7 +8,7 @@ export function documentoImprimible(cita) {
     lista.map(({ paso, registro, estado }) => ({
       procedimiento: procedimiento?.nombre ?? "Procedimiento",
       nombre: paso.nombre,
-      estado,
+      estado: etiquetaPaso(estado),
       fecha: registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente",
       observaciones: registro?.observaciones ?? "",
     }))
@@ -104,7 +104,7 @@ export function lineasTicket(cita) {
     for (const { paso, registro, persona, estado, notas } of pasos) {
       const fecha = registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente";
       const quien = persona ? `${persona.nombres} ${persona.apellidos}` : "Sin asignar";
-      lineas.push(`   ${paso.nombre} | ${estado} | ${fecha} | ${quien}`);
+      lineas.push(`   ${paso.nombre} | ${etiquetaPaso(estado)} | ${fecha} | ${quien}`);
       if (notas?.notas) lineas.push(`      Notas: ${notas.notas}`);
       if (notas?.diagnostico) lineas.push(`      Diagnostico CIE-10: ${notas.diagnostico}`);
       if (notas?.plan) lineas.push(`      Plan: ${notas.plan}`);
@@ -226,7 +226,7 @@ export class TicketCita extends Vista {
                     ({ paso, registro, estado, procedimiento }) => `<tr>
                       <td>${escapar(procedimiento?.nombre ?? "—")}</td>
                       <td>${escapar(paso.nombre)}</td>
-                      <td>${escapar(estado)}</td>
+                      <td>${escapar(etiquetaPaso(estado))}</td>
                       <td>${escapar(registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente")}</td>
                       <td>${escapar(registro?.observaciones || "—")}</td>
                     </tr>`
@@ -248,7 +248,6 @@ export class TicketCita extends Vista {
                   .join("")}</div>`
               : ""
           }
-          <p class="aviso" style="margin-top:0.8rem;font-size:0.75rem">Use Imprimir → Guardar como PDF para conservar una copia del ticket.</p>
           <div class="acciones">
             <button type="button" class="secundario" data-accion="cerrar">Cerrar</button>
             <button type="button" class="secundario" data-accion="imprimir">Imprimir</button>

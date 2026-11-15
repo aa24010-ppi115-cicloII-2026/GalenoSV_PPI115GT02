@@ -15,6 +15,7 @@ import {
   examenesAsignables,
   estadoDeCita,
   edadDe,
+  etiquetaPaso,
   leerObservaciones,
   serializarObservaciones,
 } from "../js/datos.js";
@@ -36,6 +37,25 @@ describe("datos.js", () => {
   it("lista las clínicas asociadas al paciente", () => {
     const clinicas = clinicasDePaciente(datos, 100);
     expect(clinicas.map((clinica) => clinica.idClinica)).to.deep.equal([10]);
+  });
+
+  it("no ofrece clínicas donde la persona solo trabaja como empleado", () => {
+    expect(clinicasDePaciente(datos, 300)).to.deep.equal([]);
+  });
+
+  it("traduce el estado interno del paso a un texto legible", () => {
+    expect(etiquetaPaso("completado")).to.equal("Completado");
+    expect(etiquetaPaso("actual")).to.equal("En curso");
+    expect(etiquetaPaso("pendiente")).to.equal("Pendiente");
+  });
+
+  it("calcula la edad con fechas sin hora guardadas en UTC sin restar un día", () => {
+    const reloj = sinon.useFakeTimers(new Date("2026-09-30T12:00:00-06:00"));
+    try {
+      expect(edadDe({ fechaNacimiento: "1992-09-30T00:00:00Z" })).to.equal(34);
+    } finally {
+      reloj.restore();
+    }
   });
 
   it("separa los roles de empleado de los roles de paciente", () => {
