@@ -453,7 +453,8 @@ describe("componentes Web Components", () => {
 
         const procedimiento = raiz.querySelector(".procedimiento");
         expect(procedimiento.querySelector(".nombre-procedimiento").textContent).to.equal("Limpieza dental");
-        const pasos = [...procedimiento.querySelectorAll("ol.pasos > li.paso")];
+        const linea = procedimiento.querySelector("linea-pasos").shadowRoot;
+        const pasos = [...linea.querySelectorAll("ol.pasos > li.paso")];
         expect(pasos.map((paso) => paso.querySelector(".nombre").textContent)).to.deep.equal(["Evaluación", "Profilaxis", "Alta"]);
 
         const [hecho, actual, pendiente] = pasos;
@@ -473,7 +474,7 @@ describe("componentes Web Components", () => {
         base.personas[0].fechaNacimiento = "1992-09-30T00:00:00Z";
         const indice = indizar(base);
         const tarjeta = montar("cita-card", { cita: resumenCita(indice, indice.porId.consultas.get(5000)) });
-        const actual = tarjeta.shadowRoot.querySelector(".paso.actual .quien").textContent;
+        const actual = tarjeta.shadowRoot.querySelector("linea-pasos").shadowRoot.querySelector(".paso.actual .quien").textContent;
         expect(actual).to.contain("En curso");
         expect(tarjeta.shadowRoot.textContent).to.contain("30 sept 1992");
       });
@@ -850,6 +851,44 @@ describe("componentes Web Components", () => {
     expect(completa.shadowRoot.querySelector("[data-accion='finalizar']").classList.contains("secundario")).to.be.false;
   });
 
+  it("app-consulta resume al paciente en el encabezado con su edad y el estado como insignia", async () => {
+    datos.personas[0].fechaNacimiento = "1990-05-15T00:00:00-06:00";
+    const vista = await abrirConsulta();
+    const encabezado = vista.shadowRoot.querySelector(".encabezado");
+    expect(encabezado.querySelector("h2").textContent).to.equal("Ana López");
+    expect(encabezado.querySelector(".datos").textContent).to.match(/\d+ años · Clínica Central · .+ · Limpieza/);
+    expect(encabezado.querySelector(".estado-pill").textContent).to.equal("En proceso");
+  });
+
+  it("app-consulta pliega los exámenes opcionales, resume las órdenes y muestra «Asignar» solo con exámenes elegidos", async () => {
+    datos.consultasProcedimientoPaso.push({
+      idConsultaProcedimientoPaso: 9001,
+      idConsultaProcedimiento: 8000,
+      idPersonaRol: 3000,
+      fechaInicio: "2026-11-12T09:40:00-06:00",
+      estado: "EN_PROCESO",
+    });
+    datos.ordenesExamen.push({ idOrdenExamen: 400, idConsultaProcedimientoPaso: 9001, fechaCreacion: "2026-11-12T09:45:00-06:00", indicaciones: "Examen: Radiografía periapical" });
+    const vista = await abrirConsulta();
+    const raiz = vista.shadowRoot;
+    const examenes = raiz.querySelector("details.examenes");
+    expect(examenes.open).to.be.false;
+    expect(examenes.querySelector("summary").textContent).to.contain("1 orden");
+
+    examenes.open = true;
+    const asignar = () => raiz.querySelector("[data-accion='asignar']").closest(".asignacion");
+    expect(asignar().hidden).to.be.true;
+    const buscador = raiz.querySelector("[data-examen-buscador]");
+    buscador.value = 20;
+    buscador.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    expect(asignar().hidden).to.be.false;
+
+    // Tras asignar, el bloque sigue abierto para ver la orden nueva.
+    raiz.querySelector("[data-accion='asignar']").click();
+    await esperar(() => raiz.querySelector("details.examenes summary").textContent.includes("2 órdenes"));
+    expect(raiz.querySelector("details.examenes").open).to.be.true;
+  });
+
   it("app-consulta busca el diagnóstico CIE-10 escribiendo parte del nombre", async () => {
     const vista = await abrirConsulta();
     const campo = vista.shadowRoot.querySelector("[data-campo='diagnostico']");
@@ -962,15 +1001,17 @@ describe("componentes Web Components", () => {
     expect(JSON.parse(llamada.args[1].body).fechaFin).to.be.a("string");
   });
 
-  it("app-consulta muestra qué se registró en cada paso", async () => {
+  it("app-consulta muestra qué se registró en cada paso con la misma línea de pasos del dashboard", async () => {
     sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
     const vista = document.createElement("app-consulta");
     vista.setAttribute("id-consulta", "5000");
     document.body.append(vista);
-    await esperar(() => vista.shadowRoot.querySelector(".registro-pasos"));
-    const texto = vista.shadowRoot.querySelector(".registro-pasos").textContent;
-    expect(texto).to.contain("Evaluación");
-    expect(texto).to.contain("Elena Martínez");
+    await esperar(() => vista.shadowRoot.querySelector(".proc linea-pasos"));
+    // El mismo historial en jerarquía que las cards del dashboard, sin duplicarlo en otro formato.
+    expect(vista.shadowRoot.querySelectorAll(".stepper, .registro-pasos")).to.have.length(0);
+    const linea = vista.shadowRoot.querySelector(".proc linea-pasos").shadowRoot;
+    expect(linea.querySelector(".paso.completado").textContent).to.contain("Evaluación");
+    expect(linea.querySelector(".paso.completado details.registro").textContent).to.contain("Elena Martínez");
   });
 
   it("app-consulta inicia, asigna exámenes y completa un paso", async () => {
@@ -1009,7 +1050,7 @@ describe("componentes Web Components", () => {
       )
     );
     await esperar(() => vista.shadowRoot.textContent.includes("Paso actual: Alta"));
-    expect(vista.shadowRoot.textContent).to.contain("2/3 pasos");
+    expect(vista.shadowRoot.querySelector(".paso-cabecera").textContent).to.contain("Paso 3 de 3");
   });
 
   it("app-consulta retrocede al paso anterior tras confirmar en un diálogo propio, sin borrar su registro", async () => {

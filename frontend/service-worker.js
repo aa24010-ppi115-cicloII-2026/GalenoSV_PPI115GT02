@@ -1,4 +1,4 @@
-const CACHE = "galenosv-v9";
+const CACHE = "galenosv-v10";
 const API = "http://localhost:9080";
 const RECURSOS = [
   "./",
@@ -19,6 +19,7 @@ const RECURSOS = [
   "./js/componentes/cita-card.js",
   "./js/componentes/ui-autocompletar.js",
   "./js/componentes/ui-confirmar.js",
+  "./js/componentes/linea-pasos.js",
   "./js/componentes/app-login.js",
   "./js/componentes/asistente-citas.js",
   "./js/componentes/app-busqueda.js",
