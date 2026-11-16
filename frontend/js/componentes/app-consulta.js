@@ -1,8 +1,7 @@
-import { Vista, escapar, fechaHora, fechaCorta, fechaCalendario, ahoraISO } from "../base.js";
+import { Vista, escapar, fechaHora, fechaCorta, ahoraISO } from "../base.js";
 import {
   cargarTodo,
   consultaCompleta,
-  etiquetaPaso,
   examenesAsignables,
   leerObservaciones,
   motivoDe,
@@ -13,6 +12,7 @@ import { leerSesion } from "../estado.js";
 import { estaConectado } from "../pendientes.js";
 import { CODIGOS_CIE10 } from "../cie10.js";
 import { confirmar } from "./ui-confirmar.js";
+import "./linea-pasos.js";
 import "./ui-autocompletar.js";
 
 // El diagnóstico se guarda con su texto completo («K02.1 · Caries de la dentina»).
@@ -37,8 +37,11 @@ export class AppConsulta extends Vista {
     return `
       .volver { margin-bottom: 0.8rem; }
       .encabezado { display: flex; align-items: flex-start; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
-      .encabezado h2 { font-size: 1.4rem; }
-      .encabezado .datos { display: flex; gap: 0.8rem; flex-wrap: wrap; font-size: 0.82rem; color: var(--texto-suave); }
+      .encabezado { align-items: center; }
+      .encabezado .paciente { display: grid; gap: 0.3rem; min-width: 0; }
+      .encabezado .titulo { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+      .encabezado h2 { font-size: 1.4rem; letter-spacing: -0.015em; }
+      .encabezado .datos { font-size: 0.9rem; color: var(--texto-suave); font-variant-numeric: tabular-nums; }
       .procedimientos { display: grid; gap: 1rem; margin-top: 1rem; }
       .proc { display: grid; gap: 0.8rem; }
       .proc h3 { font-size: 1.05rem; }
@@ -48,19 +51,6 @@ export class AppConsulta extends Vista {
       }
       .estado-pill.completada { background: var(--exito-suave); color: var(--exito); }
       .estado-pill.proceso { background: var(--alerta-suave); color: var(--alerta); }
-      .stepper { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0; padding: 0; list-style: none; }
-      .stepper li {
-        display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem;
-        border: 1px solid var(--borde-fuerte); border-radius: 999px; padding: 0.25rem 0.6rem; color: var(--texto-suave);
-      }
-      .stepper li b {
-        width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center;
-        background: var(--mate-suave); font-size: 0.7rem;
-      }
-      .stepper li.completado { border-color: var(--exito-borde); background: var(--exito-suave); color: var(--exito); }
-      .stepper li.completado b { background: var(--exito); color: #fff; }
-      .stepper li.actual { border-color: var(--mate); background: var(--mate); color: #fff; }
-      .stepper li.actual b { background: var(--superficie); color: var(--mate); }
       .bloque { display: grid; gap: 0.7rem; padding-top: 0.85rem; border-top: 1px solid var(--borde); }
       .bloque h5 { font-size: 0.8rem; font-weight: 700; color: var(--mate); text-transform: uppercase; letter-spacing: 0.05em; }
       .bloque h5 small { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--texto-suave); }
@@ -69,10 +59,19 @@ export class AppConsulta extends Vista {
       .acciones-paso { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
       .acciones-paso .separador { flex: 1; }
       h4, h5 { margin: 0; }
-      .paso-panel { background: var(--superficie-suave); border: 1px solid var(--borde); border-radius: var(--radio-grande); padding: 1rem; display: grid; gap: 0.75rem; }
-      .paso-panel h4 { font-size: 1rem; color: var(--mate); }
-      .paso-panel.completada { background: var(--exito-suave); border-color: var(--exito-borde); }
-      .examenes { display: grid; gap: 0.45rem; }
+      .paso-panel { display: grid; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--borde); }
+      .paso-panel h4 { font-size: 1.05rem; color: var(--texto); }
+      .paso-panel.completada h4 { color: var(--exito); }
+      /* Pie con las acciones del paso, separado de las acciones de cada sección. */
+      .acciones-paso.pie { padding-top: 0.9rem; border-top: 1px solid var(--borde); }
+      details.examenes > summary {
+        cursor: pointer; width: fit-content; border-radius: 6px; padding: 0.1rem 0.2rem; margin-left: -0.2rem;
+        font-size: 0.8rem; font-weight: 700; color: var(--mate); text-transform: uppercase; letter-spacing: 0.05em;
+      }
+      details.examenes > summary small { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--texto-suave); }
+      details.examenes > summary:focus-visible { outline: none; box-shadow: var(--anillo); }
+      details.examenes[open] { gap: 0.6rem; }
+      .asignacion { display: grid; gap: 0.6rem; }
       .elegidos { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
       .elegidos li {
         display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.84rem; color: var(--mate);
@@ -84,8 +83,10 @@ export class AppConsulta extends Vista {
         background: transparent; color: var(--mate); border: none; box-shadow: none; font-size: 1rem;
       }
       .elegidos .quitar:hover { background: var(--superficie); }
-      .ordenes { border: none; margin: 0; padding: 0; min-width: 0; font-size: 0.84rem; color: var(--mate); display: grid; gap: 0.4rem; }
-      .ordenes legend { padding: 0; margin-bottom: 0.35rem; }
+      .ordenes { margin-top: 0.5rem; font-size: 0.84rem; color: var(--mate); display: grid; gap: 0.4rem; }
+      .barra-ordenes { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+      .barra-ordenes button { min-height: 2rem; padding: 0.2rem 0.75rem; font-size: 0.8rem; }
+      .barra-ordenes button:disabled { border-color: var(--borde); color: var(--texto-tenue); background: transparent; }
       .ordenes ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
       .ordenes label {
         display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; cursor: pointer;
@@ -95,19 +96,9 @@ export class AppConsulta extends Vista {
       .ordenes label:has(input:disabled) { cursor: default; }
       .ordenes label > span { flex: 1; min-width: 12rem; }
       .con-resultado { font-size: 0.72rem; font-weight: 600; color: var(--exito); background: var(--exito-suave); border-radius: 999px; padding: 0.15rem 0.55rem; }
-      .registro-pasos { border: 1px solid var(--borde); border-radius: var(--radio); padding: 0.5rem 0.7rem; background: var(--superficie-suave); }
-      .registro-pasos summary { cursor: pointer; font-size: 0.82rem; font-weight: 700; color: var(--mate); }
-      .registro-pasos ul { list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
-      .registro-pasos li { border-top: 1px solid var(--borde); padding-top: 0.45rem; font-size: 0.8rem; }
-      .registro-pasos li:first-child { border-top: none; padding-top: 0; }
-      .registro-pasos p { margin: 0.15rem 0 0; color: var(--texto-suave); }
-      .registro-pasos .nota-paso { color: var(--mate); }
-      .estado-mini {
         font-size: 0.66rem; text-transform: uppercase; font-weight: 700; padding: 0.1rem 0.4rem;
         border-radius: 999px; background: var(--mate-suave); color: var(--mate); margin-left: 0.35rem;
       }
-      .estado-mini.completado { background: var(--exito-suave); color: var(--exito); }
-      .estado-mini.actual { background: var(--mate); color: #fff; }
     `;
   }
 
@@ -125,6 +116,7 @@ export class AppConsulta extends Vista {
   async cargar(recargar = false) {
     // Lo escrito y aún no guardado se conserva al volver a pintar (iniciar paso, asignar exámenes…).
     const borradores = this.leerBorradores();
+    const abiertos = this.qa("details.examenes[open]").map((detalle) => detalle.dataset.examenes);
     this.render(`<div class="vacio">Cargando el registro de atención…</div>`);
     try {
       this._datos = await cargarTodo({ recargar });
@@ -135,6 +127,10 @@ export class AppConsulta extends Vista {
       }
       this.pintar();
       this.aplicarBorradores(borradores);
+      for (const idCp of abiertos) {
+        const detalle = this.q(`details.examenes[data-examenes="${idCp}"]`);
+        if (detalle) detalle.open = true;
+      }
     } catch {
       this.render(`<div class="vacio">No se pudo cargar la consulta. Intente de nuevo.</div>`);
     }
@@ -153,23 +149,21 @@ export class AppConsulta extends Vista {
       <button type="button" class="secundario volver" data-accion="volver">← Volver al panel</button>
       <section class="tarjeta">
         <div class="encabezado">
-          <div>
-            <h2>${escapar(`${paciente?.nombres ?? "Paciente"} ${paciente?.apellidos ?? ""}`.trim())}</h2>
-            <div class="datos">
-              <span>${escapar(clinica?.nombre ?? "Clínica")}</span>
-              <span>${escapar(fechaHora(consulta.fechaInicio))}</span>
-              <span>${escapar(motivoDe(consulta))}</span>
-              <span>${escapar(estadoGeneral)}</span>
-              ${
-                paciente?.fechaNacimiento
-                  ? `<span>Nac. ${escapar(fechaCalendario(paciente.fechaNacimiento))}${
-                      paciente.edad !== null && paciente.edad !== undefined
-                        ? ` (${paciente.edad} años)`
-                        : ""
-                    }</span>`
-                  : ""
-              }
+          <div class="paciente">
+            <div class="titulo">
+              <h2>${escapar(`${paciente?.nombres ?? "Paciente"} ${paciente?.apellidos ?? ""}`.trim())}</h2>
+              <span class="estado-pill ${todoCompleto ? "completada" : "proceso"}">${escapar(estadoGeneral)}</span>
             </div>
+            <p class="datos">${escapar(
+              [
+                paciente?.edad !== null && paciente?.edad !== undefined ? `${paciente.edad} años` : "",
+                clinica?.nombre ?? "Clínica",
+                fechaHora(consulta.fechaInicio),
+                motivoDe(consulta),
+              ]
+                .filter(Boolean)
+                .join(" · ")
+            )}</p>
           </div>
           <div class="separador"></div>
           <div class="fila">
@@ -186,6 +180,9 @@ export class AppConsulta extends Vista {
         ${procedimientos.map((item) => this.pintarProcedimiento(item)).join("") || '<div class="vacio">La consulta no tiene procedimientos asignados.</div>'}
       </section>
     `);
+    for (const linea of this.qa("linea-pasos[data-cp]")) {
+      linea.pasos = this.buscarProcedimiento(linea.dataset.cp)?.pasos ?? [];
+    }
     for (const campo of this.qa('ui-autocompletar[data-campo="diagnostico"]')) {
       campo.opciones = OPCIONES_CIE10;
       campo.value = campo.dataset.valor;
@@ -210,65 +207,11 @@ export class AppConsulta extends Vista {
         <div class="fila">
           <h3>${escapar(procedimiento?.nombre ?? "Procedimiento")}</h3>
           <span class="separador"></span>
-          <span class="estado-pill ${finalizado ? "completada" : "proceso"}">${finalizado ? "Completado" : `${completados}/${pasos.length} pasos`}</span>
+          ${finalizado ? '<span class="estado-pill completada">Completado</span>' : ""}
         </div>
-        <ol class="stepper" aria-label="Pasos del procedimiento">
-          ${pasos
-            .map(
-              ({ paso, estado, persona, registro, indice }) => `
-                <li class="${escapar(estado)}" title="${escapar(paso.nombre)}">
-                  <b>${indice + 1}</b>
-                  <span>${escapar(paso.nombre)}</span>
-                  ${
-                    registro
-                      ? `<small>· ${escapar(persona ? `${persona.nombres} ${persona.apellidos}` : "registrado")} · ${escapar(fechaCorta(registro.fechaInicio))}</small>`
-                      : `<small>· ${estado === "actual" ? "sin iniciar" : "pendiente"}</small>`
-                  }
-                </li>`
-            )
-            .join("") || '<li class="actual"><span>Sin pasos configurados</span></li>'}
-        </ol>
-        ${this.pintarRegistroPasos(pasos)}
+        <linea-pasos data-cp="${escapar(cp.idConsultaProcedimiento)}"></linea-pasos>
         ${finalizado ? this.panelFinalizado(cp, puedeRetroceder, notas) : this.panelPaso(cp, actual, puedeRetroceder, esUltimo, pasos.length, notas)}
       </article>
-    `;
-  }
-
-  pintarRegistroPasos(pasos) {
-    if (pasos.length === 0) return "";
-    return `
-      <details class="registro-pasos">
-        <summary>Ver qué se registró en cada paso</summary>
-        <ul>
-          ${pasos
-            .map(
-              ({ paso, estado, persona, registro, notas, indice }) => `
-                <li>
-                  <strong>${indice + 1}. ${escapar(paso.nombre)}</strong>
-                  <span class="estado-mini ${escapar(estado)}">${escapar(etiquetaPaso(estado))}</span>
-                  <p>
-                    ${
-                      registro
-                        ? `${escapar(fechaHora(registro.fechaInicio))} · ${escapar(
-                            persona ? `${persona.nombres} ${persona.apellidos}` : "Sin asignar"
-                          )}`
-                        : "Todavía no se ha registrado este paso."
-                    }
-                  </p>
-                  ${
-                    notas?.notas || notas?.diagnostico || notas?.plan
-                      ? `<p class="nota-paso">
-                           ${notas.diagnostico ? `<b>CIE-10:</b> ${escapar(notas.diagnostico)} ` : ""}
-                           ${notas.notas ? `<b>Notas:</b> ${escapar(notas.notas)} ` : ""}
-                           ${notas.plan ? `<b>Plan:</b> ${escapar(notas.plan)}` : ""}
-                         </p>`
-                      : ""
-                  }
-                </li>`
-            )
-            .join("")}
-        </ul>
-      </details>
     `;
   }
 
@@ -312,7 +255,7 @@ export class AppConsulta extends Vista {
             : "Si la atención terminó, use «Finalizar consulta». Para corregir un paso, vuelva al anterior."
         }</p>
         ${this.formularioNotas(cp, notas)}
-        ${puedeRetroceder ? `<div class="acciones-paso">${this.botonAnterior(idCp)}</div>` : ""}
+        ${puedeRetroceder ? `<div class="acciones-paso pie">${this.botonAnterior(idCp)}</div>` : ""}
       </div>
     `;
   }
@@ -331,7 +274,7 @@ export class AppConsulta extends Vista {
     const anterior = puedeRetroceder ? this.botonAnterior(idCp) : "";
     // Sin iniciar, la acción principal va arriba; iniciado, «Completar» va al final del registro.
     const acciones = registro
-      ? `<div class="acciones-paso">${anterior}<span class="separador"></span>
+      ? `<div class="acciones-paso pie">${anterior}<span class="separador"></span>
            <button type="button" data-accion="completar" data-cp="${idCp}" data-paso="${escapar(paso.idProcedimientoPaso)}">${esUltimo ? "Completar último paso" : "Guardar y avanzar al siguiente paso"}</button>
          </div>`
       : `<div class="acciones-paso">
@@ -346,42 +289,40 @@ export class AppConsulta extends Vista {
         </div>
         ${
           registro
-            ? `<p class="aviso">Iniciado ${escapar(fechaHora(registro.fechaInicio))}${persona ? ` por ${escapar(persona.nombres)}` : ""}. Registre la atención y, si hace falta, asigne exámenes.</p>`
+            ? `<p class="aviso">Iniciado ${escapar(fechaHora(registro.fechaInicio))}${persona ? ` por ${escapar(`${persona.nombres} ${persona.apellidos}`.trim())}` : ""}.</p>`
             : `<p class="aviso">Aún no se ha iniciado este paso. Inícielo para asignar exámenes y poder completarlo.</p>`
         }
         ${registro ? "" : acciones}
         ${this.formularioNotas(cp, notas)}
-        <section class="bloque examenes" aria-labelledby="ex-${idCp}">
-          <h5 id="ex-${idCp}">Exámenes del paso <small>(opcional)</small></h5>
+        <details class="bloque examenes" data-examenes="${idCp}">
+          <summary>Exámenes del paso <small>(opcional)${ordenes.length ? ` · ${ordenes.length} ${ordenes.length === 1 ? "orden" : "órdenes"}` : ""}</small></summary>
           ${
             !registro
               ? '<p class="aviso">Inicie el paso para poder asignar exámenes.</p>'
               : examenes.length === 0
                 ? '<p class="aviso">No hay exámenes configurados para este procedimiento.</p>'
                 : `<ui-autocompletar id="examen-${idCp}" data-examen-buscador="${idCp}" etiqueta="Buscar examen por nombre o categoría"></ui-autocompletar>
-                   <ul class="elegidos" data-elegidos="${idCp}" aria-label="Exámenes elegidos"></ul>`
-          }
-          ${
-            registro && examenes.length > 0
-              ? `<div class="campo">
-                   <label for="ind-${idCp}">Indicaciones para los exámenes</label>
-                   <input id="ind-${idCp}" data-campo="indicaciones" placeholder="Ej. Radiografía periapical del sector" />
-                 </div>
-                 <div class="fila"><button type="button" class="secundario" data-accion="asignar" data-cp="${idCp}">Asignar exámenes seleccionados</button></div>`
-              : ""
+                   <ul class="elegidos" data-elegidos="${idCp}" aria-label="Exámenes elegidos"></ul>
+                   <div class="asignacion" hidden>
+                     <div class="campo">
+                       <label for="ind-${idCp}">Indicaciones para los exámenes</label>
+                       <input id="ind-${idCp}" data-campo="indicaciones" placeholder="Ej. Radiografía periapical del sector" />
+                     </div>
+                     <div class="fila"><button type="button" class="secundario" data-accion="asignar" data-cp="${idCp}">Asignar exámenes seleccionados</button></div>
+                   </div>`
           }
           ${
             ordenes.length > 0
-              ? `<fieldset class="ordenes">
-                   <legend class="etiqueta">Órdenes registradas</legend>
-                   <ul>${ordenes.map((orden) => this.pintarOrden(orden)).join("")}</ul>
-                 </fieldset>
-                 <div class="fila">
-                   <button type="button" class="peligro" data-accion="eliminar-ordenes" data-cp="${idCp}" disabled>Eliminar órdenes seleccionadas</button>
+              ? `<div class="ordenes">
+                   <div class="barra-ordenes">
+                     <span class="etiqueta" id="ord-${idCp}">Órdenes registradas</span>
+                     <button type="button" class="peligro" data-accion="eliminar-ordenes" data-cp="${idCp}" disabled>Eliminar seleccionadas</button>
+                   </div>
+                   <ul role="group" aria-labelledby="ord-${idCp}">${ordenes.map((orden) => this.pintarOrden(orden)).join("")}</ul>
                  </div>`
               : ""
           }
-        </section>
+        </details>
         ${registro ? acciones : ""}
       </div>
     `;
@@ -402,12 +343,12 @@ export class AppConsulta extends Vista {
       </li>`;
   }
 
-  /** Habilita «Eliminar órdenes seleccionadas» y muestra cuántas hay. */
+  /** Habilita «Eliminar seleccionadas» y muestra cuántas hay. */
   actualizarEliminarOrdenes(idCp) {
     const boton = this.q(`[data-accion="eliminar-ordenes"][data-cp="${idCp}"]`);
     const total = this.qa(`[data-cp="${idCp}"] .ordenes input:checked`).length;
     boton.disabled = total === 0;
-    boton.textContent = total ? `Eliminar órdenes seleccionadas (${total})` : "Eliminar órdenes seleccionadas";
+    boton.textContent = total ? `Eliminar seleccionadas (${total})` : "Eliminar seleccionadas";
   }
 
   /** Lista de exámenes elegidos y opciones del buscador sin los ya elegidos. */
@@ -431,6 +372,8 @@ export class AppConsulta extends Vista {
       texto: [examen.nombre, tipos.join(", ")].filter(Boolean).join(" · "),
     }));
     if (disponibles.length === 0) buscador.mensaje = "Ya eligió todos los exámenes disponibles";
+    // Indicaciones y «Asignar» solo tienen sentido con algún examen elegido.
+    this.q(`[data-cp="${idCp}"] .asignacion`).hidden = elegidos.length === 0;
   }
 
   leerBorradores() {
