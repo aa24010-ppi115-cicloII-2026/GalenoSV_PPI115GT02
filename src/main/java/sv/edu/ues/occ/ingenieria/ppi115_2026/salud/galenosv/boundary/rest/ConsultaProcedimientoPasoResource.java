@@ -84,7 +84,12 @@ public class ConsultaProcedimientoPasoResource {
             String problema = validar(datos);
             if (problema != null) return RestUtil.error(422, problema, "Revise los datos enviados");
 
-            ConsultaProcedimientoPaso entidad = new ConsultaProcedimientoPaso(UUID.randomUUID());
+            UUID id = RestUtil.idNuevo(datos.getIdConsultaProcedimientoPaso(), "idConsultaProcedimientoPaso");
+            if (dao.find(id) != null) {
+                // Reintento de un cambio ya guardado: se responde igual, sin duplicarlo.
+                return Response.created(uriInfo.getAbsolutePathBuilder().path(id.toString()).build()).build();
+            }
+            ConsultaProcedimientoPaso entidad = new ConsultaProcedimientoPaso(id);
             entidad.setFechaInicio(java.time.OffsetDateTime.now());
             copiar(datos, entidad);
             dao.crear(entidad);

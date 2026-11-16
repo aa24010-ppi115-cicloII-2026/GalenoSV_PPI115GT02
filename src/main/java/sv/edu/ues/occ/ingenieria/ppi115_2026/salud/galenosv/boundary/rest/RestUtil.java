@@ -36,6 +36,15 @@ public final class RestUtil {
         }
     }
 
+    /**
+     * Id para un registro nuevo: el que envía el cliente o uno aleatorio. Con el id del cliente,
+     * reenviar un cambio guardado sin conexión no duplica el registro.
+     */
+    public static UUID idNuevo(String enviado, String parametro) {
+        UUID id = uuid(enviado, parametro);
+        return id != null ? id : UUID.randomUUID();
+    }
+
     /** Acepta fecha con zona, fecha-hora o fecha simple; informa el campo invalido. */
     public static OffsetDateTime fecha(String valor, String parametro) {
         if (valor == null || valor.isBlank()) {

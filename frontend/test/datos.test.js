@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import { datosBase, indizar, stubApi } from "./ayudas.js";
-import { cargarTodo, limpiarCache } from "../js/datos.js";
+import { cargarTodo, limpiarCache, aplicarPendientes } from "../js/datos.js";
 import {
   personaDeDocumento,
   documentoDe,
@@ -222,5 +222,25 @@ describe("datos.js", () => {
         serializarObservaciones({ ...notas, pasos: { 7000: { notas: "Paso 1", fecha: "2026-11-12T09:00:00-06:00" } } })
       ).pasos["7000"].notas
     ).to.equal("Paso 1");
+  });
+  it("muestra sobre los datos del servidor los cambios guardados sin conexión, sin alterar la copia original", () => {
+    datos.ordenesExamen.push({ idOrdenExamen: 4000, idConsultaProcedimientoPaso: 9000 });
+    const vista = aplicarPendientes(datos, [
+      {
+        metodo: "POST",
+        ruta: "consultas-procedimiento-paso",
+        cuerpo: { idConsultaProcedimientoPaso: "c1", idConsultaProcedimiento: 8000, estado: "EN_PROCESO" },
+      },
+      { metodo: "PUT", ruta: "consultas-procedimiento-paso/c1", cuerpo: { estado: "FINALIZADO" } },
+      { metodo: "PUT", ruta: "consultas-procedimiento-paso/9000", cuerpo: { observaciones: "Editado" } },
+      { metodo: "DELETE", ruta: "ordenes-examen/4000", cuerpo: null },
+    ]);
+    expect(vista.porId.consultasProcedimientoPaso.get("c1").estado).to.equal("FINALIZADO");
+    expect(vista.porId.consultasProcedimientoPaso.get(9000).observaciones).to.equal("Editado");
+    expect(vista.ordenesExamen).to.deep.equal([]);
+    expect(datos.consultasProcedimientoPaso).to.have.length(1);
+    expect(datos.consultasProcedimientoPaso[0].observaciones).to.be.undefined;
+    expect(datos.ordenesExamen).to.have.length(1);
+    expect(aplicarPendientes(datos, [])).to.equal(datos);
   });
 });

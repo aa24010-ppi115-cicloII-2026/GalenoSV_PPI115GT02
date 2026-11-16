@@ -1,4 +1,4 @@
-import { listarTodo } from "./api.js";
+import { listarTodo, listarPendientes } from "./api.js";
 
 const FUENTES = {
   clinicas: "clinicas",
@@ -44,26 +44,57 @@ const CAMPO_ID = {
   mediosContacto: "idMedioContacto",
 };
 
+const CLAVE_DE_RUTA = Object.fromEntries(Object.entries(FUENTES).map(([clave, ruta]) => [ruta, clave]));
+
+/** Agrega a cada tabla su índice por identificador propio (datos.porId.<tabla>). */
+function indizarTablas(tablas) {
+  const datos = { ...tablas, porId: {} };
+  for (const [clave, lista] of Object.entries(tablas)) {
+    if (!Array.isArray(lista)) continue;
+    const campo = CAMPO_ID[clave];
+    datos.porId[clave] = new Map(campo ? lista.map((item) => [item[campo], item]) : []);
+  }
+  return datos;
+}
+
+/**
+ * Muestra sobre los datos del servidor los cambios guardados sin conexión, para que la pantalla
+ * refleje lo hecho antes de sincronizar. Trabaja sobre copias: los datos originales no cambian.
+ */
+export function aplicarPendientes(datos, pendientes) {
+  if (pendientes.length === 0) return datos;
+  const tablas = {};
+  for (const clave of Object.keys(FUENTES)) tablas[clave] = [...(datos[clave] ?? [])];
+  for (const { metodo, ruta, cuerpo } of pendientes) {
+    const [recurso, id] = ruta.split("/");
+    const clave = CLAVE_DE_RUTA[recurso];
+    if (!clave) continue;
+    const campo = CAMPO_ID[clave];
+    const lista = tablas[clave];
+    const indice = lista.findIndex((item) => String(item[campo]) === id);
+    // Un alta sin id del cliente no se puede referenciar todavía; se verá al sincronizar.
+    if (metodo === "POST" && cuerpo?.[campo]) lista.push({ ...cuerpo });
+    else if (metodo === "PUT" && indice >= 0) lista[indice] = { ...lista[indice], ...cuerpo };
+    else if (metodo === "DELETE" && indice >= 0) lista.splice(indice, 1);
+  }
+  return indizarTablas(tablas);
+}
+
 let cache = null;
 let carga = null;
 
 export async function cargarTodo({ recargar = false } = {}) {
-  if (cache && !recargar) return cache;
-  if (carga && !recargar) return carga;
-  carga = Promise.all(
-    Object.entries(FUENTES).map(async ([clave, ruta]) => [clave, await listarTodo(ruta)])
-  ).then((entradas) => {
-    cache = Object.fromEntries(entradas);
-    cache.porId = {};
-    for (const [clave, lista] of Object.entries(cache)) {
-      if (!Array.isArray(lista)) continue;
-      const campo = CAMPO_ID[clave];
-      cache.porId[clave] = new Map(campo ? lista.map((item) => [item[campo], item]) : []);
-    }
-    return cache;
-  });
+  if (cache && !recargar) return aplicarPendientes(cache, listarPendientes());
+  if (!carga || recargar) {
+    carga = Promise.all(
+      Object.entries(FUENTES).map(async ([clave, ruta]) => [clave, await listarTodo(ruta)])
+    ).then((entradas) => {
+      cache = indizarTablas(Object.fromEntries(entradas));
+      return cache;
+    });
+  }
   try {
-    return await carga;
+    return aplicarPendientes(await carga, listarPendientes());
   } finally {
     carga = null;
   }

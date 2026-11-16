@@ -20,6 +20,8 @@ function escribir(pendientes) {
   } catch {
     // Almacenamiento no disponible: el cambio se pierde, pero la app sigue operando.
   }
+  // Avisa a la interfaz (aviso de conexión) que cambió la cantidad de pendientes.
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("pendientes-cambio"));
 }
 
 export function encolar(operacion) {
