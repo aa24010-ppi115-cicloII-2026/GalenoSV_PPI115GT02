@@ -46,7 +46,7 @@ export class AppDashboard extends Vista {
         .rangos { grid-column: 1 / -1; justify-content: flex-start; }
         #resumen { grid-template-columns: 1fr 1fr; }
       }
-      @media (max-width: 520px) { .datos { grid-template-columns: 1fr; } }
+      @media (max-width: 520px) { .datos, .fechas { grid-template-columns: minmax(0, 1fr); } }
     `;
   }
 

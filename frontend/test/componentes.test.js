@@ -719,6 +719,15 @@ describe("componentes Web Components", () => {
     expect(instalar.shadowRoot.querySelector("button").hidden).to.be.true;
   });
 
+  it("app-shell ubica el botón de instalar en el encabezado, sin flotar sobre el contenido", async () => {
+    const shell = montar("app-shell");
+    await esperar(() => shell.shadowRoot.querySelector("header pwa-instalar"));
+    const instalar = shell.shadowRoot.querySelector("header pwa-instalar");
+    await esperar(() => instalar.shadowRoot.querySelector("button"));
+    expect(instalar.estilos).to.not.contain("position: fixed");
+    expect(shell.shadowRoot.querySelector("main pwa-instalar, footer pwa-instalar")).to.be.null;
+  });
+
   it("app-shell muestra el aviso de trabajo sin conexión", async () => {
     const shell = montar("app-shell");
     await esperar(() => shell.shadowRoot.querySelector("#estado-conexion"));

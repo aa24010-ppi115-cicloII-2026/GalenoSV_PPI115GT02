@@ -1,4 +1,4 @@
-const CACHE = "galenosv-v11";
+const CACHE = "galenosv-v13";
 const API = "http://localhost:9080";
 const RECURSOS = [
   "./",
