@@ -40,6 +40,28 @@ public class TicketResourceTest {
     }
 
     @Test
+    void testGenerar_incluyeSeccionesTipoImpresion() {
+        byte[] pdf = recurso.generar(List.of(
+                "Paciente: Ana Lopez",
+                "Clinica: Clinica Dental",
+                "Fecha de la cita: 25/09/2026 09:00",
+                "Motivo: Control",
+                "Estado: Completada",
+                "Ticket: #abc-123",
+                "PROCEDIMIENTOS Y PASOS",
+                "- Limpieza dental",
+                "   Evaluacion clinica | Completado | 25/09/2026 09:10 | Maria Lopez"
+        ));
+
+        String texto = new String(pdf, StandardCharsets.ISO_8859_1);
+        assertTrue(texto.contains("Comprobante de cita"));
+        assertTrue(texto.contains("Procedimientos y pasos"));
+        assertTrue(texto.contains("Limpieza dental"));
+        assertTrue(texto.contains("Evaluacion clinica"));
+        assertTrue(texto.contains("abc-123"));
+    }
+
+    @Test
     void testGenerar_aceptaListaVacia() {
         byte[] pdf = recurso.generar(List.of());
 

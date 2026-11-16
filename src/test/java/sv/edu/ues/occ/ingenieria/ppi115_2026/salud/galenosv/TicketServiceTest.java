@@ -64,29 +64,38 @@ public class TicketServiceTest {
     void ordenaLosPasosPorSecuenciaYMarcaElSiguienteEnCurso() {
         registros(registro("FINALIZADO", 9));
 
-        List<String> lineas = servicio.lineas(idConsulta);
+        TicketService.Datos datos = servicio.datos(idConsulta);
 
-        assertEquals(List.of(
-                "   Evaluación inicial | Completado | 14/11/2026 09:00 | Sin asignar",
-                "   Profilaxis | En curso | Sin fecha | Sin asignar",
-                "   Indicaciones finales | Pendiente | Sin fecha | Sin asignar"), pasos(lineas));
-        assertTrue(lineas.contains("Estado: En proceso"), "Faltan dos pasos: la cita no está completada");
+        List<TicketService.PasoTicket> pasos = datos.procedimientos.get(0).pasos;
+        assertEquals("Evaluación inicial", pasos.get(0).nombre);
+        assertEquals("Completado", pasos.get(0).estado);
+        assertEquals("14/11/2026 09:00", pasos.get(0).fecha);
+        assertEquals("Profilaxis", pasos.get(1).nombre);
+        assertEquals("En curso", pasos.get(1).estado);
+        assertEquals("Indicaciones finales", pasos.get(2).nombre);
+        assertEquals("Pendiente", pasos.get(2).estado);
+        assertEquals("En proceso", datos.estado);
+        assertTrue(servicio.lineas(idConsulta).contains("Estado: En proceso"));
     }
 
     @Test
     void emparejaLosRegistrosPorFechaYNoPorIdentificador() {
         registros(registro("FINALIZADO", 10), registro("FINALIZADO", 9));
 
-        List<String> lineas = pasos(servicio.lineas(idConsulta));
+        List<TicketService.PasoTicket> pasos = servicio.datos(idConsulta).procedimientos.get(0).pasos;
 
-        assertTrue(lineas.get(0).startsWith("   Evaluación inicial | Completado | 14/11/2026 09:00"));
-        assertTrue(lineas.get(1).startsWith("   Profilaxis | Completado | 14/11/2026 10:00"));
+        assertEquals("Evaluación inicial", pasos.get(0).nombre);
+        assertEquals("14/11/2026 09:00", pasos.get(0).fecha);
+        assertEquals("Profilaxis", pasos.get(1).nombre);
+        assertEquals("14/11/2026 10:00", pasos.get(1).fecha);
+        assertTrue(pasos(servicio.lineas(idConsulta)).get(0).startsWith("   Evaluación inicial | Completado | 14/11/2026 09:00"));
     }
 
     @Test
     void laCitaSoloQuedaCompletadaCuandoTodosLosPasosTerminaron() {
         registros(registro("FINALIZADO", 9), registro("FINALIZADO", 10), registro("FINALIZADO", 11));
 
+        assertEquals("Completada", servicio.datos(idConsulta).estado);
         assertTrue(servicio.lineas(idConsulta).contains("Estado: Completada"));
     }
 
