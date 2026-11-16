@@ -1,0 +1,12 @@
+import "./componentes/ui-toast.js";
+import "./componentes/pwa-instalar.js";
+import "./componentes/ticket-cita.js";
+import "./componentes/cita-card.js";
+import "./componentes/ui-autocompletar.js";
+import "./componentes/asistente-citas.js";
+import "./componentes/app-login.js";
+import "./componentes/app-busqueda.js";
+import "./componentes/app-dashboard.js";
+import "./componentes/app-consulta.js";
+import "./componentes/app-shell.js";
+import "./pwa.js";
