@@ -44,6 +44,7 @@ describe("manifest PWA", () => {
     expect(serviceWorker).to.contain('"./js/componentes/app-shell.js"');
     expect(serviceWorker).to.contain('"./js/componentes/asistente-citas.js"');
     expect(serviceWorker).to.contain('"./js/componentes/ui-autocompletar.js"');
+    expect(serviceWorker).to.contain('"./js/componentes/ui-confirmar.js"');
     expect(serviceWorker).to.contain('"./js/datos.js"');
     expect(serviceWorker).to.contain('"./js/pdf.js"');
     expect(serviceWorker).to.contain('"./js/pendientes.js"');

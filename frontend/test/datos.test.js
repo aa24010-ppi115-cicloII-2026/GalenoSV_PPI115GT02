@@ -141,6 +141,21 @@ describe("datos.js", () => {
     expect(pacientesDeClinica(datos, 99)).to.deep.equal([]);
   });
 
+  it("tras retroceder solo el primer paso sin terminar queda en curso y el siguiente conserva su registro", () => {
+    // Paso 1 reabierto (PENDIENTE) cuando el paso 2 ya se había iniciado.
+    datos.consultasProcedimientoPaso[0].estado = "PENDIENTE";
+    datos.consultasProcedimientoPaso.push({
+      idConsultaProcedimientoPaso: 9001,
+      idConsultaProcedimiento: 8000,
+      idPersonaRol: 3000,
+      fechaInicio: "2026-11-12T09:40:00-06:00",
+      estado: "EN_PROCESO",
+    });
+    const pasos = pasosConRegistros(datos, datos.porId.consultasProcedimiento.get(8000));
+    expect(pasos.map((paso) => paso.estado)).to.deep.equal(["actual", "pendiente", "pendiente"]);
+    expect(pasos[1].registro.idConsultaProcedimientoPaso).to.equal(9001);
+  });
+
   it("calcula el estado de la cita segun los pasos realizados", () => {
     const enProceso = resumenCita(datos, datos.porId.consultas.get(5000));
     expect(estadoDeCita(enProceso)).to.deep.equal({ clave: "proceso", texto: "En proceso" });
