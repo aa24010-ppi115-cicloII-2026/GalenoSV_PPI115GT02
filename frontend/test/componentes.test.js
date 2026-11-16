@@ -38,8 +38,6 @@ describe("componentes Web Components", () => {
     globalThis.Event = dom.window.Event;
     globalThis.customElements = dom.window.customElements;
     globalThis.sessionStorage = dom.window.sessionStorage;
-    dom.window.confirm = () => true;
-    globalThis.confirm = dom.window.confirm;
     await import("../js/componentes/ui-toast.js");
     await import("../js/componentes/ui-autocompletar.js");
     ({ documentoImprimible, lineasTicket } = await import("../js/componentes/ticket-cita.js"));
@@ -62,7 +60,6 @@ describe("componentes Web Components", () => {
       "Event",
       "customElements",
       "sessionStorage",
-      "confirm",
     ]) {
       delete globalThis[clave];
     }
@@ -754,38 +751,196 @@ describe("componentes Web Components", () => {
     await esperar(() => dom.window.location.hash === "#/dashboard");
   });
 
-  it("app-consulta filtra los exámenes por categoría", async () => {
+  /** Abre la consulta y espera a que se pinte. */
+  async function abrirConsulta(id = "5000") {
     sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
+    const vista = document.createElement("app-consulta");
+    vista.setAttribute("id-consulta", id);
+    document.body.append(vista);
+    await esperar(() => vista.shadowRoot.querySelector(".proc"));
+    return vista;
+  }
+
+  /** Responde el diálogo de confirmación propio y devuelve su texto. */
+  async function responderDialogo(aceptar) {
+    await esperar(() => document.querySelector("ui-confirmar"));
+    const dialogo = document.querySelector("ui-confirmar");
+    const texto = dialogo.shadowRoot.textContent;
+    dialogo.shadowRoot.querySelector(`[data-respuesta="${aceptar ? "si" : "no"}"]`).click();
+    await esperar(() => !document.querySelector("ui-confirmar"));
+    return texto;
+  }
+
+  const pasoActualizado = () =>
+    fetch.getCalls().filter((llamada) => llamada.args[1]?.method === "PUT" && llamada.args[0].includes("consultas-procedimiento-paso"));
+
+  it("ui-confirmar enfoca Cancelar, mantiene el foco dentro con Tab y Escape cancela", async () => {
+    const { confirmar } = await import("../js/componentes/ui-confirmar.js");
+    const respuesta = confirmar({ titulo: "¿Seguro?", aceptar: "Sí" });
+    const raiz = document.querySelector("ui-confirmar").shadowRoot;
+    expect(raiz.querySelector("[role=alertdialog]").getAttribute("aria-modal")).to.equal("true");
+    expect(raiz.activeElement.textContent).to.equal("Cancelar");
+    const tecla = (key) => raiz.activeElement.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+    tecla("Tab");
+    expect(raiz.activeElement.textContent).to.equal("Sí");
+    tecla("Tab");
+    expect(raiz.activeElement.textContent).to.equal("Cancelar");
+    tecla("Escape");
+    expect(await respuesta).to.be.false;
+    expect(document.querySelector("ui-confirmar")).to.be.null;
+  });
+
+  it("app-consulta no ofrece retroceder en el primer paso, aunque ya esté iniciado", async () => {
+    datos.consultasProcedimientoPaso = [];
+    const vista = await abrirConsulta();
+    const raiz = vista.shadowRoot;
+    await esperar(() => raiz.querySelector("[data-accion='iniciar']"));
+    expect(raiz.querySelector("[data-accion='retroceder']")).to.be.null;
+    raiz.querySelector("[data-accion='iniciar']").click();
+    await esperar(() => raiz.querySelector("[data-accion='completar']"));
+    expect(raiz.querySelector("[data-accion='retroceder']")).to.be.null;
+  });
+
+  it("app-consulta con todos los pasos completados retrocede al último paso, no al penúltimo", async () => {
+    datos.consultasProcedimientoPaso.push(
+      { idConsultaProcedimientoPaso: 9001, idConsultaProcedimiento: 8000, idPersonaRol: 3000, fechaInicio: "2026-11-12T09:40:00-06:00", estado: "FINALIZADO" },
+      { idConsultaProcedimientoPaso: 9002, idConsultaProcedimiento: 8000, idPersonaRol: 3000, fechaInicio: "2026-11-12T10:00:00-06:00", estado: "FINALIZADO" }
+    );
+    const vista = await abrirConsulta();
+    vista.shadowRoot.querySelector("[data-accion='retroceder']").click();
+    expect(await responderDialogo(true)).to.contain("Alta");
+    await esperar(() => pasoActualizado().length === 1);
+    expect(pasoActualizado()[0].args[0]).to.contain("/9002");
+  });
+
+  it("app-consulta en el último paso ofrece completarlo en lugar de avanzar", async () => {
+    datos.consultasProcedimientoPaso.push(
+      { idConsultaProcedimientoPaso: 9001, idConsultaProcedimiento: 8000, idPersonaRol: 3000, fechaInicio: "2026-11-12T09:40:00-06:00", estado: "FINALIZADO" },
+      { idConsultaProcedimientoPaso: 9002, idConsultaProcedimiento: 8000, idPersonaRol: 3000, fechaInicio: "2026-11-12T10:00:00-06:00", estado: "EN_PROCESO" }
+    );
+    const vista = await abrirConsulta();
+    expect(vista.shadowRoot.querySelector("[data-accion='completar']").textContent).to.equal("Completar último paso");
+  });
+
+  it("app-consulta no pierde lo escrito en el registro al iniciar el paso", async () => {
+    datos.consultasProcedimientoPaso = [];
+    const vista = await abrirConsulta();
+    const raiz = vista.shadowRoot;
+    await esperar(() => raiz.querySelector("[data-accion='iniciar']"));
+    expect(raiz.querySelector(".paso-panel").textContent).to.contain("Paso 1 de 3");
+    raiz.querySelector("[data-campo='notas']").value = "Paciente refiere sensibilidad";
+    raiz.querySelector("[data-campo='plan']").value = "Control en 15 días";
+    raiz.querySelector("[data-accion='iniciar']").click();
+    await esperar(() => raiz.querySelector("[data-accion='completar']"));
+    expect(raiz.querySelector("[data-campo='notas']").value).to.equal("Paciente refiere sensibilidad");
+    expect(raiz.querySelector("[data-campo='plan']").value).to.equal("Control en 15 días");
+  });
+
+  it("app-consulta destaca «Finalizar consulta» solo cuando todos los pasos están completos", async () => {
+    const vista = await abrirConsulta();
+    expect(vista.shadowRoot.querySelector("[data-accion='finalizar']").classList.contains("secundario")).to.be.true;
+
+    vista.remove();
+    limpiarCache();
+    datos.consultasProcedimientoPaso.push(
+      { idConsultaProcedimientoPaso: 9001, idConsultaProcedimiento: 8000, idPersonaRol: 3000, fechaInicio: "2026-11-12T09:40:00-06:00", estado: "FINALIZADO" },
+      { idConsultaProcedimientoPaso: 9002, idConsultaProcedimiento: 8000, idPersonaRol: 3000, fechaInicio: "2026-11-12T10:00:00-06:00", estado: "FINALIZADO" }
+    );
+    const completa = await abrirConsulta();
+    expect(completa.shadowRoot.querySelector("[data-accion='finalizar']").classList.contains("secundario")).to.be.false;
+  });
+
+  it("app-consulta busca el diagnóstico CIE-10 escribiendo parte del nombre", async () => {
+    const vista = await abrirConsulta();
+    const campo = vista.shadowRoot.querySelector("[data-campo='diagnostico']");
+    expect(campo.localName).to.equal("ui-autocompletar");
+    const entrada = campo.shadowRoot.querySelector("input");
+    entrada.value = "dentina";
+    entrada.dispatchEvent(new dom.window.Event("input"));
+    const opciones = [...campo.shadowRoot.querySelectorAll("li[role=option]")].map((li) => li.textContent);
+    expect(opciones).to.deep.equal(["K02.1 · Caries de la dentina"]);
+  });
+
+  it("app-consulta busca exámenes por nombre o categoría y permite elegir y quitar varios", async () => {
     datos.examenes.push({ idExamen: 21, nombre: "Hemograma", activo: true });
     datos.examenesTipoExamen.push({ idExamenTipoExamen: 2, idExamen: 21, idTipoExamen: 31 });
     datos.tiposExamen.push({ idTipoExamen: 31, nombre: "Laboratorio" });
-    datos.procedimientosPasoExamen.push({
-      idProcedimientoPasoExamen: 2,
-      idProcedimientoPaso: 7001,
-      idExamen: 21,
-      activo: true,
+    datos.procedimientosPasoExamen.push({ idProcedimientoPasoExamen: 2, idProcedimientoPaso: 7001, idExamen: 21, activo: true });
+    const vista = await abrirConsulta();
+    const raiz = vista.shadowRoot;
+    await esperar(() => raiz.querySelector("[data-accion='iniciar']"));
+    raiz.querySelector("[data-accion='iniciar']").click();
+    await esperar(() => raiz.querySelector("[data-examen-buscador]"));
+
+    const buscador = raiz.querySelector("[data-examen-buscador]");
+    expect(buscador.localName).to.equal("ui-autocompletar");
+    const entrada = buscador.shadowRoot.querySelector("input");
+    const buscar = (texto) => {
+      entrada.value = texto;
+      entrada.dispatchEvent(new dom.window.Event("input"));
+      return [...buscador.shadowRoot.querySelectorAll("li[role=option]")].map((li) => li.textContent);
+    };
+    const elegir = (idExamen) => {
+      buscador.value = idExamen;
+      buscador.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    };
+    const elegidos = () => [...raiz.querySelectorAll(".elegidos li")].map((li) => li.querySelector("span").textContent);
+
+    expect(buscar("laboratorio")).to.deep.equal(["Hemograma · Laboratorio"]);
+    expect(buscar("radio")).to.deep.equal(["Radiografía periapical · Imagenología"]);
+    elegir(21);
+    elegir(20);
+    expect(elegidos()).to.deep.equal(["Hemograma", "Radiografía periapical"]);
+    // Lo ya elegido no se vuelve a ofrecer.
+    expect(buscador.opciones).to.deep.equal([]);
+    expect(buscador.mensaje).to.equal("Ya eligió todos los exámenes disponibles");
+
+    raiz.querySelector('.elegidos button[aria-label="Quitar Hemograma"]').click();
+    expect(elegidos()).to.deep.equal(["Radiografía periapical"]);
+    expect(buscador.opciones.map((opcion) => opcion.valor)).to.deep.equal([21]);
+  });
+
+  it("app-consulta elimina las órdenes de examen seleccionadas del paso en curso tras confirmar, salvo las que ya tienen resultado", async () => {
+    datos.consultasProcedimientoPaso.push({
+      idConsultaProcedimientoPaso: 9001,
+      idConsultaProcedimiento: 8000,
+      idPersonaRol: 3000,
+      fechaInicio: "2026-11-12T09:40:00-06:00",
+      estado: "EN_PROCESO",
     });
-    const vista = document.createElement("app-consulta");
-    vista.setAttribute("id-consulta", "5000");
-    document.body.append(vista);
-    await esperar(() => vista.shadowRoot.querySelector("[data-accion='iniciar']"));
-    vista.shadowRoot.querySelector("[data-accion='iniciar']").click();
-    await esperar(() => vista.shadowRoot.querySelector("[data-categoria-filtro]"));
+    datos.ordenesExamen.push(
+      { idOrdenExamen: 400, idConsultaProcedimientoPaso: 9001, fechaCreacion: "2026-11-12T09:45:00-06:00", indicaciones: "Examen: Radiografía periapical" },
+      { idOrdenExamen: 401, idConsultaProcedimientoPaso: 9001, fechaCreacion: "2026-11-12T09:46:00-06:00", indicaciones: "Examen: Hemograma" }
+    );
+    datos.examenesResultado.push({ idExamenResultado: 500, idOrdenExamen: 401, resultado: "Normal" });
+    const vista = await abrirConsulta();
+    const raiz = vista.shadowRoot;
+    const casillas = () => [...raiz.querySelectorAll('.ordenes input[type="checkbox"]')];
+    const boton = () => raiz.querySelector("[data-accion='eliminar-ordenes']");
+    await esperar(() => casillas().length === 2);
 
-    const etiquetas = () => [...vista.shadowRoot.querySelectorAll("label.examen")];
-    expect(etiquetas()).to.have.length(2);
-    const filtro = vista.shadowRoot.querySelector("[data-categoria-filtro]");
-    filtro.value = "Laboratorio";
-    filtro.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    const visibles = etiquetas().filter((etiqueta) => !etiqueta.hidden);
-    expect(visibles).to.have.length(1);
-    expect(visibles[0].textContent).to.contain("Hemograma");
+    // La acción va fuera de la lista y está inactiva hasta seleccionar.
+    expect(raiz.querySelector(".ordenes li button")).to.be.null;
+    expect(boton().disabled).to.be.true;
+    const [sinResultado, conResultado] = casillas();
+    expect(conResultado.disabled).to.be.true;
+    expect(conResultado.closest("li").textContent).to.contain("Con resultado");
 
-    filtro.value = "Imagenología";
-    filtro.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    const visibles2 = etiquetas().filter((etiqueta) => !etiqueta.hidden);
-    expect(visibles2).to.have.length(1);
-    expect(visibles2[0].textContent).to.contain("Radiografía");
+    sinResultado.click();
+    expect(boton().disabled).to.be.false;
+    expect(boton().textContent).to.contain("(1)");
+
+    const borrados = () => fetch.getCalls().filter((llamada) => llamada.args[1]?.method === "DELETE");
+    boton().click();
+    expect(await responderDialogo(false)).to.contain("Radiografía periapical");
+    expect(borrados()).to.have.length(0);
+
+    boton().click();
+    expect(await responderDialogo(true)).to.contain("no se puede deshacer");
+    await esperar(() => borrados().length === 1);
+    expect(borrados()[0].args[0]).to.contain("/ordenes-examen/400");
+    await esperar(() => casillas().length === 1);
+    expect(raiz.querySelector(".ordenes").textContent).to.contain("Hemograma");
   });
 
   it("app-consulta finaliza la consulta registrando la fecha de cierre", async () => {
@@ -795,6 +950,7 @@ describe("componentes Web Components", () => {
     document.body.append(vista);
     await esperar(() => vista.shadowRoot.querySelector("[data-accion='finalizar']"));
     vista.shadowRoot.querySelector("[data-accion='finalizar']").click();
+    expect(await responderDialogo(true)).to.contain("Finalizar la consulta");
     await esperar(() =>
       fetch.getCalls().some(
         (llamada) => llamada.args[1]?.method === "PUT" && llamada.args[0].includes("/consultas/")
@@ -832,14 +988,17 @@ describe("componentes Web Components", () => {
     expect(creacion).to.not.be.undefined;
     expect(JSON.parse(creacion.args[1].body).estado).to.equal("EN_PROCESO");
 
-    const casilla = vista.shadowRoot.querySelector('input[type="checkbox"]');
-    casilla.click();
+    const buscador = vista.shadowRoot.querySelector("[data-examen-buscador]");
+    buscador.value = 20;
+    buscador.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
     vista.shadowRoot.querySelector("[data-accion='asignar']").click();
     await esperar(() =>
       fetch.getCalls().some(
         (llamada) => (llamada.args[1]?.method ?? "GET") === "POST" && llamada.args[0].includes("ordenes-examen")
       )
     );
+    const orden = fetch.getCalls().find((llamada) => llamada.args[0].includes("ordenes-examen") && llamada.args[1]?.method === "POST");
+    expect(JSON.parse(orden.args[1].body).indicaciones).to.contain("Radiografía periapical");
     await esperar(() => vista.shadowRoot.querySelector("[data-accion='completar']"));
 
     vista.shadowRoot.querySelector("[data-campo='diagnostico']").value = "K02.1 · Caries de la dentina";
@@ -853,13 +1012,22 @@ describe("componentes Web Components", () => {
     expect(vista.shadowRoot.textContent).to.contain("2/3 pasos");
   });
 
-  it("app-consulta retrocede al paso anterior sin borrar su registro", async () => {
+  it("app-consulta retrocede al paso anterior tras confirmar en un diálogo propio, sin borrar su registro", async () => {
     sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
     const vista = document.createElement("app-consulta");
     vista.setAttribute("id-consulta", "5000");
     document.body.append(vista);
     await esperar(() => vista.shadowRoot.querySelector("[data-accion='retroceder']"));
+    const anterior = vista.shadowRoot.querySelector("[data-accion='retroceder']");
+    anterior.focus();
+    anterior.click();
+    expect(await responderDialogo(false)).to.contain("Evaluación");
+    expect(pasoActualizado()).to.have.length(0);
+    // Al cerrar, el foco vuelve al botón que abrió el diálogo.
+    expect(vista.shadowRoot.activeElement).to.equal(anterior);
+
     vista.shadowRoot.querySelector("[data-accion='retroceder']").click();
+    await responderDialogo(true);
     await esperar(() =>
       fetch.getCalls().some(
         (llamada) => llamada.args[1]?.method === "PUT" && llamada.args[0].includes("consultas-procedimiento-paso")

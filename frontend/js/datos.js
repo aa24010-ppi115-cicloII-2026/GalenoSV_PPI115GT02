@@ -225,10 +225,9 @@ export function pasosConRegistros(datos, consultaProcedimiento) {
     let estado = "pendiente";
     if (finalizado) {
       estado = "completado";
-    } else if (registro) {
-      estado = "actual";
-      actualAsignado = true;
     } else if (!actualAsignado) {
+      // Solo el primer paso sin terminar está en curso. Un paso posterior puede conservar su
+      // registro (se inició antes de retroceder) y se retoma al volver a avanzar.
       estado = "actual";
       actualAsignado = true;
     }
