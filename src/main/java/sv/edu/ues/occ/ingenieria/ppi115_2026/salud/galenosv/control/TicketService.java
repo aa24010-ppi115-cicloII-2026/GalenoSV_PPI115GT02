@@ -46,40 +46,25 @@ public class TicketService {
     @Inject
     private OrdenExamenDAO ordenExamenDAO;
 
-    /** Lineas del comprobante; devuelve null cuando la consulta no existe. */
-    public List<String> lineas(UUID idConsulta) {
+    /** Datos estructurados del comprobante; null cuando la consulta no existe. */
+    public Datos datos(UUID idConsulta) {
         Consulta consulta = consultaDAO.find(idConsulta);
         if (consulta == null) {
             return null;
         }
-        List<String> lineas = new ArrayList<>();
         PersonaRol personaRol = consulta.getIdPersonaRol();
         Persona persona = personaRol == null ? null : personaRol.getIdPersona();
         Clinica clinica = personaRol == null ? null : personaRol.getIdClinica();
 
-        lineas.add("Paciente: " + nombre(persona));
-        lineas.add("Clinica: " + (clinica == null ? "-" : clinica.getNombre()));
-        lineas.add("Fecha de la cita: " + fecha(consulta.getFechaInicio()));
-        lineas.add("Motivo: " + (consulta.getObservaciones() == null || consulta.getObservaciones().isBlank()
-                ? "Consulta registrada" : consulta.getObservaciones()));
-        lineas.add("Estado: " + estado(consulta));
-        lineas.add("Ticket: #" + consulta.getIdConsulta());
-        lineas.add("");
-        lineas.add("PROCEDIMIENTOS Y PASOS");
-
-        List<ConsultaProcedimiento> procedimientos = consultaProcedimientoDAO.findByConsulta(idConsulta);
-        if (procedimientos.isEmpty()) {
-            lineas.add("La consulta no tiene procedimientos asignados.");
-        }
-        for (ConsultaProcedimiento procedimiento : procedimientos) {
-            Procedimiento definicion = procedimiento.getIdProcedimiento() == null
-                    ? null : procedimientoDAO.find(procedimiento.getIdProcedimiento());
-            lineas.add("- " + (definicion == null ? "Procedimiento" : definicion.getNombre()));
+        List<ProcedimientoTicket> procedimientos = new ArrayList<>();
+        for (ConsultaProcedimiento cp : consultaProcedimientoDAO.findByConsulta(idConsulta)) {
+            Procedimiento def = cp.getIdProcedimiento() == null ? null : procedimientoDAO.find(cp.getIdProcedimiento());
+            String nombreProc = def == null ? "Procedimiento" : def.getNombre();
+            List<PasoTicket> pasos = new ArrayList<>();
             boolean actualAsignado = false;
-            for (Object[] paso : pasosDe(procedimiento)) {
-                ProcedimientoPaso definicionPaso = (ProcedimientoPaso) paso[0];
-                ConsultaProcedimientoPaso registro = (ConsultaProcedimientoPaso) paso[1];
-                // Mismas etiquetas que la tarjeta de la cita en el frontend.
+            for (Object[] par : pasosDe(cp)) {
+                ProcedimientoPaso dp = (ProcedimientoPaso) par[0];
+                ConsultaProcedimientoPaso registro = (ConsultaProcedimientoPaso) par[1];
                 String etiqueta = "Pendiente";
                 if (finalizado(registro)) {
                     etiqueta = "Completado";
@@ -87,18 +72,102 @@ public class TicketService {
                     etiqueta = "En curso";
                     actualAsignado = true;
                 }
-                lineas.add("   " + (definicionPaso == null ? "Paso" : definicionPaso.getNombre())
-                        + " | " + etiqueta
-                        + " | " + (registro == null ? "Sin fecha" : fecha(registro.getFechaInicio()))
-                        + " | " + quien(registro));
+                pasos.add(new PasoTicket(
+                        dp == null ? "Paso" : dp.getNombre(),
+                        etiqueta,
+                        registro == null ? "Sin fecha" : fecha(registro.getFechaInicio()),
+                        quien(registro),
+                        ""));
             }
-            for (String orden : ordenesDe(procedimiento)) {
+            procedimientos.add(new ProcedimientoTicket(nombreProc, pasos, ordenesDe(cp)));
+        }
+
+        String motivo = consulta.getObservaciones() == null || consulta.getObservaciones().isBlank()
+                ? "Consulta registrada" : consulta.getObservaciones();
+        return new Datos(String.valueOf(consulta.getIdConsulta()), nombre(persona),
+                clinica == null ? "-" : clinica.getNombre(),
+                fecha(consulta.getFechaInicio()), motivo, estado(consulta), procedimientos);
+    }
+
+    /** Lineas del comprobante; devuelve null cuando la consulta no existe. */
+    public List<String> lineas(UUID idConsulta) {
+        Datos datos = datos(idConsulta);
+        if (datos == null) {
+            return null;
+        }
+        List<String> lineas = new ArrayList<>();
+        lineas.add("Paciente: " + datos.paciente);
+        lineas.add("Clinica: " + datos.clinica);
+        lineas.add("Fecha de la cita: " + datos.fecha);
+        lineas.add("Motivo: " + datos.motivo);
+        lineas.add("Estado: " + datos.estado);
+        lineas.add("Ticket: #" + datos.idConsulta);
+        lineas.add("");
+        lineas.add("PROCEDIMIENTOS Y PASOS");
+        if (datos.procedimientos.isEmpty()) {
+            lineas.add("La consulta no tiene procedimientos asignados.");
+        }
+        for (ProcedimientoTicket p : datos.procedimientos) {
+            lineas.add("- " + p.nombre);
+            for (PasoTicket paso : p.pasos) {
+                lineas.add("   " + paso.nombre + " | " + paso.estado + " | " + paso.fecha + " | " + paso.realizadoPor);
+            }
+            for (String orden : p.ordenes) {
                 lineas.add("   " + orden);
             }
         }
         lineas.add("");
         lineas.add("Documento generado por el backend de GalenoSV.");
         return lineas;
+    }
+
+    public static class Datos {
+        public final String idConsulta;
+        public final String paciente;
+        public final String clinica;
+        public final String fecha;
+        public final String motivo;
+        public final String estado;
+        public final List<ProcedimientoTicket> procedimientos;
+
+        public Datos(String idConsulta, String paciente, String clinica, String fecha, String motivo, String estado,
+                List<ProcedimientoTicket> procedimientos) {
+            this.idConsulta = idConsulta;
+            this.paciente = paciente;
+            this.clinica = clinica;
+            this.fecha = fecha;
+            this.motivo = motivo;
+            this.estado = estado;
+            this.procedimientos = procedimientos;
+        }
+    }
+
+    public static class ProcedimientoTicket {
+        public final String nombre;
+        public final List<PasoTicket> pasos;
+        public final List<String> ordenes;
+
+        public ProcedimientoTicket(String nombre, List<PasoTicket> pasos, List<String> ordenes) {
+            this.nombre = nombre;
+            this.pasos = pasos;
+            this.ordenes = ordenes;
+        }
+    }
+
+    public static class PasoTicket {
+        public final String nombre;
+        public final String estado;
+        public final String fecha;
+        public final String realizadoPor;
+        public final String observaciones;
+
+        public PasoTicket(String nombre, String estado, String fecha, String realizadoPor, String observaciones) {
+            this.nombre = nombre;
+            this.estado = estado;
+            this.fecha = fecha;
+            this.realizadoPor = realizadoPor;
+            this.observaciones = observaciones;
+        }
     }
 
     /** Empareja cada paso del procedimiento con su registro de atencion. */
