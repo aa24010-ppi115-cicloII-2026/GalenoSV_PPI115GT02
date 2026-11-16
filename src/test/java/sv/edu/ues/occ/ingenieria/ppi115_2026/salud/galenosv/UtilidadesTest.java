@@ -3,8 +3,11 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv;
 import org.junit.jupiter.api.Test;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.FechaBean;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ValidacionFormato;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.rest.ParametroInvalidoException;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.rest.RestUtil;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,5 +40,15 @@ public class UtilidadesTest {
         assertFalse(b.fecha(OffsetDateTime.now()).isBlank());
         assertFalse(b.fechaHora(OffsetDateTime.now()).isBlank());
         assertTrue(b instanceof java.io.Serializable);
+    }
+
+    @Test void testIdNuevo_usaElDelClienteParaNoDuplicarAlReintentar(){
+        UUID enviado = UUID.randomUUID();
+        assertEquals(enviado, RestUtil.idNuevo(enviado.toString(), "idOrdenExamen"));
+        assertNotNull(RestUtil.idNuevo(null, "idOrdenExamen"));
+        assertNotEquals(RestUtil.idNuevo("", "idOrdenExamen"), RestUtil.idNuevo("", "idOrdenExamen"));
+        ParametroInvalidoException error = assertThrows(ParametroInvalidoException.class,
+                () -> RestUtil.idNuevo("no-es-uuid", "idOrdenExamen"));
+        assertEquals("idOrdenExamen", error.getParametro());
     }
 }

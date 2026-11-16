@@ -2,6 +2,7 @@ import { Vista, escapar } from "../base.js";
 import { leerSesion, cerrarSesion, alCambiarSesion } from "../estado.js";
 import { estaConectado, sincronizar, listarPendientes } from "../pendientes.js";
 import { ejecutarPendiente } from "../api.js";
+import { limpiarCache } from "../datos.js";
 
 const VISTAS = {
   buscar: "app-busqueda",
@@ -141,6 +142,7 @@ export class AppShell extends Vista {
       this.sincronizarPendientes();
     });
     window.addEventListener("offline", () => this.actualizarConexion());
+    window.addEventListener("pendientes-cambio", () => this.actualizarConexion());
     this.actualizarConexion();
     this._quitarEscucha = alCambiarSesion(() => this.actualizarSesion());
     this.actualizarSesion();
@@ -170,6 +172,8 @@ export class AppShell extends Vista {
     const resultado = await sincronizar((pendiente) => ejecutarPendiente(pendiente));
     this.actualizarConexion();
     if (resultado.enviadas > 0) {
+      // Lo guardado en memoria no incluye lo recién enviado: la próxima vista lo pide al servidor.
+      limpiarCache();
       this.notificar(`Se enviaron ${resultado.enviadas} cambio(s) acumulado(s).`, "ok");
     }
     return resultado;

@@ -155,8 +155,10 @@ export function stubApi(datos) {
     }
     if (metodo === "POST") {
       const cuerpo = JSON.parse(opciones.body ?? "{}");
-      const nuevoId = ++secuencia;
-      lista.push({ [CAMPO_ID[clave]]: nuevoId, ...cuerpo });
+      // Como el backend: respeta el id que envía el cliente y no duplica un reintento.
+      const nuevoId = cuerpo[CAMPO_ID[clave]] ?? ++secuencia;
+      if (!lista.some((item) => String(item[CAMPO_ID[clave]]) === String(nuevoId)))
+        lista.push({ [CAMPO_ID[clave]]: nuevoId, ...cuerpo });
       return new Response(null, {
         status: 201,
         headers: { Location: `http://localhost:9080/api/${recurso}/${nuevoId}` },

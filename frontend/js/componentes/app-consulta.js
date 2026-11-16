@@ -459,7 +459,9 @@ export class AppConsulta extends Vista {
       return;
     }
     try {
+      // El id se genera aquí para poder completar el paso aunque no haya conexión.
       await crearConId("consultas-procedimiento-paso", {
+        idConsultaProcedimientoPaso: crypto.randomUUID(),
         fechaInicio: ahoraISO(),
         estado: "EN_PROCESO",
         idConsultaProcedimiento: item.consultaProcedimiento.idConsultaProcedimiento,
@@ -597,6 +599,7 @@ export class AppConsulta extends Vista {
       for (const idExamen of seleccionados) {
         const examen = this._examenes.get(String(idCp))?.find((item) => String(item.examen.idExamen) === idExamen)?.examen;
         await crear("ordenes-examen", {
+          idOrdenExamen: crypto.randomUUID(),
           fechaCreacion: ahoraISO(),
           indicaciones: `Examen: ${examen?.nombre ?? idExamen}${indicaciones ? ` — ${indicaciones}` : ""}`,
           idConsultaProcedimientoPaso: actual.registro.idConsultaProcedimientoPaso,

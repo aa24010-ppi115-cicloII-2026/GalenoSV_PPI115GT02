@@ -5,6 +5,8 @@ import { datosBase, indizar, stubApi, esperar } from "./ayudas.js";
 import { limpiarCache, consultaCompleta, resumenCita } from "../js/datos.js";
 import { guardarSesion } from "../js/estado.js";
 import { construirPdf } from "../js/pdf.js";
+import { listarPendientes, vaciarPendientes, sincronizar, encolar } from "../js/pendientes.js";
+import { ejecutarPendiente } from "../js/api.js";
 
 let documentoImprimible;
 let lineasTicket;
@@ -731,6 +733,29 @@ describe("componentes Web Components", () => {
     await esperar(() => shell.shadowRoot.querySelector("#estado-conexion").hidden);
   });
 
+  it("app-shell cuenta los cambios sin conexión en cuanto se guardan y vacía la cola al volver la red", async () => {
+    const shell = montar("app-shell");
+    await esperar(() => shell.shadowRoot.querySelector("#estado-conexion"));
+    sinRed();
+    try {
+      dom.window.dispatchEvent(new dom.window.Event("offline"));
+      const aviso = () => shell.shadowRoot.querySelector("#estado-conexion").textContent;
+      expect(aviso()).to.not.contain("pendiente");
+      encolar({ metodo: "DELETE", ruta: "ordenes-examen/400", cuerpo: null });
+      expect(aviso()).to.contain("hay 1 cambio(s) pendiente(s)");
+
+      conRed();
+      dom.window.dispatchEvent(new dom.window.Event("online"));
+      await esperar(() => listarPendientes().length === 0);
+      expect(fetch.getCalls().some((llamada) => llamada.args[1]?.method === "DELETE")).to.be.true;
+      await esperar(() => shell.shadowRoot.querySelector("#estado-conexion").hidden);
+    } finally {
+      conRed();
+      vaciarPendientes();
+      delete globalThis.localStorage;
+    }
+  });
+
   it("app-shell enruta las vistas y protege las rutas de empleados", async () => {
     dom.window.location.hash = "#/buscar";
     const shell = montar("app-shell");
@@ -1051,6 +1076,63 @@ describe("componentes Web Components", () => {
     );
     await esperar(() => vista.shadowRoot.textContent.includes("Paso actual: Alta"));
     expect(vista.shadowRoot.querySelector(".paso-cabecera").textContent).to.contain("Paso 3 de 3");
+  });
+
+  /** Simula la falta de red con una cola de cambios real en localStorage. */
+  function sinRed() {
+    globalThis.localStorage = dom.window.localStorage;
+    vaciarPendientes();
+    Object.defineProperty(globalThis.navigator, "onLine", { value: false, configurable: true });
+  }
+
+  function conRed() {
+    Object.defineProperty(globalThis.navigator, "onLine", { value: true, configurable: true });
+  }
+
+  it("app-consulta sin conexión inicia, asigna y completa un paso, lo muestra en pantalla y lo envía con los mismos ids al volver la red", async () => {
+    datos.consultasProcedimientoPaso = [];
+    const vista = await abrirConsulta();
+    const raiz = vista.shadowRoot;
+    await esperar(() => raiz.querySelector("[data-accion='iniciar']"));
+    sinRed();
+    try {
+      raiz.querySelector("[data-accion='iniciar']").click();
+      await esperar(() => raiz.querySelector("[data-accion='completar']"));
+
+      const buscador = raiz.querySelector("[data-examen-buscador]");
+      buscador.value = 20;
+      buscador.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+      raiz.querySelector("[data-accion='asignar']").click();
+      await esperar(() => raiz.querySelector(".ordenes input[name='orden']"));
+      expect(raiz.querySelector(".ordenes").textContent).to.contain("Radiografía periapical");
+
+      raiz.querySelector("[data-campo='diagnostico']").value = "K02.1 · Caries de la dentina";
+      raiz.querySelector("[data-accion='completar']").click();
+      await esperar(() => raiz.textContent.includes("Paso actual: Profilaxis"));
+
+      const escrituras = fetch.getCalls().filter((llamada) => (llamada.args[1]?.method ?? "GET") !== "GET");
+      expect(escrituras).to.have.length(0);
+      const cola = listarPendientes();
+      const [paso, orden] = cola;
+      const idPaso = paso.cuerpo.idConsultaProcedimientoPaso;
+      expect(idPaso).to.match(/^[0-9a-f-]{36}$/);
+      expect(orden.cuerpo.idOrdenExamen).to.match(/^[0-9a-f-]{36}$/);
+      expect(orden.cuerpo.idConsultaProcedimientoPaso).to.equal(idPaso);
+      // El cierre del paso apunta al id creado sin conexión, no a uno indefinido.
+      expect(cola.map((pendiente) => `${pendiente.metodo} ${pendiente.ruta}`)).to.include(
+        `PUT consultas-procedimiento-paso/${idPaso}`
+      );
+
+      conRed();
+      expect(await sincronizar(ejecutarPendiente)).to.deep.equal({ enviadas: cola.length, pendientes: 0 });
+      expect(datos.consultasProcedimientoPaso).to.have.length(1);
+      expect(datos.consultasProcedimientoPaso[0]).to.include({ idConsultaProcedimientoPaso: idPaso, estado: "FINALIZADO" });
+      expect(datos.ordenesExamen[0].idConsultaProcedimientoPaso).to.equal(idPaso);
+    } finally {
+      conRed();
+      vaciarPendientes();
+      delete globalThis.localStorage;
+    }
   });
 
   it("app-consulta retrocede al paso anterior tras confirmar en un diálogo propio, sin borrar su registro", async () => {
