@@ -39,7 +39,6 @@ describe("manifest PWA", () => {
   it("registra el service worker y precarga los módulos de la SPA", () => {
     expect(index).to.contain('type="module" src="js/app.js"');
     expect(index).to.contain("<app-shell>");
-    expect(index).to.contain("<pwa-instalar>");
     expect(serviceWorker).to.match(/const CACHE = "galenosv-v\d+"/);
     expect(serviceWorker).to.contain('"./js/componentes/app-shell.js"');
     expect(serviceWorker).to.contain('"./js/componentes/asistente-citas.js"');

@@ -113,6 +113,7 @@ export class AppShell extends Vista {
             <button class="enlace" data-ruta="buscar" type="button" aria-current="page">Buscar citas</button>
             <button class="enlace" id="acceso" data-ruta="acceso" type="button">Acceso empleados</button>
           </nav>
+          <pwa-instalar></pwa-instalar>
           <div class="usuario"></div>
         </div>
       </header>
