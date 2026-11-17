@@ -605,6 +605,22 @@ describe("componentes Web Components", () => {
         expect(etiquetas).to.deep.equal(["Procedimiento", "Paso", "Estado", "Fecha", "Observaciones"]);
       });
 
+      it("un paso pendiente que conserva su registro de antes de retroceder no muestra fecha ni responsable", () => {
+        const cita = citaDePrueba();
+        const [primero] = cita.procedimientos[0].pasos;
+        // Mismo registro que el paso 1, pero el paso quedó pendiente tras retroceder.
+        const pendiente = { ...primero, estado: "pendiente" };
+        const conPendiente = { ...cita, procedimientos: [{ ...cita.procedimientos[0], pasos: [pendiente] }] };
+
+        const fila = montar("ticket-cita", { cita: conPendiente }).shadowRoot.querySelector("tbody tr");
+        expect([...fila.cells].map((celda) => celda.textContent).slice(2, 4)).to.deep.equal(["Pendiente", "Pendiente"]);
+        expect(lineasTicket(conPendiente).find((linea) => linea.includes(primero.paso.nombre))).to.contain("Sin asignar");
+
+        const linea = montar("linea-pasos", { pasos: [pendiente] }).shadowRoot;
+        expect(linea.querySelector(".quien").textContent).to.equal("Pendiente");
+        expect(linea.querySelector("details.registro")).to.be.null;
+      });
+
       it("ticket-cita muestra un código corto del ticket en lugar del identificador completo", () => {
         const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
         cita.consulta = { ...cita.consulta, idConsulta: "9fcdae6b-1100-401c-881a-892650484990" };

@@ -97,6 +97,18 @@ public class TicketServiceTest {
     }
 
     @Test
+    void trasRetrocederSoloElPrimerPasoSinTerminarQuedaEnCursoYElSiguienteSinFecha() {
+        // Se retrocedió desde «Indicaciones finales»: conserva su registro, pero vuelve a estar pendiente.
+        registros(registro("FINALIZADO", 9), registro("EN_PROCESO", 10), registro("EN_PROCESO", 11));
+
+        List<String> pasos = resumen(servicio.datos(idConsulta));
+
+        assertEquals("Profilaxis | En curso | 14/11/2026 10:00", pasos.get(1));
+        assertEquals("Indicaciones finales | Pendiente | Sin fecha", pasos.get(2));
+        assertEquals("Sin asignar", servicio.datos(idConsulta).procedimientos.get(0).pasos.get(2).realizadoPor);
+    }
+
+    @Test
     void lasOrdenesDeExamenNoRepitenLaPalabraExamen() {
         ConsultaProcedimientoPaso evaluado = registro("FINALIZADO", 9);
         registros(evaluado);

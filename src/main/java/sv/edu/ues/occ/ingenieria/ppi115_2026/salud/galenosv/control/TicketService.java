@@ -73,19 +73,24 @@ public class TicketService {
             for (Object[] par : pasosDe(cp)) {
                 ProcedimientoPaso dp = (ProcedimientoPaso) par[0];
                 ConsultaProcedimientoPaso registro = (ConsultaProcedimientoPaso) par[1];
-                // Mismas etiquetas que la tarjeta de la cita en el frontend.
+                // Mismas etiquetas que la tarjeta de la cita en el frontend: solo el primer paso sin
+                // terminar está en curso. Un paso posterior puede conservar su registro de antes de
+                // retroceder; queda pendiente y ese registro no se muestra.
                 String etiqueta = "Pendiente";
+                ConsultaProcedimientoPaso visible = registro;
                 if (finalizado(registro)) {
                     etiqueta = "Completado";
-                } else if (registro != null || !actualAsignado) {
+                } else if (!actualAsignado) {
                     etiqueta = registro != null ? "En curso" : "Por iniciar";
                     actualAsignado = true;
+                } else {
+                    visible = null;
                 }
                 pasos.add(new PasoTicket(
                         dp == null ? "Paso" : dp.getNombre(),
                         etiqueta,
-                        registro == null ? "Sin fecha" : fecha(registro.getFechaInicio()),
-                        quien(registro),
+                        visible == null ? "Sin fecha" : fecha(visible.getFechaInicio()),
+                        quien(visible),
                         dp == null ? "" : notas.getOrDefault(String.valueOf(dp.getIdProcedimientoPaso()), "")));
             }
             procedimientos.add(new ProcedimientoTicket(nombreProc, pasos, ordenesDe(cp)));

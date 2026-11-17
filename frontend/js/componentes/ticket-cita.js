@@ -1,5 +1,5 @@
 import { Vista, escapar, fechaHora } from "../base.js";
-import { motivoDe, estadoDeCita, etiquetaPaso, notaDelPaso } from "../datos.js";
+import { motivoDe, estadoDeCita, etiquetaPaso, notaDelPaso, registroVisible } from "../datos.js";
 import { descargarPdf } from "../pdf.js";
 import { pedirBinario, estaConectado } from "../api.js";
 
@@ -13,14 +13,17 @@ function filasTicket(cita) {
   return cita.procedimientos.flatMap(({ procedimiento, pasos, ordenes = [] }) => {
     const nombre = procedimiento?.nombre ?? "Procedimiento";
     return [
-      ...pasos.map(({ paso, registro, estado, notas }) => ({
-        procedimiento: nombre,
-        paso: paso.nombre,
-        estado: etiquetaPaso(estado, Boolean(registro)),
-        fecha: registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente",
-        // Lo registrado al completar el paso; el borrador del paso en curso no es parte del comprobante.
-        observaciones: notaDelPaso(notas ?? {}),
-      })),
+      ...pasos.map((item) => {
+        const registro = registroVisible(item);
+        return {
+          procedimiento: nombre,
+          paso: item.paso.nombre,
+          estado: etiquetaPaso(item.estado, Boolean(registro)),
+          fecha: registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente",
+          // Lo registrado al completar el paso; el borrador del paso en curso no es parte del comprobante.
+          observaciones: notaDelPaso(item.notas ?? {}),
+        };
+      }),
       ...ordenes.map((orden) => ({
         procedimiento: nombre,
         paso: "Examen ordenado",
@@ -102,9 +105,11 @@ export function lineasTicket(cita) {
   lineas.push("PROCEDIMIENTOS Y PASOS");
   for (const { procedimiento, pasos, ordenes = [] } of cita.procedimientos) {
     lineas.push(`- ${procedimiento?.nombre ?? "Procedimiento"}`);
-    for (const { paso, registro, persona, estado, notas } of pasos) {
+    for (const item of pasos) {
+      const { paso, persona, estado, notas } = item;
+      const registro = registroVisible(item);
       const fecha = registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente";
-      const quien = persona ? `${persona.nombres} ${persona.apellidos}` : "Sin asignar";
+      const quien = registro && persona ? `${persona.nombres} ${persona.apellidos}` : "Sin asignar";
       lineas.push(`   ${paso.nombre} | ${etiquetaPaso(estado, Boolean(registro))} | ${fecha} | ${quien}`);
       if (notas?.notas) lineas.push(`      Notas: ${notas.notas}`);
       if (notas?.diagnostico) lineas.push(`      Diagnostico CIE-10: ${notas.diagnostico}`);

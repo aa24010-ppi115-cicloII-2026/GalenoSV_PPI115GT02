@@ -1,5 +1,5 @@
 import { Vista, escapar, fechaHora, fechaCorta } from "../base.js";
-import { etiquetaPaso } from "../datos.js";
+import { etiquetaPaso, registroVisible } from "../datos.js";
 
 /**
  * Pasos de un procedimiento en jerarquía: línea de tiempo con estado, quién y cuándo,
@@ -81,7 +81,9 @@ export class LineaPasos extends Vista {
   }
 
   /** Lo que se registró en un paso: quién, rol, cuándo y sus notas. Solo existe si el paso tiene registro. */
-  pintarRegistro({ registro, persona, rol, notas }) {
+  pintarRegistro(item) {
+    const { persona, rol, notas } = item;
+    const registro = registroVisible(item);
     if (!registro) return "";
     const filas = [
       ["Realizó", persona ? `${persona.nombres} ${persona.apellidos}` : "Sin asignar"],
@@ -102,7 +104,8 @@ export class LineaPasos extends Vista {
 
   /** Un paso dentro del procedimiento: número, nombre, estado, quién y cuándo, y su registro. */
   pintarPaso(item) {
-    const { paso, estado, persona, registro, indice } = item;
+    const { paso, estado, persona, indice } = item;
+    const registro = registroVisible(item);
     const quien = [
       etiquetaPaso(estado, Boolean(registro)),
       registro && `${persona ? `${persona.nombres} ${persona.apellidos}` : "Sin asignar"} · ${fechaCorta(registro.fechaInicio)}`,

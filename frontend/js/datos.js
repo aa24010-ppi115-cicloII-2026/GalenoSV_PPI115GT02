@@ -187,6 +187,14 @@ const ETIQUETAS_PASO = { completado: "Completado", actual: "En curso", pendiente
  * Texto legible del estado interno de un paso (completado, actual, pendiente).
  * El paso actual solo está «En curso» si alguien lo inició; si no, está «Por iniciar».
  */
+/**
+ * Registro que se muestra de un paso. Un paso pendiente puede conservar el registro de antes de
+ * retroceder (para retomarlo al avanzar), pero no se muestra: no tiene fecha ni responsable vigentes.
+ */
+export function registroVisible({ estado, registro }) {
+  return estado === "pendiente" ? null : registro ?? null;
+}
+
 export function etiquetaPaso(estado, iniciado = true) {
   if (estado === "actual" && !iniciado) return "Por iniciar";
   return ETIQUETAS_PASO[estado] ?? String(estado ?? "");
