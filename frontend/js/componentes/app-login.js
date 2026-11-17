@@ -7,32 +7,7 @@ import "./ui-autocompletar.js";
 export class AppLogin extends Vista {
   get estilos() {
     return `
-      .marco {
-        display: grid;
-        grid-template-columns: 1.05fr 1fr;
-        gap: 1.5rem;
-        align-items: stretch;
-        max-width: 980px;
-        margin: 0 auto;
-      }
-      .intro {
-        background: linear-gradient(150deg, var(--mate-fuerte, #1f3a50), var(--mate, #2c4a63) 45%, var(--acento-fuerte, #0b6155));
-        color: #f3f6f9;
-        border-radius: var(--radio-grande, 14px);
-        padding: 2rem 1.85rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.9rem;
-        justify-content: center;
-      }
-      .intro h2 { font-size: clamp(1.35rem, 1.1rem + 1vw, 1.7rem); line-height: 1.2; letter-spacing: -0.02em; }
-      .intro p { color: #d3e0ea; font-size: 0.95rem; max-width: 46ch; }
-      .intro ul { margin: 0.2rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.55rem; font-size: 0.9rem; color: #e6eef4; }
-      .intro li { display: flex; gap: 0.6rem; align-items: baseline; }
-      .intro li::before {
-        content: ""; flex: none; width: 0.45rem; height: 0.45rem; border-radius: 999px;
-        background: #9fe3d6; transform: translateY(-0.1rem);
-      }
+      .marco { max-width: 440px; margin: 0 auto; }
       .tarjeta { padding: 1.6rem 1.6rem 1.35rem; }
       form { display: grid; gap: 1.05rem; }
       .titulo { display: grid; gap: 0.3rem; }
@@ -44,26 +19,13 @@ export class AppLogin extends Vista {
         padding-top: 1rem; border-top: 1px solid var(--borde, #d6dee7);
       }
       .legal { font-size: 0.75rem; color: var(--texto-suave, #4d6378); line-height: 1.5; }
-      @media (max-width: 760px) {
-        .marco { grid-template-columns: 1fr; }
-        .intro { order: 2; padding: 1.4rem 1.25rem; }
-        .tarjeta { padding: 1.25rem 1.1rem 1.1rem; }
-      }
+      @media (max-width: 520px) { .tarjeta { padding: 1.25rem 1.1rem 1.1rem; } }
     `;
   }
 
   connectedCallback() {
     this.render(`
       <div class="marco">
-        <section class="intro" aria-labelledby="titulo-intro">
-          <h2 id="titulo-intro">Ingrese con su documento de empleado</h2>
-          <p>GalenoSV valida su identidad con el tipo y número de documento registrado por la clínica. No existe registro público de cuentas.</p>
-          <ul>
-            <li>Consulte las citas del día según su rol y clínica.</li>
-            <li>Registre notas, diagnóstico CIE-10 y plan de atención.</li>
-            <li>Asigne exámenes y avance los pasos del procedimiento.</li>
-          </ul>
-        </section>
         <section class="tarjeta">
           <form id="formulario" novalidate aria-labelledby="titulo-login">
             <div class="titulo">
@@ -85,7 +47,12 @@ export class AppLogin extends Vista {
       </div>
     `);
     this.q("#ir-buscar").addEventListener("click", () => this.navegar("buscar"));
-    this.q("#tipo").addEventListener("change", () => this.mostrarFormato());
+    this.q("#tipo").addEventListener("change", () => {
+      this.mostrarFormato();
+      this.mostrarError("");
+    });
+    // El error se refiere a lo escrito antes: al corregir el número deja de mostrarse.
+    this.q("#numero").addEventListener("input", () => this.mostrarError(""));
     this.q("#formulario").addEventListener("submit", (evento) => {
       evento.preventDefault();
       this.entrar();
@@ -115,7 +82,7 @@ export class AppLogin extends Vista {
   mostrarFormato() {
     const tipo = this.tipoElegido();
     this.q("#formato").textContent = tipo?.indicaciones ?? "";
-    this.q("#numero").placeholder = tipo?.nombre === "DUI" ? "Ej. 01234567-8" : "";
+    this.q("#numero").placeholder = tipo?.nombre === "DUI" ? "Ej. 00000000-0" : "";
   }
 
   mostrarError(mensaje) {
@@ -143,13 +110,10 @@ export class AppLogin extends Vista {
         return;
       }
       const persona = personaDeDocumento(datos, idTipoDocumento, numero);
-      if (!persona) {
-        this.mostrarError("No existe un empleado con ese documento. Verifique los datos.");
-        return;
-      }
-      const asignaciones = empleadoDePersona(datos, persona.idPersona);
+      const asignaciones = persona ? empleadoDePersona(datos, persona.idPersona) : [];
+      // Mismo mensaje si el documento no existe o no es de un empleado: no se revela quién está registrado.
       if (asignaciones.length === 0) {
-        this.mostrarError("El documento no tiene un rol de empleado activo en una clínica.");
+        this.mostrarError("No hay un empleado registrado con ese documento. Verifique el tipo y el número.");
         return;
       }
       const roles = asignaciones.map(({ personaRol, rol, clinica }) => ({

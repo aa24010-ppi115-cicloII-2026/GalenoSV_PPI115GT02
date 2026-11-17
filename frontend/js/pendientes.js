@@ -41,10 +41,6 @@ export function quitarPendiente(id) {
   return pendientes.length;
 }
 
-export function vaciarPendientes() {
-  escribir([]);
-}
-
 /**
  * Reintenta las operaciones guardadas mientras la aplicacion estuvo sin conexion.
  * Cada operacion se ejecuta una vez; si falla se conserva para el siguiente intento.

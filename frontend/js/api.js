@@ -64,11 +64,6 @@ export async function listarTodo(ruta) {
   return datos;
 }
 
-export async function obtener(ruta, id) {
-  const respuesta = await pedir(`${ruta}/${id}`);
-  return respuesta.json();
-}
-
 export async function crear(ruta, datos) {
   if (!estaConectado()) {
     encolar({ metodo: "POST", ruta, cuerpo: datos });

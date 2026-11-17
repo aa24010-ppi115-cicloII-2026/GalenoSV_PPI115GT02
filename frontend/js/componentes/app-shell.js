@@ -11,6 +11,14 @@ const VISTAS = {
   consulta: "app-consulta",
 };
 
+/** Título de la pestaña de cada vista: el lector de pantalla y el historial distinguen las páginas. */
+const TITULOS = {
+  buscar: "Buscar mis citas",
+  login: "Acceso de empleados",
+  dashboard: "Agenda de consultas",
+  consulta: "Registro de atención",
+};
+
 function rutaActual() {
   const hash = window.location.hash.replace(/^#\/?/, "");
   const [nombre, parametro] = hash.split("/");
@@ -212,6 +220,7 @@ export class AppShell extends Vista {
       window.location.hash = "#/dashboard";
       return;
     }
+    document.title = `${TITULOS[nombre]} · GalenoSV`;
     const contenedor = this.q("#vista");
     const vista = document.createElement(VISTAS[nombre]);
     if (parametro) vista.setAttribute("id-consulta", parametro);

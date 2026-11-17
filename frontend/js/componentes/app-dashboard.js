@@ -104,7 +104,13 @@ export class AppDashboard extends Vista {
     });
     this.shadowRoot.addEventListener("ver-ticket", (evento) => this.abrirTicket(evento.detail));
     this.cargarRoles();
-    this.ponerRango("hoy");
+    // Al volver de una consulta se recuperan las fechas elegidas; la primera vez se muestra hoy.
+    if (sesion?.filtros) {
+      this.q("#desde").value = sesion.filtros.desde;
+      this.q("#hasta").value = sesion.filtros.hasta;
+    } else {
+      this.ponerRango("hoy");
+    }
     this.cargar();
   }
 
@@ -177,6 +183,8 @@ export class AppDashboard extends Vista {
       this._datos = await cargarTodo();
       if (!this.isConnected) return;
       this.cargarPacientes();
+      const idPaciente = leerSesion()?.filtros?.idPaciente;
+      if (idPaciente) this.q("#paciente").value = idPaciente;
       this.aplicar();
     } catch {
       this.q("#lista").innerHTML = `<div class="vacio">No se pudo cargar la agenda. Intente de nuevo.</div>`;
@@ -192,7 +200,7 @@ export class AppDashboard extends Vista {
     const desde = this.q("#desde").value;
     const hasta = this.q("#hasta").value;
     const idPaciente = this.q("#paciente").value || null;
-    actualizarSesion({ idClinica: idClinica ?? sesion.idClinica, idRol });
+    actualizarSesion({ idClinica: idClinica ?? sesion.idClinica, idRol, filtros: { desde, hasta, idPaciente } });
     this.describirRango(desde, hasta);
     const lista = this.q("#lista");
     if (desde && hasta && desde > hasta) {

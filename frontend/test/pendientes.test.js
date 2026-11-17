@@ -5,7 +5,6 @@ import {
   encolar,
   listarPendientes,
   quitarPendiente,
-  vaciarPendientes,
   sincronizar,
   estaConectado,
 } from "../js/pendientes.js";
@@ -16,11 +15,11 @@ describe("pendientes.js", () => {
   beforeEach(() => {
     dom = new JSDOM("<!DOCTYPE html>", { url: "http://localhost:3000/" });
     globalThis.localStorage = dom.window.localStorage;
-    vaciarPendientes();
+    localStorage.clear();
   });
 
   afterEach(() => {
-    vaciarPendientes();
+    localStorage.clear();
     dom.window.close();
     delete globalThis.localStorage;
   });
@@ -46,12 +45,6 @@ describe("pendientes.js", () => {
     encolar({ metodo: "POST", ruta: "a", cuerpo: {} });
     const id = listarPendientes()[0].id;
     quitarPendiente(id);
-    expect(listarPendientes()).to.have.length(0);
-  });
-
-  it("vacía la cola completa", () => {
-    encolar({ metodo: "POST", ruta: "a", cuerpo: {} });
-    vaciarPendientes();
     expect(listarPendientes()).to.have.length(0);
   });
 

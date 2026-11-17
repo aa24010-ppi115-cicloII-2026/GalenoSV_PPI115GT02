@@ -1,5 +1,5 @@
 import { Vista, escapar } from "../base.js";
-import { cargarTodo, citasDePaciente } from "../datos.js";
+import { cargarTodo, citasDePaciente, documentoDePersona, edadDe } from "../datos.js";
 import "./asistente-citas.js";
 
 const SIN_RESULTADOS = `<div class="vacio">Complete los pasos del asistente para ver sus citas.</div>`;
@@ -14,7 +14,8 @@ export class AppBusqueda extends Vista {
       #resultados { margin-top: 2rem; display: grid; gap: 1rem; }
       .resumen { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.75rem; border-bottom: 1px solid var(--borde, #d6dee7); }
       .resumen > div { display: grid; gap: 0.1rem; }
-      .resumen strong { font-size: 1.15rem; letter-spacing: -0.01em; }
+      .resumen h3 { font-size: 1.15rem; letter-spacing: -0.01em; }
+      .resumen h3:focus { outline: none; }
       .lista { display: grid; gap: 1rem; }
     `;
   }
@@ -50,12 +51,22 @@ export class AppBusqueda extends Vista {
     const citas = citasDePaciente(this._datos, { idPersona: persona.idPersona, idClinica, desde, hasta });
     const nombre = `${persona.nombres} ${persona.apellidos}`.trim();
     const total = `${citas.length} cita${citas.length === 1 ? "" : "s"}`;
+    // Los datos del paciente van una sola vez aquí, no en cada tarjeta.
+    const documento = documentoDePersona(this._datos, persona.idPersona);
+    const edad = edadDe(persona);
+    const datosPaciente = [
+      documento && `${documento.tipo} ${documento.valor}`,
+      edad !== null && `${edad} años`,
+      `${total} en ${clinica?.nombre ?? "la clínica elegida"}`,
+    ]
+      .filter(Boolean)
+      .join(" · ");
     const contenedor = this.q("#resultados");
     contenedor.innerHTML = `
       <div class="resumen">
         <div>
-          <strong>${escapar(nombre)}</strong>
-          <span class="aviso">${total} en ${escapar(clinica?.nombre ?? "la clínica elegida")}</span>
+          <h3 id="titulo-resultados" tabindex="-1">${escapar(nombre)}</h3>
+          <span class="aviso">${escapar(datosPaciente)}</span>
         </div>
         <span class="separador"></span>
         <button type="button" class="secundario" id="nueva">Nueva búsqueda</button>
@@ -64,6 +75,8 @@ export class AppBusqueda extends Vista {
     `;
     contenedor.querySelector("#nueva").addEventListener("click", () => this.nuevaBusqueda());
     const lista = contenedor.querySelector("#lista-citas");
+    // Lleva la vista y el lector de pantalla a los resultados, que quedan debajo del asistente.
+    contenedor.querySelector("#titulo-resultados").focus();
     if (citas.length === 0) {
       lista.innerHTML = `<div class="vacio">No hay citas para la clínica y las fechas elegidas.</div>`;
       return;

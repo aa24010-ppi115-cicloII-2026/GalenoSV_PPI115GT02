@@ -34,7 +34,12 @@ export function datosBase() {
         idConsultaProcedimiento: 8000,
         idConsulta: 5000,
         idProcedimiento: 6000,
-        observaciones: JSON.stringify({ notas: "Sin dolor", diagnostico: "K02.1 · Caries de la dentina", plan: "Control" }),
+        observaciones: JSON.stringify({
+          notas: "Sin dolor",
+          diagnostico: "K02.1 · Caries de la dentina",
+          plan: "Control",
+          pasos: { 7000: { notas: "Sin dolor", diagnostico: "K02.1 · Caries de la dentina", plan: "Control" } },
+        }),
       },
       { idConsultaProcedimiento: 8001, idConsulta: 5002, idProcedimiento: 6001, observaciones: null },
     ],
@@ -104,7 +109,7 @@ export function indizar(datos) {
   return copia;
 }
 
-export const RUTAS = {
+const RUTAS = {
   clinicas: "clinicas",
   roles: "roles",
   personas: "personas",

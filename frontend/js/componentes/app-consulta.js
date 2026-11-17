@@ -21,21 +21,12 @@ const OPCIONES_CIE10 = CODIGOS_CIE10.map(({ codigo, descripcion }) => {
   return { valor: texto, texto };
 });
 
-/** Texto que se guarda en el registro del paso. */
-export function notaDelPaso({ notas = "", diagnostico = "", plan = "" }) {
-  return [
-    diagnostico ? `CIE-10: ${diagnostico}` : "",
-    notas ? `Notas: ${notas}` : "",
-    plan ? `Plan: ${plan}` : "",
-  ]
-    .filter(Boolean)
-    .join(" | ");
-}
-
 export class AppConsulta extends Vista {
   get estilos() {
     return `
       .volver { margin-bottom: 0.8rem; }
+      .aviso-carga { display: grid; gap: 0.9rem; justify-items: center; }
+      .aviso-carga .fila { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
       .encabezado { display: flex; align-items: flex-start; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
       .encabezado { align-items: center; }
       .encabezado .paciente { display: grid; gap: 0.3rem; min-width: 0; }
@@ -122,7 +113,7 @@ export class AppConsulta extends Vista {
       this._datos = await cargarTodo({ recargar });
       this._cita = consultaCompleta(this._datos, this._id);
       if (!this._cita) {
-        this.render(`<div class="vacio">La consulta solicitada no existe.</div>`);
+        this.pintarAviso("La consulta solicitada no existe.");
         return;
       }
       this.pintar();
@@ -132,8 +123,21 @@ export class AppConsulta extends Vista {
         if (detalle) detalle.open = true;
       }
     } catch {
-      this.render(`<div class="vacio">No se pudo cargar la consulta. Intente de nuevo.</div>`);
+      this.pintarAviso("No se pudo cargar la consulta. Revise la conexión e intente de nuevo.", true);
     }
+  }
+
+  /** Estado sin consulta que mostrar: siempre deja una salida (volver) y, si falló la carga, reintentar. */
+  pintarAviso(mensaje, reintentar = false) {
+    this.render(`
+      <div class="vacio aviso-carga" role="alert">
+        <p>${escapar(mensaje)}</p>
+        <div class="fila">
+          <button type="button" class="secundario" data-accion="volver">← Volver al panel</button>
+          ${reintentar ? '<button type="button" data-accion="reintentar">Reintentar</button>' : ""}
+        </div>
+      </div>
+    `);
   }
 
   pintar() {
@@ -194,7 +198,6 @@ export class AppConsulta extends Vista {
 
   pintarProcedimiento({ consultaProcedimiento, procedimiento, pasos }) {
     const cp = consultaProcedimiento;
-    const notas = leerObservaciones(cp.observaciones);
     const completados = pasos.filter(({ estado }) => estado === "completado").length;
     const finalizado = pasos.length > 0 && completados === pasos.length;
     const actual = pasos.find(({ estado }) => estado === "actual") ?? null;
@@ -202,6 +205,7 @@ export class AppConsulta extends Vista {
     // Se retrocede al paso anterior si el actual no es el primero, o al último si todos están completos.
     const puedeRetroceder = finalizado ? hayRegistros : (actual?.indice ?? 0) > 0;
     const esUltimo = actual ? actual.indice === pasos.length - 1 : false;
+    const notas = this.notasDelFormulario(cp, actual);
     return `
       <article class="tarjeta proc" data-cp="${escapar(cp.idConsultaProcedimiento)}">
         <div class="fila">
@@ -213,6 +217,18 @@ export class AppConsulta extends Vista {
         ${finalizado ? this.panelFinalizado(cp, puedeRetroceder, notas) : this.panelPaso(cp, actual, puedeRetroceder, esUltimo, pasos.length, notas)}
       </article>
     `;
+  }
+
+  /**
+   * Valores del formulario: el borrador del paso en curso. Si no hay borrador y el paso se
+   * reabrió al retroceder, se muestra lo que ese paso ya tenía registrado para corregirlo.
+   */
+  notasDelFormulario(cp, actual) {
+    const guardadas = leerObservaciones(cp.observaciones);
+    const hayBorrador = guardadas.notas || guardadas.diagnostico || guardadas.plan;
+    const delPaso = actual ? guardadas.pasos?.[actual.paso.idProcedimientoPaso] : null;
+    if (hayBorrador || !delPaso) return guardadas;
+    return { ...guardadas, notas: delPaso.notas ?? "", diagnostico: delPaso.diagnostico ?? "", plan: delPaso.plan ?? "" };
   }
 
   /** Registro de atención del procedimiento: notas, diagnóstico CIE-10 y plan. */
@@ -442,7 +458,8 @@ export class AppConsulta extends Vista {
       idProcedimiento: cp.idProcedimiento,
       fechaInicio: cp.fechaInicio,
       fechaFin: cp.fechaFin,
-      observaciones: serializarObservaciones({ ...valores, pasos }),
+      // Al completar un paso su registro pasa a `pasos` y el borrador queda vacío para el siguiente.
+      observaciones: serializarObservaciones(idPaso ? { notas: "", diagnostico: "", plan: "", pasos } : { ...valores, pasos }),
       idConsulta: cp.idConsulta,
     });
     if (!silencioso) this.notificar("Notas de atención guardadas.", "ok");
@@ -483,10 +500,6 @@ export class AppConsulta extends Vista {
     const item = this.buscarProcedimiento(idCp);
     if (!item) return;
     const actual = item.pasos.find(({ paso }) => String(paso.idProcedimientoPaso) === String(idPaso));
-    if (!actual?.registro) {
-      this.notificar("Primero inicie el paso actual.", "error");
-      return;
-    }
     const notas = this.leerNotas(idCp);
     if (!notas.diagnostico) {
       this.notificar("Elija el diagnóstico CIE-10 de la lista antes de completar el paso.", "error");
@@ -502,6 +515,11 @@ export class AppConsulta extends Vista {
         idConsultaProcedimiento: item.consultaProcedimiento.idConsultaProcedimiento,
         idPersonaRol: registro.idPersonaRol,
       });
+      // Lo escrito ya quedó en el paso completado: no se arrastra al siguiente al volver a pintar.
+      for (const campo of ["notas", "diagnostico", "plan"]) {
+        const elemento = this.q(`[data-cp="${idCp}"] [data-campo="${campo}"]`);
+        if (elemento) elemento.value = "";
+      }
       this.notificar(
         estaConectado()
           ? "Paso completado. Avance registrado."
@@ -553,14 +571,17 @@ export class AppConsulta extends Vista {
 
   async finalizarConsulta() {
     const consulta = this._cita.consulta;
-    if (consulta.fechaFin) {
-      this.notificar("La consulta ya fue finalizada.", "info");
-      return;
-    }
+    const sinCompletar = this._cita.procedimientos
+      .flatMap(({ pasos }) => pasos)
+      .filter(({ estado }) => estado !== "completado").length;
     const aceptado = await confirmar({
       titulo: "¿Finalizar la consulta?",
-      mensaje: "Se registrará la fecha y hora de cierre de la consulta.",
+      mensaje:
+        sinCompletar > 0
+          ? `Quedan ${sinCompletar} ${sinCompletar === 1 ? "paso" : "pasos"} sin completar. Si finaliza, se registrará la fecha y hora de cierre de todos modos.`
+          : "Se registrará la fecha y hora de cierre de la consulta.",
       aceptar: "Finalizar",
+      peligro: sinCompletar > 0,
     });
     if (!aceptado) return;
     try {
@@ -585,15 +606,7 @@ export class AppConsulta extends Vista {
     const item = this.buscarProcedimiento(idCp);
     if (!item) return;
     const actual = item.pasos.find(({ estado }) => estado === "actual");
-    if (!actual?.registro) {
-      this.notificar("Inicie el paso actual antes de asignar exámenes.", "error");
-      return;
-    }
     const seleccionados = this._elegidos.get(String(idCp)) ?? [];
-    if (seleccionados.length === 0) {
-      this.notificar("Busque y elija al menos un examen.", "error");
-      return;
-    }
     const indicaciones = this.q(`[data-cp="${idCp}"] [data-campo="indicaciones"]`)?.value.trim() ?? "";
     try {
       for (const idExamen of seleccionados) {
@@ -674,13 +687,25 @@ export class AppConsulta extends Vista {
     const { accion, cp, paso } = boton.dataset;
     if (accion === "volver") this.navegar("dashboard");
     if (accion === "ticket") this.abrirTicket();
-    if (accion === "guardar-notas") this.guardarNotas(cp).catch((error) => this.notificar(error.message, "error"));
-    if (accion === "iniciar") this.iniciarPaso(cp, paso);
-    if (accion === "completar") this.completarPaso(cp, paso);
+    if (accion === "reintentar") this.cargar(true);
     if (accion === "retroceder") this.retroceder(cp);
-    if (accion === "asignar") this.asignarExamenes(cp);
     if (accion === "finalizar") this.finalizarConsulta();
     if (accion === "eliminar-ordenes") this.eliminarOrdenes(cp);
+    // Las acciones que guardan sin pedir confirmación bloquean su botón mientras trabajan:
+    // un doble clic no repite la operación (por ejemplo, dos pasos iniciados).
+    const guardar = {
+      "guardar-notas": () => this.guardarNotas(cp).catch((error) => this.notificar(error.message, "error")),
+      iniciar: () => this.iniciarPaso(cp, paso),
+      completar: () => this.completarPaso(cp, paso),
+      asignar: () => this.asignarExamenes(cp),
+    }[accion];
+    if (!guardar) return;
+    boton.disabled = true;
+    boton.setAttribute("aria-busy", "true");
+    guardar().finally(() => {
+      boton.disabled = false;
+      boton.removeAttribute("aria-busy");
+    });
   }
 }
 

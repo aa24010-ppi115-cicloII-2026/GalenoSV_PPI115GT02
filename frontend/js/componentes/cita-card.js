@@ -99,7 +99,7 @@ export class CitaCard extends Vista {
     const acciones = `
       <div class="acciones">
         <button type="button" class="secundario" data-accion="ticket">Ver ticket</button>
-        ${sesion ? `<button type="button" data-accion="atender">Atender consulta</button>` : ""}
+        ${sesion && this.getAttribute("vista") !== "paciente" ? `<button type="button" data-accion="atender">Atender consulta</button>` : ""}
       </div>
     `;
     const etiquetaPaciente = `${paciente?.nombres ?? "Paciente"} ${paciente?.apellidos ?? ""}`.trim();
@@ -118,7 +118,10 @@ export class CitaCard extends Vista {
           </div>
           <span class="estado ${estado}">${textoEstado}</span>
         </div>
-        <div class="general">
+        ${
+          paraPaciente
+            ? ""
+            : `<div class="general">
           <span><b>Documento:</b> ${escapar(documentoPaciente ?? "No registrado")}</span>
           ${
             cita.paciente?.fechaNacimiento
@@ -129,7 +132,8 @@ export class CitaCard extends Vista {
                 }</span>`
               : ""
           }
-        </div>
+        </div>`
+        }
         <div class="procedimientos">
           ${procedimientos
             .map(

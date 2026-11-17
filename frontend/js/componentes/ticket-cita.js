@@ -1,29 +1,29 @@
 import { Vista, escapar, fechaHora } from "../base.js";
-import { leerObservaciones, motivoDe, estadoDeCita, etiquetaPaso } from "../datos.js";
+import { motivoDe, estadoDeCita, etiquetaPaso, notaDelPaso } from "../datos.js";
 import { descargarPdf } from "../pdf.js";
 import { pedirBinario, estaConectado } from "../api.js";
 
+/** Código corto y legible del ticket: el primer bloque del identificador de la consulta. */
+function codigoTicket(idConsulta) {
+  return String(idConsulta ?? "").split("-")[0].toUpperCase();
+}
+
 export function documentoImprimible(cita) {
   const pasos = cita.procedimientos.flatMap(({ procedimiento, pasos: lista }) =>
-    lista.map(({ paso, registro, estado }) => ({
+    lista.map(({ paso, registro, estado, notas }) => ({
       procedimiento: procedimiento?.nombre ?? "Procedimiento",
       nombre: paso.nombre,
-      estado: etiquetaPaso(estado),
+      estado: etiquetaPaso(estado, Boolean(registro)),
       fecha: registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente",
-      observaciones: registro?.observaciones ?? "",
+      // Lo registrado al completar el paso; el borrador del paso en curso no es parte del comprobante.
+      observaciones: notaDelPaso(notas ?? {}),
     }))
   );
-  const notas = cita.procedimientos
-    .map(({ procedimiento, consultaProcedimiento }) => ({
-      nombre: procedimiento?.nombre ?? "Procedimiento",
-      ...leerObservaciones(consultaProcedimiento?.observaciones),
-    }))
-    .filter((item) => item.notas || item.diagnostico || item.plan);
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Ticket de cita ${escapar(cita.consulta.idConsulta)}</title>
+  <title>Ticket de cita ${escapar(codigoTicket(cita.consulta.idConsulta))}</title>
   <style>
     body { font-family: system-ui, "Segoe UI", sans-serif; margin: 2rem; color: #14202b; }
     header { border-bottom: 3px solid #0f7b6c; padding-bottom: 0.7rem; margin-bottom: 1rem; }
@@ -42,7 +42,7 @@ export function documentoImprimible(cita) {
 <body>
   <header>
     <h1>GalenoSV · Comprobante de cita</h1>
-    <p>Ticket <span class="codigo">#${escapar(cita.consulta.idConsulta)}</span> · ${escapar(fechaHora(cita.consulta.fechaInicio))}</p>
+    <p>Ticket <span class="codigo">#${escapar(codigoTicket(cita.consulta.idConsulta))}</span> · ${escapar(fechaHora(cita.consulta.fechaInicio))}</p>
   </header>
   <section class="datos">
     <div><span>Paciente</span>${escapar(`${cita.paciente?.nombres ?? ""} ${cita.paciente?.apellidos ?? ""}`.trim())}</div>
@@ -69,20 +69,6 @@ export function documentoImprimible(cita) {
       }
     </tbody>
   </table>
-  ${
-    notas.length > 0
-      ? `<h2>Notas de atención</h2>${notas
-          .map(
-            (item) => `<div style="font-size:0.85rem;margin-bottom:0.6rem">
-              <strong>${escapar(item.nombre)}</strong>
-              ${item.diagnostico ? `<p>Diagnóstico CIE-10: ${escapar(item.diagnostico)}</p>` : ""}
-              ${item.notas ? `<p>Notas: ${escapar(item.notas)}</p>` : ""}
-              ${item.plan ? `<p>Plan: ${escapar(item.plan)}</p>` : ""}
-            </div>`
-          )
-          .join("")}`
-      : ""
-  }
   <footer>Documento generado desde GalenoSV. Use Imprimir → Guardar como PDF para conservar una copia.</footer>
 </body>
 </html>`;
@@ -96,7 +82,7 @@ export function lineasTicket(cita) {
   lineas.push(`Fecha de la cita: ${fechaHora(cita.consulta.fechaInicio)}`);
   lineas.push(`Motivo: ${motivoDe(cita.consulta)}`);
   lineas.push(`Estado: ${estadoDeCita(cita).texto}`);
-  lineas.push(`Ticket: #${cita.consulta.idConsulta}`);
+  lineas.push(`Ticket: #${codigoTicket(cita.consulta.idConsulta)}`);
   lineas.push("");
   lineas.push("PROCEDIMIENTOS Y PASOS");
   for (const { procedimiento, pasos } of cita.procedimientos) {
@@ -104,23 +90,10 @@ export function lineasTicket(cita) {
     for (const { paso, registro, persona, estado, notas } of pasos) {
       const fecha = registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente";
       const quien = persona ? `${persona.nombres} ${persona.apellidos}` : "Sin asignar";
-      lineas.push(`   ${paso.nombre} | ${etiquetaPaso(estado)} | ${fecha} | ${quien}`);
+      lineas.push(`   ${paso.nombre} | ${etiquetaPaso(estado, Boolean(registro))} | ${fecha} | ${quien}`);
       if (notas?.notas) lineas.push(`      Notas: ${notas.notas}`);
       if (notas?.diagnostico) lineas.push(`      Diagnostico CIE-10: ${notas.diagnostico}`);
       if (notas?.plan) lineas.push(`      Plan: ${notas.plan}`);
-    }
-  }
-  const atenciones = cita.procedimientos
-    .map(({ procedimiento, notas }) => ({ procedimiento, notas }))
-    .filter(({ notas }) => notas && (notas.notas || notas.diagnostico || notas.plan));
-  if (atenciones.length > 0) {
-    lineas.push("");
-    lineas.push("NOTAS DE ATENCION");
-    for (const { procedimiento, notas } of atenciones) {
-      lineas.push(`- ${procedimiento?.nombre ?? "Procedimiento"}`);
-      if (notas.diagnostico) lineas.push(`   Diagnostico CIE-10: ${notas.diagnostico}`);
-      if (notas.notas) lineas.push(`   Notas: ${notas.notas}`);
-      if (notas.plan) lineas.push(`   Plan: ${notas.plan}`);
     }
   }
   lineas.push("");
@@ -149,7 +122,6 @@ export class TicketCita extends Vista {
       th, td { text-align: left; border-bottom: 1px solid var(--borde, #d6dee7); padding: 0.5rem 0.55rem; vertical-align: top; }
       th { background: var(--superficie-suave, #f7f9fb); color: var(--mate, #2c4a63); font-size: 0.74rem; font-weight: 600; }
       tbody tr:last-child td { border-bottom: none; }
-      .notas { display: grid; gap: 0.6rem; margin-top: 1rem; font-size: 0.85rem; }
       .tabla { overflow-x: auto; border: 1px solid var(--borde, #d6dee7); border-radius: var(--radio, 10px); }
       .acciones { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--borde, #d6dee7); }
       @media (max-width: 620px) { .datos { grid-template-columns: 1fr; } .acciones button { flex: 1; } }
@@ -172,6 +144,8 @@ export class TicketCita extends Vista {
 
   disconnectedCallback() {
     document.removeEventListener("keydown", this._tecla);
+    // Al cerrar, el foco vuelve al botón que abrió el comprobante.
+    this._previo?.focus?.();
   }
 
   connectedCallback() {
@@ -186,9 +160,22 @@ export class TicketCita extends Vista {
       this.shadowRoot.addEventListener("click", this._escucha);
       this._tecla = (evento) => {
         if (evento.key === "Escape") this.remove();
+        // Es un diálogo modal: Tab recorre solo sus botones.
+        if (evento.key === "Tab") {
+          const botones = this.qa("button");
+          if (botones.length === 0) return;
+          evento.preventDefault();
+          const actual = botones.indexOf(this.shadowRoot.activeElement);
+          const siguiente = (actual + (evento.shiftKey ? -1 : 1) + botones.length) % botones.length;
+          botones[siguiente].focus();
+        }
       };
       document.addEventListener("keydown", this._tecla);
     }
+    // El botón que lo abrió suele estar dentro de otros Shadow DOM.
+    let previo = document.activeElement;
+    while (previo?.shadowRoot?.activeElement) previo = previo.shadowRoot.activeElement;
+    this._previo = previo;
     this.pintar();
     this.q("button[data-accion='cerrar']")?.focus();
   }
@@ -200,20 +187,14 @@ export class TicketCita extends Vista {
       return;
     }
     const pasos = cita.procedimientos.flatMap(({ procedimiento, pasos: lista }) =>
-      lista.map(({ paso, registro, estado }) => ({ paso, registro, estado, procedimiento }))
+      lista.map(({ paso, registro, estado, notas }) => ({ paso, registro, estado, notas, procedimiento }))
     );
-    const notas = cita.procedimientos
-      .map(({ procedimiento, consultaProcedimiento }) => ({
-        nombre: procedimiento?.nombre ?? "Procedimiento",
-        ...leerObservaciones(consultaProcedimiento?.observaciones),
-      }))
-      .filter((item) => item.notas || item.diagnostico || item.plan);
     this.render(`
       <div class="fondo" role="dialog" aria-modal="true" aria-label="Ticket de la cita">
         <div class="hoja">
           <header>
             <h2>GalenoSV · Comprobante de cita</h2>
-            <p class="aviso">Ticket <span class="codigo">#${escapar(cita.consulta.idConsulta)}</span> · ${escapar(fechaHora(cita.consulta.fechaInicio))}</p>
+            <p class="aviso">Ticket <span class="codigo">#${escapar(codigoTicket(cita.consulta.idConsulta))}</span> · ${escapar(fechaHora(cita.consulta.fechaInicio))}</p>
           </header>
           <div class="datos">
             <div><span>Paciente</span>${escapar(`${cita.paciente?.nombres ?? ""} ${cita.paciente?.apellidos ?? ""}`.trim() || "—")}</div>
@@ -227,31 +208,18 @@ export class TicketCita extends Vista {
               ${
                 pasos
                   .map(
-                    ({ paso, registro, estado, procedimiento }) => `<tr>
+                    ({ paso, registro, estado, notas, procedimiento }) => `<tr>
                       <td>${escapar(procedimiento?.nombre ?? "—")}</td>
                       <td>${escapar(paso.nombre)}</td>
-                      <td>${escapar(etiquetaPaso(estado))}</td>
+                      <td>${escapar(etiquetaPaso(estado, Boolean(registro)))}</td>
                       <td>${escapar(registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente")}</td>
-                      <td>${escapar(registro?.observaciones || "—")}</td>
+                      <td>${escapar(notaDelPaso(notas ?? {}) || "—")}</td>
                     </tr>`
                   )
                   .join("") || '<tr><td colspan="5">Sin pasos registrados.</td></tr>'
               }
             </tbody>
           </table></div>
-          ${
-            notas.length > 0
-              ? `<div class="notas">${notas
-                  .map(
-                    (item) => `<div><strong>${escapar(item.nombre)}</strong>
-                      ${item.diagnostico ? `<p>CIE-10: ${escapar(item.diagnostico)}</p>` : ""}
-                      ${item.notas ? `<p>Notas: ${escapar(item.notas)}</p>` : ""}
-                      ${item.plan ? `<p>Plan: ${escapar(item.plan)}</p>` : ""}
-                    </div>`
-                  )
-                  .join("")}</div>`
-              : ""
-          }
           <div class="acciones">
             <button type="button" class="secundario" data-accion="cerrar">Cerrar</button>
             <button type="button" class="secundario" data-accion="imprimir">Imprimir</button>

@@ -104,7 +104,7 @@ export class LineaPasos extends Vista {
   pintarPaso(item) {
     const { paso, estado, persona, registro, indice } = item;
     const quien = [
-      etiquetaPaso(estado),
+      etiquetaPaso(estado, Boolean(registro)),
       registro && `${persona ? `${persona.nombres} ${persona.apellidos}` : "Sin asignar"} · ${fechaCorta(registro.fechaInicio)}`,
     ]
       .filter(Boolean)

@@ -183,9 +183,20 @@ export function edadDe(persona) {
 
 const ETIQUETAS_PASO = { completado: "Completado", actual: "En curso", pendiente: "Pendiente" };
 
-/** Texto legible del estado interno de un paso (completado, actual, pendiente). */
-export function etiquetaPaso(estado) {
+/**
+ * Texto legible del estado interno de un paso (completado, actual, pendiente).
+ * El paso actual solo está «En curso» si alguien lo inició; si no, está «Por iniciar».
+ */
+export function etiquetaPaso(estado, iniciado = true) {
+  if (estado === "actual" && !iniciado) return "Por iniciar";
   return ETIQUETAS_PASO[estado] ?? String(estado ?? "");
+}
+
+/** Resumen en una línea de lo registrado en un paso: diagnóstico, notas y plan. */
+export function notaDelPaso({ notas = "", diagnostico = "", plan = "" } = {}) {
+  return [diagnostico && `CIE-10: ${diagnostico}`, notas && `Notas: ${notas}`, plan && `Plan: ${plan}`]
+    .filter(Boolean)
+    .join(" | ");
 }
 
 export function motivoDe(consulta) {

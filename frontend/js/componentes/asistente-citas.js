@@ -146,6 +146,9 @@ export class AsistenteCitas extends Vista {
       else this.avanzar();
     });
     this.q("#tipo").addEventListener("change", () => this.mostrarFormato());
+    // Un error se refiere a lo que se escribió antes: al corregir cualquier dato deja de mostrarse.
+    this.q("form").addEventListener("input", () => this.mostrarError(""));
+    this.q("form").addEventListener("change", () => this.mostrarError(""));
     this.mostrarPaso();
     if (this._datos) this.pintarTipos();
   }
@@ -180,7 +183,7 @@ export class AsistenteCitas extends Vista {
     const tipo = this.tipoElegido();
     const ayuda = tipo?.indicaciones || (tipo?.expresionRegular ? `Formato: ${tipo.expresionRegular}` : "");
     this.q("#formato").textContent = ayuda;
-    this.q("#numero").placeholder = tipo?.nombre === "DUI" ? "Ej. 01234567-8" : "";
+    this.q("#numero").placeholder = tipo?.nombre === "DUI" ? "Ej. 00000000-0" : "";
   }
 
   mostrarError(mensaje) {
@@ -201,7 +204,6 @@ export class AsistenteCitas extends Vista {
       if (!this.q("#clinica").value) return this.mostrarError("Seleccione una clínica.");
       return this.irA(4);
     }
-    return undefined;
   }
 
   validarDocumento() {
@@ -216,15 +218,12 @@ export class AsistenteCitas extends Vista {
       return false;
     }
     const persona = personaDeDocumento(this._datos, tipo.idTipoDocumento, numero);
-    if (!persona) {
-      this.mostrarError("El documento no está registrado en GalenoSV. Verifique el tipo y el número.");
-      return false;
-    }
-    const clinicas = clinicasDePaciente(this._datos, persona.idPersona).sort((a, b) =>
-      String(a.nombre).localeCompare(String(b.nombre))
-    );
+    const clinicas = persona
+      ? clinicasDePaciente(this._datos, persona.idPersona).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)))
+      : [];
+    // Mismo mensaje si el documento no existe o no es de un paciente: la pantalla es pública.
     if (clinicas.length === 0) {
-      this.mostrarError("El documento no tiene clínicas registradas como paciente.");
+      this.mostrarError("No hay citas registradas con ese documento. Verifique el tipo y el número.");
       return false;
     }
     this._persona = persona;

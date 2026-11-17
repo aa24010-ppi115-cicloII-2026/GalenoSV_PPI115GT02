@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import { listarPendientes, vaciarPendientes } from "../js/pendientes.js";
-import { API, listar, listarTodo, obtener, crear, crearConId, actualizar, eliminar } from "../js/api.js";
+import { listarPendientes } from "../js/pendientes.js";
+import { API, listar, listarTodo, crear, crearConId, actualizar, eliminar } from "../js/api.js";
 
 const respuestaJson = (cuerpo, estado = 200, cabeceras = {}) =>
   new Response(JSON.stringify(cuerpo), {
@@ -72,15 +72,6 @@ describe("api.js", () => {
     const datos = await listarTodo("roles");
     expect(datos).to.deep.equal([]);
     expect(fetchFalso.calledOnce).to.be.true;
-  });
-
-  it("obtiene un registro por id", async () => {
-    fetchFalso.resolves(respuestaJson({ idRol: "abc", nombre: "Odontólogo" }));
-
-    const resultado = await obtener("roles", "abc");
-
-    expect(fetchFalso.firstCall.args[0]).to.equal(`${API}/roles/abc`);
-    expect(resultado).to.deep.equal({ idRol: "abc", nombre: "Odontólogo" });
   });
 
   it("crea un registro y devuelve la cabecera Location", async () => {
@@ -158,7 +149,6 @@ describe("api.js", () => {
       setItem: (clave, valor) => almacen.set(clave, valor),
       removeItem: (clave) => almacen.delete(clave),
     };
-    vaciarPendientes();
     Object.defineProperty(globalThis.navigator, "onLine", { value: false, configurable: true });
     try {
       await crear("roles", { nombre: "Sin red" });
@@ -171,7 +161,6 @@ describe("api.js", () => {
       expect(fetchFalso.called).to.be.false;
     } finally {
       Object.defineProperty(globalThis.navigator, "onLine", { value: true, configurable: true });
-      vaciarPendientes();
       delete globalThis.localStorage;
     }
   });
