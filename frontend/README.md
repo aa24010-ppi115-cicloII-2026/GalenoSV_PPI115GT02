@@ -105,16 +105,12 @@ Endpoints nuevos que usa el frontend:
 
 El resto de la API (20 recursos CRUD con paginacion `first/max`) no se modifico.
 
-## 7. Datos de demostración
+## 7. Acceso de empleados
 
 El acceso de empleados se hace con **tipo y número de documento** (sin contraseña, tal como
-requiere el enunciado). Datos de ejemplo cargados en la base:
-
-| Documento    | Persona        | Rol           |
-| ------------ | -------------- | ------------- |
-| `01234567-8` | José Torres    | Odontólogo    |
-| `02345678-9` | María López    | Paciente      |
-| `03456789-0` | Ana Ramírez    | Recepcionista |
+requiere el enunciado). Entra cualquier persona registrada en la base con un rol distinto de
+Paciente; quien solo es paciente consulta sus citas desde «Buscar citas». El repositorio no
+incluye datos: se usan los registros de la base de datos de la clínica.
 
 ## 8. Notas de implementación
 
