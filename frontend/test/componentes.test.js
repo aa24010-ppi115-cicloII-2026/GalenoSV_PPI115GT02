@@ -1354,26 +1354,39 @@ describe("componentes Web Components", () => {
   describe("App shell y PWA", () => {
     it("pwa-instalar muestra el botón cuando el navegador ofrece instalar", async () => {
       const instalar = montar("pwa-instalar");
-      await esperar(() => instalar.shadowRoot.querySelector("button"));
-      expect(instalar.shadowRoot.querySelector("button").hidden).to.be.true;
+      await esperar(() => instalar.shadowRoot.querySelector(".tarjeta"));
+      const tarjeta = instalar.shadowRoot.querySelector(".tarjeta");
+      expect(tarjeta.hidden).to.be.true;
       const prompt = sinon.spy();
       const evento = new dom.window.Event("beforeinstallprompt");
       evento.prompt = prompt;
       evento.userChoice = Promise.resolve({ outcome: "accepted" });
       dom.window.dispatchEvent(evento);
-      await esperar(() => !instalar.shadowRoot.querySelector("button").hidden);
-      instalar.shadowRoot.querySelector("button").click();
+      await esperar(() => !tarjeta.hidden);
+      instalar.shadowRoot.querySelector("#instalar").click();
       await esperar(() => prompt.called);
-      expect(instalar.shadowRoot.querySelector("button").hidden).to.be.true;
+      expect(tarjeta.hidden).to.be.true;
     });
 
-    it("app-shell ubica el botón de instalar en el encabezado, sin flotar sobre el contenido", async () => {
+    it("pwa-instalar se puede cerrar con «Ahora no» sin abrir la instalación", async () => {
+      const instalar = montar("pwa-instalar");
+      await esperar(() => instalar.shadowRoot.querySelector(".tarjeta"));
+      const tarjeta = instalar.shadowRoot.querySelector(".tarjeta");
+      const evento = new dom.window.Event("beforeinstallprompt");
+      evento.prompt = sinon.spy();
+      dom.window.dispatchEvent(evento);
+      await esperar(() => !tarjeta.hidden);
+      instalar.shadowRoot.querySelector('[aria-label="Ahora no"]').click();
+      expect(tarjeta.hidden).to.be.true;
+      expect(evento.prompt.called).to.be.false;
+    });
+
+    it("app-shell muestra la invitación a instalar abajo a la derecha, fuera del encabezado", async () => {
       const shell = montar("app-shell");
-      await esperar(() => shell.shadowRoot.querySelector("header pwa-instalar"));
-      const instalar = shell.shadowRoot.querySelector("header pwa-instalar");
-      await esperar(() => instalar.shadowRoot.querySelector("button"));
-      expect(instalar.estilos).to.not.contain("position: fixed");
-      expect(shell.shadowRoot.querySelector("main pwa-instalar, footer pwa-instalar")).to.be.null;
+      await esperar(() => shell.shadowRoot.querySelector("pwa-instalar"));
+      const instalar = shell.shadowRoot.querySelector("pwa-instalar");
+      expect(shell.shadowRoot.querySelector("header pwa-instalar")).to.be.null;
+      expect(instalar.estilos).to.match(/position: fixed; right: 1rem; bottom: 0\.75rem/);
     });
 
     it("app-shell muestra el aviso de trabajo sin conexión", async () => {

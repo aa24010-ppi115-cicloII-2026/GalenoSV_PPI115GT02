@@ -121,13 +121,13 @@ export class AppShell extends Vista {
             <button class="enlace" data-ruta="buscar" type="button" aria-current="page">Buscar citas</button>
             <button class="enlace" id="acceso" data-ruta="acceso" type="button">Acceso empleados</button>
           </nav>
-          <pwa-instalar></pwa-instalar>
           <div class="usuario"></div>
         </div>
       </header>
       <div class="estado-conexion" id="estado-conexion" hidden role="status"></div>
       <main class="contenedor" id="vista" tabindex="-1"></main>
       <footer class="contenedor">PPI115 2026 · GalenoSV · Aplicación web progresiva</footer>
+      <pwa-instalar></pwa-instalar>
       <ui-toast></ui-toast>
     `);
 

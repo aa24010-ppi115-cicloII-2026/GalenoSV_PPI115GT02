@@ -6,7 +6,7 @@ export class UiToast extends Vista {
       #lista {
         position: fixed;
         right: 1rem;
-        bottom: 3.6rem;
+        bottom: 5.25rem;
         display: grid;
         gap: 0.5rem;
         z-index: 50;
