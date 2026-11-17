@@ -1,4 +1,4 @@
-const CACHE = "galenosv-v21";
+const CACHE = "galenosv-v22";
 const API = "http://localhost:9080";
 const RECURSOS = [
   "./",
@@ -108,12 +108,14 @@ async function datosPrimero(peticion) {
     }
     return respuesta;
   } catch {
+    // La API no respondió: se usa lo guardado y se marca para que la app avise al usuario.
     const guardada = await caches.match(peticion);
-    if (guardada) return guardada;
-    return new Response(JSON.stringify([]), {
-      status: 200,
-      headers: { "Content-Type": "application/json", "X-Sin-Conexion": "true" },
-    });
+    const cabeceras = new Headers(guardada?.headers ?? { "Content-Type": "application/json" });
+    cabeceras.set("X-Sin-Conexion", "true");
+    if (guardada) return new Response(await guardada.blob(), { status: guardada.status, headers: cabeceras });
+    // Sin copia guardada no se inventa una lista vacía: la vista muestra que no pudo cargar.
+    const mensaje = "El servidor de GalenoSV no responde y no hay datos guardados en este dispositivo.";
+    return new Response(JSON.stringify({ mensaje }), { status: 503, headers: cabeceras });
   }
 }
 

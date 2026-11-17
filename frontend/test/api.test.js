@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import { listarPendientes } from "../js/pendientes.js";
-import { API, listar, listarTodo, crear, crearConId, actualizar, eliminar } from "../js/api.js";
+import { API, listar, listarTodo, crear, crearConId, actualizar, eliminar, servicioNoResponde } from "../js/api.js";
 
 const respuestaJson = (cuerpo, estado = 200, cabeceras = {}) =>
   new Response(JSON.stringify(cuerpo), {
@@ -163,6 +163,22 @@ describe("api.js", () => {
       Object.defineProperty(globalThis.navigator, "onLine", { value: true, configurable: true });
       delete globalThis.localStorage;
     }
+  });
+
+  it("si hay red pero el servidor no responde lo indica con un mensaje claro y se recupera al volver", async () => {
+    fetchFalso.rejects(new TypeError("Failed to fetch"));
+    const error = await capturarError(crear("roles", { nombre: "Nuevo" }));
+    expect(error.message).to.equal("No se pudo contactar al servidor de GalenoSV. Intente de nuevo en unos minutos.");
+    expect(servicioNoResponde()).to.be.true;
+
+    // El service worker respondió con lo guardado en el dispositivo.
+    fetchFalso.resolves(respuestaJson([], 200, { "X-Total-Count": "0", "X-Sin-Conexion": "true" }));
+    await listar("roles");
+    expect(servicioNoResponde()).to.be.true;
+
+    fetchFalso.resolves(respuestaJson([], 200, { "X-Total-Count": "0" }));
+    await listar("roles");
+    expect(servicioNoResponde()).to.be.false;
   });
 
   it("propaga el estado 409 de un conflicto de llave foránea", async () => {

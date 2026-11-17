@@ -18,9 +18,30 @@ async function errorDe(respuesta) {
   return error;
 }
 
+let servicioCaido = false;
+
+/** Hay red, pero la API no respondió: la app trabaja con lo guardado en el dispositivo. */
+export function servicioNoResponde() {
+  return servicioCaido;
+}
+
+function marcarServicio(caido) {
+  if (caido === servicioCaido) return;
+  servicioCaido = caido;
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("servicio-cambio"));
+}
+
 async function pedir(ruta, opciones = {}) {
   const cabeceras = { Accept: "application/json", "Content-Type": "application/json", ...(opciones.headers ?? {}) };
-  const respuesta = await fetch(`${API}/${ruta}`, { ...opciones, headers: cabeceras });
+  let respuesta;
+  try {
+    respuesta = await fetch(`${API}/${ruta}`, { ...opciones, headers: cabeceras });
+  } catch {
+    marcarServicio(true);
+    throw new Error("No se pudo contactar al servidor de GalenoSV. Intente de nuevo en unos minutos.");
+  }
+  // El service worker marca así lo que respondió desde el dispositivo porque la API no contestó.
+  marcarServicio(respuesta.headers.get("X-Sin-Conexion") === "true");
   if (!respuesta.ok) throw await errorDe(respuesta);
   return respuesta;
 }

@@ -50,6 +50,8 @@ describe("manifest PWA", () => {
     expect(serviceWorker).to.contain('"./js/pendientes.js"');
     expect(serviceWorker).to.contain('addEventListener("fetch"');
     expect(serviceWorker).to.contain('datosPrimero');
+    expect(serviceWorker).to.contain('cabeceras.set("X-Sin-Conexion", "true")');
+    expect(serviceWorker).to.contain("status: 503");
     expect(serviceWorker).to.contain('self.skipWaiting()');
     expect(serviceWorker).to.contain('clients.claim()');
   });

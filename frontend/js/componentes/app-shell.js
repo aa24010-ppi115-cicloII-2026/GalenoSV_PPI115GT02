@@ -1,7 +1,7 @@
 import { Vista, escapar } from "../base.js";
 import { leerSesion, cerrarSesion, alCambiarSesion } from "../estado.js";
 import { estaConectado, sincronizar, listarPendientes } from "../pendientes.js";
-import { ejecutarPendiente } from "../api.js";
+import { ejecutarPendiente, servicioNoResponde } from "../api.js";
 import { limpiarCache } from "../datos.js";
 
 const VISTAS = {
@@ -152,6 +152,7 @@ export class AppShell extends Vista {
     });
     window.addEventListener("offline", () => this.actualizarConexion());
     window.addEventListener("pendientes-cambio", () => this.actualizarConexion());
+    window.addEventListener("servicio-cambio", () => this.actualizarConexion());
     this.actualizarConexion();
     this._quitarEscucha = alCambiarSesion(() => this.actualizarSesion());
     this.actualizarSesion();
@@ -166,13 +167,15 @@ export class AppShell extends Vista {
     const aviso = this.q("#estado-conexion");
     if (!aviso) return;
     const pendientes = listarPendientes().length;
-    if (estaConectado()) {
+    const sinRed = !estaConectado();
+    if (!sinRed && !servicioNoResponde()) {
       aviso.hidden = true;
       aviso.innerHTML = "";
       return;
     }
+    const motivo = sinRed ? "Sin conexión" : "El servidor de GalenoSV no responde";
     aviso.hidden = false;
-    aviso.innerHTML = `<span>Sin conexión: los datos mostrados son los guardados en este dispositivo${
+    aviso.innerHTML = `<span>${motivo}: los datos mostrados son los guardados en este dispositivo${
       pendientes > 0 ? ` y hay ${pendientes} cambio(s) pendiente(s) por enviar` : ""
     }.</span>`;
   }

@@ -5,7 +5,7 @@ import { datosBase, indizar, stubApi, esperar } from "./ayudas.js";
 import { limpiarCache, consultaCompleta, resumenCita } from "../js/datos.js";
 import { guardarSesion } from "../js/estado.js";
 import { listarPendientes, sincronizar, encolar } from "../js/pendientes.js";
-import { ejecutarPendiente } from "../js/api.js";
+import { ejecutarPendiente, listar } from "../js/api.js";
 
 let documentoImprimible;
 let lineasTicket;
@@ -1346,6 +1346,20 @@ describe("componentes Web Components", () => {
       Object.defineProperty(globalThis.navigator, "onLine", { value: true, configurable: true });
       dom.window.dispatchEvent(new dom.window.Event("online"));
       await esperar(() => shell.shadowRoot.querySelector("#estado-conexion").hidden);
+    });
+
+    it("app-shell avisa que el servidor no responde aunque haya red, y quita el aviso cuando vuelve", async () => {
+      const shell = montar("app-shell");
+      await esperar(() => shell.shadowRoot.querySelector("#estado-conexion"));
+      fetch.rejects(new TypeError("Failed to fetch"));
+      await listar("roles").catch(() => {});
+      const aviso = shell.shadowRoot.querySelector("#estado-conexion");
+      expect(aviso.hidden).to.be.false;
+      expect(aviso.textContent).to.contain("El servidor de GalenoSV no responde");
+      sinon.restore();
+      stubApi(datosBase());
+      await listar("roles");
+      expect(shell.shadowRoot.querySelector("#estado-conexion").hidden).to.be.true;
     });
 
     it("app-shell cuenta los cambios sin conexión en cuanto se guardan y vacía la cola al volver la red", async () => {
