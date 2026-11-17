@@ -17,6 +17,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TicketServic
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Consulta;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimiento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimientoPaso;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.OrdenExamen;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPaso;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPasoSecuencia;
 
@@ -61,16 +62,18 @@ public class TicketServiceTest {
     }
 
     @Test
-    void ordenaLosPasosPorSecuenciaYMarcaElSiguienteEnCurso() {
+    void ordenaLosPasosPorSecuenciaYMarcaElSiguientePorIniciar() {
         registros(registro("FINALIZADO", 9));
 
         List<String> lineas = servicio.lineas(idConsulta);
 
         assertEquals(List.of(
                 "   Evaluación inicial | Completado | 14/11/2026 09:00 | Sin asignar",
-                "   Profilaxis | En curso | Sin fecha | Sin asignar",
+                "   Profilaxis | Por iniciar | Sin fecha | Sin asignar",
                 "   Indicaciones finales | Pendiente | Sin fecha | Sin asignar"), pasos(lineas));
         assertTrue(lineas.contains("Estado: En proceso"), "Faltan dos pasos: la cita no está completada");
+        assertTrue(lineas.contains("Ticket: #" + idConsulta.toString().substring(0, 8).toUpperCase()),
+                "El ticket usa el mismo código corto que el frontend");
     }
 
     @Test
@@ -81,6 +84,27 @@ public class TicketServiceTest {
 
         assertTrue(lineas.get(0).startsWith("   Evaluación inicial | Completado | 14/11/2026 09:00"));
         assertTrue(lineas.get(1).startsWith("   Profilaxis | Completado | 14/11/2026 10:00"));
+    }
+
+    @Test
+    void elPasoIniciadoSinTerminarQuedaEnCurso() {
+        registros(registro("FINALIZADO", 9), registro("EN_PROCESO", 10));
+
+        List<String> lineas = pasos(servicio.lineas(idConsulta));
+
+        assertTrue(lineas.get(1).startsWith("   Profilaxis | En curso | 14/11/2026 10:00"));
+        assertTrue(lineas.get(2).startsWith("   Indicaciones finales | Pendiente"));
+    }
+
+    @Test
+    void lasOrdenesDeExamenNoRepitenLaPalabraExamen() {
+        ConsultaProcedimientoPaso evaluado = registro("FINALIZADO", 9);
+        registros(evaluado);
+        OrdenExamen orden = new OrdenExamen();
+        orden.setIndicaciones("Examen: Hemograma completo — En ayunas");
+        when(ordenExamenDAO.findByConsultaProcedimientoPaso(evaluado.getIdConsultaProcedimientoPaso())).thenReturn(List.of(orden));
+
+        assertTrue(servicio.lineas(idConsulta).contains("   Examen ordenado: Hemograma completo — En ayunas"));
     }
 
     @Test

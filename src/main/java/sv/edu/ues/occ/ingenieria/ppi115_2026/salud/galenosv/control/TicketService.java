@@ -63,7 +63,8 @@ public class TicketService {
         lineas.add("Motivo: " + (consulta.getObservaciones() == null || consulta.getObservaciones().isBlank()
                 ? "Consulta registrada" : consulta.getObservaciones()));
         lineas.add("Estado: " + estado(consulta));
-        lineas.add("Ticket: #" + consulta.getIdConsulta());
+        // Mismo código corto que muestra el frontend: el primer bloque del UUID de la consulta.
+        lineas.add("Ticket: #" + consulta.getIdConsulta().toString().split("-")[0].toUpperCase());
         lineas.add("");
         lineas.add("PROCEDIMIENTOS Y PASOS");
 
@@ -84,7 +85,8 @@ public class TicketService {
                 if (finalizado(registro)) {
                     etiqueta = "Completado";
                 } else if (registro != null || !actualAsignado) {
-                    etiqueta = "En curso";
+                    // El siguiente paso que nadie ha iniciado aún no está en curso.
+                    etiqueta = registro != null ? "En curso" : "Por iniciar";
                     actualAsignado = true;
                 }
                 lineas.add("   " + (definicionPaso == null ? "Paso" : definicionPaso.getNombre())
@@ -181,7 +183,9 @@ public class TicketService {
         for (ConsultaProcedimientoPaso registro : consultaProcedimientoPasoDAO
                 .findByConsultaProcedimiento(procedimiento.getIdConsultaProcedimiento())) {
             for (OrdenExamen orden : ordenExamenDAO.findByConsultaProcedimientoPaso(registro.getIdConsultaProcedimientoPaso())) {
-                ordenes.add("Examen ordenado: " + (orden.getIndicaciones() == null ? "Sin indicaciones" : orden.getIndicaciones()));
+                String indicaciones = orden.getIndicaciones() == null ? "Sin indicaciones" : orden.getIndicaciones();
+                // El frontend guarda "Examen: <nombre> — <indicaciones>"; no se repite la palabra.
+                ordenes.add("Examen ordenado: " + indicaciones.replaceFirst("^Examen:\\s*", ""));
             }
         }
         return ordenes;
