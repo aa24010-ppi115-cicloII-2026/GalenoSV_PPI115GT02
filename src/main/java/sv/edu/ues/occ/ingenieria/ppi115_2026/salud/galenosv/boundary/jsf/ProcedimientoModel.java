@@ -73,7 +73,6 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
 
     private String idPasoAnteriorSeleccionadoSecuencia;
     private String idPasoSeleccionadoSecuencia;
-    private String idExamenAgregar;
     private Rol rolAutocompleteSeleccionado;
     private Examen examenAutocompleteSeleccionado;
     private boolean dependenciaBloqueada;
@@ -222,7 +221,6 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         idsExamenesPaso = new ArrayList<>();
         examenesTemporalesPaso = new ArrayList<>();
         examenPasoSeleccionadoTemporal = null;
-        idExamenAgregar = null;
         rolAutocompleteSeleccionado = null;
         examenAutocompleteSeleccionado = null;
         dependenciaBloqueada = false;
@@ -271,6 +269,24 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
             return;
         }
         prepararPasoDependiente(pasoNodoSeleccionado.getData());
+    }
+
+    public void prepararEdicionPasoSeleccionado() {
+        if (pasoNodoSeleccionado == null || pasoNodoSeleccionado.getData() == null) {
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN,
+                    "Seleccione un paso", "Seleccione en el árbol el paso a modificar"));
+            return;
+        }
+        prepararEdicionPasoCompleto(pasoNodoSeleccionado.getData());
+    }
+
+    public void eliminarPasoSeleccionado() {
+        if (pasoNodoSeleccionado == null || pasoNodoSeleccionado.getData() == null) {
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN,
+                    "Seleccione un paso", "Seleccione en el árbol el paso a eliminar"));
+            return;
+        }
+        eliminarPasoCompleto(pasoNodoSeleccionado.getData());
     }
 
     @SuppressWarnings("unchecked")
@@ -328,19 +344,6 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         if (!existe) {
             examenesTemporalesPaso.add(examen);
             idsExamenesPaso.add(id);
-        }
-    }
-
-    public void agregarExamenAgregado() {
-        if (idExamenAgregar == null || idExamenAgregar.isBlank()) {
-            return;
-        }
-        try {
-            Examen examen = examenDAO.find(UUID.fromString(idExamenAgregar));
-            agregarExamenPaso(examen);
-            idExamenAgregar = null;
-        } catch (IllegalArgumentException ex) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Examen inválido", ex.getMessage()));
         }
     }
 
@@ -684,14 +687,6 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
         }
     }
 
-    public List<Rol> getRoles() {
-        return rolDAO.findActivos();
-    }
-
-    public List<Examen> getExamenes() {
-        return examenDAO.findActivos();
-    }
-
     public TreeNode<ProcedimientoPaso> getArbolPasos() {
         if (arbolPasos != null) {
             return arbolPasos;
@@ -792,8 +787,6 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
 
     public String getIdPasoAnteriorSeleccionadoSecuencia() { return idPasoAnteriorSeleccionadoSecuencia; }
     public void setIdPasoAnteriorSeleccionadoSecuencia(String idPasoAnteriorSeleccionadoSecuencia) { this.idPasoAnteriorSeleccionadoSecuencia = idPasoAnteriorSeleccionadoSecuencia; }
-    public String getIdExamenAgregar() { return idExamenAgregar; }
-    public void setIdExamenAgregar(String idExamenAgregar) { this.idExamenAgregar = idExamenAgregar; }
     public Rol getRolAutocompleteSeleccionado() { return rolAutocompleteSeleccionado; }
     public void setRolAutocompleteSeleccionado(Rol rolAutocompleteSeleccionado) { this.rolAutocompleteSeleccionado = rolAutocompleteSeleccionado; }
     public Examen getExamenAutocompleteSeleccionado() { return examenAutocompleteSeleccionado; }

@@ -73,7 +73,7 @@
                         <p:tab title="Pasos" disabled="#{procedimientoModel.estado eq 'CREAR'}">
                             <h:panelGroup id="panelPasos" layout="block">
                                 <h:panelGroup rendered="#{not procedimientoModel.capturandoPaso}">
-                                    <div class="video-actions">
+                                    <h:panelGroup id="toolbarPasos" layout="block" styleClass="video-actions">
                                         <p:commandButton value="Nuevo Paso Inicial" icon="pi pi-plus"
                                                          actionListener="#{procedimientoModel.prepararCapturaPaso}"
                                                          process="@this" resetValues="true" update="panelPasos"
@@ -85,12 +85,31 @@
                                                          disabled="#{empty procedimientoModel.pasoNodoSeleccionado or procedimientoModel.pasoSeleccionadoEsFin}"
                                                          title="#{procedimientoModel.pasoSeleccionadoEsFin ? 'El paso seleccionado indica el fin y no admite dependientes' : 'Agregar paso dependiente del seleccionado'}"
                                                          rendered="#{not procedimientoModel.puedeCrearPasoInicial}"/>
-                                    </div>
+                                        <p:commandButton id="btnModificarPasoSel"
+                                                         value="Modificar seleccionado" icon="pi pi-pencil"
+                                                         actionListener="#{procedimientoModel.prepararEdicionPasoSeleccionado}"
+                                                         process="@this"
+                                                         resetValues="true" update="panelPasos"
+                                                         disabled="#{empty procedimientoModel.pasoNodoSeleccionado}"
+                                                         title="Modificar paso seleccionado"/>
+                                        <p:commandButton id="btnEliminarPasoSel"
+                                                         value="Eliminar seleccionado" icon="pi pi-trash"
+                                                         actionListener="#{procedimientoModel.eliminarPasoSeleccionado}"
+                                                         process="@this"
+                                                         update="panelPasos :frmProcedimiento:mensajes :avisos"
+                                                         disabled="#{empty procedimientoModel.pasoNodoSeleccionado}"
+                                                         title="Eliminar paso seleccionado"
+                                                         styleClass="ui-button-danger">
+                                            <p:confirm header="Eliminar paso"
+                                                       message="¿Desea eliminar el paso seleccionado?"
+                                                       icon="pi pi-exclamation-triangle"/>
+                                        </p:commandButton>
+                                    </h:panelGroup>
                                     <p:treeTable id="arbolPasos" value="#{procedimientoModel.arbolPasos}" var="paso"
                                                  emptyMessage="No se encontraron pasos" selectionMode="single"
                                                  selection="#{procedimientoModel.pasoNodoSeleccionado}">
                                         <p:ajax event="select" listener="#{procedimientoModel.onPasoNodoSelect}"
-                                                update=":frmProcedimiento:tabsProcedimiento:btnPasoDependiente"/>
+                                                update="toolbarPasos"/>
                                         <p:column headerText="Nombre">
                                             <h:outputText value="#{paso.nombre}"/>
                                         </p:column>
@@ -102,28 +121,6 @@
                                         </p:column>
                                         <p:column headerText="Indica fin">
                                             <h:outputText value="#{paso.indicaFin ? 'Sí' : 'No'}"/>
-                                        </p:column>
-                                        <p:column headerText="Acciones" style="width:165px;text-align:center">
-                                            <p:commandButton icon="pi pi-sitemap" title="#{paso.indicaFin ? 'Paso final: no admite dependientes' : 'Crear paso dependiente'}"
-                                                             disabled="#{paso.indicaFin}"
-                                                             actionListener="#{procedimientoModel.prepararPasoDependiente(paso)}"
-                                                             process="@this"
-                                                             resetValues="true" update=":frmProcedimiento:tabsProcedimiento:panelPasos :frmProcedimiento:mensajes"
-                                                             style="margin-right:4px"/>
-                                            <p:commandButton icon="pi pi-pencil" title="Modificar paso"
-                                                             actionListener="#{procedimientoModel.prepararEdicionPasoCompleto(paso)}"
-                                                             process="@this"
-                                                             resetValues="true" update=":frmProcedimiento:tabsProcedimiento:panelPasos"
-                                                             style="margin-right:4px"/>
-                                            <p:commandButton icon="pi pi-trash" title="Eliminar paso"
-                                                             actionListener="#{procedimientoModel.eliminarPasoCompleto(paso)}"
-                                                             process="@this"
-                                                             update=":frmProcedimiento:tabsProcedimiento:panelPasos :frmProcedimiento:mensajes :avisos"
-                                                             styleClass="ui-button-danger">
-                                                <p:confirm header="Eliminar paso"
-                                                           message="¿Desea eliminar el paso seleccionado?"
-                                                           icon="pi pi-exclamation-triangle"/>
-                                            </p:commandButton>
                                         </p:column>
                                     </p:treeTable>
                                 </h:panelGroup>

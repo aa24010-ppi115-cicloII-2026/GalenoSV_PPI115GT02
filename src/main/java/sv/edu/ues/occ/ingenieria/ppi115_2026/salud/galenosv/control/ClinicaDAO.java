@@ -7,7 +7,6 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Clinica;
 
@@ -24,23 +23,6 @@ public class ClinicaDAO extends DefaultDAO<Clinica> {
     public ClinicaDAO() {
         super(Clinica.class);
     }
-
-    public List<Clinica> buscarPorNombre(String nombre) {
-        try {
-            if (nombre == null || nombre.trim().isEmpty()) {
-                throw new IllegalArgumentException("nombre no puede ser nulo");
-            }
-            String jpql = "SELECT c FROM Clinica c WHERE c.nombre = :nombre";
-            TypedQuery<Clinica> q = getEntityManager().createQuery(jpql, Clinica.class);
-            q.setParameter("nombre", nombre.trim());
-            return q.getResultList();
-        } catch (IllegalArgumentException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new IllegalStateException("Error en buscarPorNombre", ex);
-        }
-    }
-
 
     public List<Clinica> findActivas() {
         return getEntityManager().createQuery(

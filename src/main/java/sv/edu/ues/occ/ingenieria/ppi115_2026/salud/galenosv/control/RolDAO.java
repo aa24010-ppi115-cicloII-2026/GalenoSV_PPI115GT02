@@ -7,7 +7,6 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Rol;
 
@@ -24,23 +23,6 @@ public class RolDAO extends DefaultDAO<Rol> {
     public RolDAO() {
         super(Rol.class);
     }
-
-    public List<Rol> buscarPorNombre(String nombre) {
-        try {
-            if (nombre == null || nombre.trim().isEmpty()) {
-                throw new IllegalArgumentException("nombre no puede ser nulo");
-            }
-            String jpql = "SELECT r FROM Rol r WHERE r.nombre = :nombre";
-            TypedQuery<Rol> q = getEntityManager().createQuery(jpql, Rol.class);
-            q.setParameter("nombre", nombre.trim());
-            return q.getResultList();
-        } catch (IllegalArgumentException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new IllegalStateException("Error en buscarPorNombre", ex);
-        }
-    }
-
 
     public boolean existeNombre(String nombre, java.util.UUID excluirId) {
         if (nombre == null || nombre.isBlank()) {

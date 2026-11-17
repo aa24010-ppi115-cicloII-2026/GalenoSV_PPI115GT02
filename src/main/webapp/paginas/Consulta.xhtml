@@ -203,7 +203,12 @@
                                      process="@this" update="filtroPaciente filtroDocumento filtroRol filtroMedio tablaPacientes"/>
                 </div>
                 <p:dataTable id="tablaPacientes" value="#{consultaModel.pacientesFiltrados}" var="paciente"
-                             emptyMessage="No se encontraron pacientes" paginator="true" rows="8">
+                             emptyMessage="No se encontraron pacientes" paginator="true" rows="8"
+                             selectionMode="single" selection="#{consultaModel.pacienteSeleccionado}"
+                             rowKey="#{paciente.idPersonaRol}">
+                    <p:ajax event="rowSelect" listener="#{consultaModel.onPacienteSelect}"
+                            process="@this" update=":frmConsulta:tabsConsulta:consultaPaciente"
+                            oncomplete="PF('dlgPacientes').hide()"/>
                     <p:column headerText="Persona">
                         <h:outputText value="#{paciente.idPersona.nombres} #{paciente.idPersona.apellidos}"/>
                     </p:column>
@@ -215,12 +220,6 @@
                     </p:column>
                     <p:column headerText="Contacto">
                         <h:outputText value="#{consultaModel.mediosPaciente(paciente)}"/>
-                    </p:column>
-                    <p:column style="width:105px">
-                        <p:commandButton value="Seleccionar"
-                                         actionListener="#{consultaModel.seleccionarPaciente(paciente)}"
-                                         process="@this" update=":frmConsulta:tabsConsulta:consultaPaciente"
-                                         oncomplete="PF('dlgPacientes').hide()"/>
                     </p:column>
                 </p:dataTable>
             </p:dialog>

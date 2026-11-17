@@ -56,15 +56,6 @@ public class ConsultaDAO extends DefaultDAO<Consulta> {
     }
 
 
-    public java.util.List<Consulta> findByPersonaRol(java.util.UUID id) {
-        if (id == null) {
-            return java.util.Collections.emptyList();
-        }
-        return getEntityManager().createQuery(
-                "SELECT e FROM Consulta e WHERE e.idPersonaRol.idPersonaRol = :id ORDER BY e.idConsulta", Consulta.class)
-                .setParameter("id", id).setMaxResults(1000).getResultList();
-    }
-
     public Long countByPersonaRol(java.util.UUID id) {
         if (id == null) {
             return 0L;
