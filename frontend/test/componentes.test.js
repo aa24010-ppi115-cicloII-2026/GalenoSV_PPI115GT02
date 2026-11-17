@@ -438,6 +438,19 @@ describe("componentes Web Components", () => {
     });
 
     describe("cards de citas", () => {
+      it("cita-card ofrece «Atender consulta» con pasos pendientes y «Ver atención» cuando ya terminó", () => {
+        sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
+        const indice = indizar(datosBase());
+        const cita = resumenCita(indice, indice.porId.consultas.get(5000));
+        const boton = (c) => montar("cita-card", { cita: c }).shadowRoot.querySelector('[data-accion="atender"]').textContent;
+        expect(boton(cita)).to.equal("Atender consulta");
+        const terminada = {
+          ...cita,
+          procedimientos: cita.procedimientos.map((p) => ({ ...p, pasos: p.pasos.map((paso) => ({ ...paso, estado: "completado" })) })),
+        };
+        expect(boton(terminada)).to.equal("Ver atención");
+      });
+
       it("cita-card emite ver-ticket y navega al registro de atención", () => {
         sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
         const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
@@ -567,6 +580,31 @@ describe("componentes Web Components", () => {
         }
       });
 
+      it("el ticket incluye las órdenes de examen del procedimiento sin repetir la palabra «Examen»", () => {
+        const base = datosBase();
+        base.ordenesExamen.push({
+          idOrdenExamen: 400,
+          idConsultaProcedimientoPaso: 9000,
+          fechaCreacion: "2026-11-12T09:20:00-06:00",
+          indicaciones: "Examen: Radiografía periapical — Sector inferior",
+        });
+        const indice = indizar(base);
+        const cita = resumenCita(indice, indice.porId.consultas.get(5000));
+        const filas = [...montar("ticket-cita", { cita }).shadowRoot.querySelectorAll("tbody tr")].map((fila) =>
+          [...fila.cells].map((celda) => celda.textContent)
+        );
+        expect(filas.at(-1).slice(1, 3)).to.deep.equal(["Examen ordenado", "Ordenado"]);
+        expect(filas.at(-1)[4]).to.equal("Radiografía periapical — Sector inferior");
+        expect(documentoImprimible(cita)).to.contain("Radiografía periapical — Sector inferior");
+        expect(lineasTicket(cita)).to.include("   Examen ordenado: Radiografía periapical — Sector inferior");
+      });
+
+      it("en pantallas angostas cada celda del ticket lleva su etiqueta para leerse como tarjeta", () => {
+        const ticket = montar("ticket-cita", { cita: citaDePrueba() }).shadowRoot;
+        const etiquetas = [...ticket.querySelector("tbody tr").cells].map((celda) => celda.dataset.etiqueta);
+        expect(etiquetas).to.deep.equal(["Procedimiento", "Paso", "Estado", "Fecha", "Observaciones"]);
+      });
+
       it("ticket-cita muestra un código corto del ticket en lugar del identificador completo", () => {
         const cita = resumenCita(indizar(datosBase()), indizar(datosBase()).porId.consultas.get(5000));
         cita.consulta = { ...cita.consulta, idConsulta: "9fcdae6b-1100-401c-881a-892650484990" };
@@ -576,14 +614,17 @@ describe("componentes Web Components", () => {
         expect(lineasTicket(cita)).to.include("Ticket: #9FCDAE6B");
       });
 
-      it("ticket-cita descarga el PDF desde el backend", async () => {
-        const ticket = montar("ticket-cita", { cita: citaDePrueba() });
+      it("ticket-cita descarga el PDF desde el backend con el código corto como nombre", async () => {
+        const cita = citaDePrueba();
+        cita.consulta = { ...cita.consulta, idConsulta: "9fcdae6b-1100-401c-881a-892650484990" };
+        const ticket = montar("ticket-cita", { cita });
         const { descargas, avisos } = capturarDescargas(ticket);
         ticket.shadowRoot.querySelector("[data-accion='descargar']").click();
         await esperar(() => descargas.length > 0 && avisos.length > 0);
-        expect(descargas[0]).to.equal("ticket-5000.pdf");
+        expect(peticionesTicket()[0].args[0]).to.contain("/tickets/consultas/9fcdae6b-1100-401c-881a-892650484990");
+        expect(descargas[0]).to.equal("ticket-9FCDAE6B.pdf");
         expect(peticionesTicket()[0].args[1].headers.Accept).to.equal("application/pdf");
-        expect(avisos[0]).to.match(/^Ticket PDF descargado/);
+        expect(avisos[0]).to.equal("Ticket PDF descargado.");
       });
 
       it("ticket-cita genera el PDF en el dispositivo cuando el backend falla", async () => {
@@ -839,6 +880,7 @@ describe("componentes Web Components", () => {
       await esperar(() => raiz.querySelector("#lista [role=alert]"));
       expect(tarjetas(raiz)).to.have.length(0);
       expect(raiz.querySelector("#lista").textContent).to.contain("posterior");
+      expect(raiz.querySelector("#rango-aviso").textContent).to.equal("");
     });
 
     it("usa buscadores para clínica, rol y paciente, y filtra por el paciente elegido", async () => {
@@ -1371,7 +1413,9 @@ describe("componentes Web Components", () => {
         const aviso = () => shell.shadowRoot.querySelector("#estado-conexion").textContent;
         expect(aviso()).to.not.contain("pendiente");
         encolar({ metodo: "DELETE", ruta: "ordenes-examen/400", cuerpo: null });
-        expect(aviso()).to.contain("hay 1 cambio(s) pendiente(s)");
+        expect(aviso()).to.contain("hay 1 cambio pendiente por enviar");
+        encolar({ metodo: "DELETE", ruta: "ordenes-examen/401", cuerpo: null });
+        expect(aviso()).to.contain("hay 2 cambios pendientes por enviar");
 
         conRed();
         dom.window.dispatchEvent(new dom.window.Event("online"));

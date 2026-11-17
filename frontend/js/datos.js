@@ -300,6 +300,21 @@ export function documentoDePersona(datos, idPersona) {
   };
 }
 
+/** Órdenes de examen emitidas en los pasos de un procedimiento, sin repetir la palabra «Examen». */
+export function ordenesDeProcedimiento(datos, consultaProcedimiento) {
+  const registros = new Set(
+    datos.consultasProcedimientoPaso
+      .filter((registro) => registro.idConsultaProcedimiento === consultaProcedimiento.idConsultaProcedimiento)
+      .map((registro) => registro.idConsultaProcedimientoPaso)
+  );
+  return datos.ordenesExamen
+    .filter((orden) => registros.has(orden.idConsultaProcedimientoPaso))
+    .map((orden) => ({
+      fecha: orden.fechaCreacion ?? null,
+      texto: String(orden.indicaciones ?? "Sin indicaciones").replace(/^Examen:\s*/, ""),
+    }));
+}
+
 export function resumenCita(datos, consulta) {
   const personaRol = datos.porId.personasRol.get(consulta.idPersonaRol) ?? null;
   const paciente = personaRol ? datos.porId.personas.get(personaRol.idPersona) ?? null : null;
@@ -312,6 +327,7 @@ export function resumenCita(datos, consulta) {
       procedimiento: datos.porId.procedimientos.get(consultaProcedimiento.idProcedimiento) ?? null,
       notas: leerObservaciones(consultaProcedimiento.observaciones),
       pasos: pasosConRegistros(datos, consultaProcedimiento),
+      ordenes: ordenesDeProcedimiento(datos, consultaProcedimiento),
     }));
   return {
     consulta,

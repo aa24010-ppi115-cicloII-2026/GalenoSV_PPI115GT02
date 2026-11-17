@@ -55,7 +55,7 @@ public class TicketResource {
             if (datos == null) return RestUtil.error(404, "id", "No existe el registro");
             byte[] pdf = generar(datos);
             return Response.ok(pdf)
-                    .header("Content-Disposition", "attachment; filename=\"ticket-" + uuid + ".pdf\"")
+                    .header("Content-Disposition", "attachment; filename=\"ticket-" + datos.codigo + ".pdf\"")
                     .build();
         } catch (RuntimeException ex) {
             return RestUtil.error(500, "", "No se pudo generar el comprobante");

@@ -166,5 +166,4 @@ export function descargarPdf(nombre, titulo, lineas) {
   enlace.click();
   enlace.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
-  return bytes.length;
 }

@@ -1,4 +1,4 @@
-import { Vista, escapar, fechaHora, fechaCorta, ahoraISO } from "../base.js";
+import { Vista, escapar, fechaHora, fechaCorta, ahoraISO, cantidad } from "../base.js";
 import {
   cargarTodo,
   consultaCompleta,
@@ -559,7 +559,7 @@ export class AppConsulta extends Vista {
       });
       this.notificar(
         estaConectado()
-          ? `Se retrocedió al paso "${previo.paso.nombre}".`
+          ? `Se retrocedió al paso «${previo.paso.nombre}».`
           : `Retroceso guardado sin conexión: se enviará al recuperar la red.`,
         "ok"
       );
@@ -620,8 +620,8 @@ export class AppConsulta extends Vista {
       }
       this.notificar(
         estaConectado()
-          ? `${seleccionados.length} examen(es) asignado(s).`
-          : `${seleccionados.length} examen(es) guardado(s) sin conexión.`,
+          ? `${cantidad(seleccionados.length, "examen asignado", "exámenes asignados")}.`
+          : `${cantidad(seleccionados.length, "examen guardado", "exámenes guardados")} sin conexión.`,
         "ok"
       );
       await this.cargar(true);
@@ -646,7 +646,7 @@ export class AppConsulta extends Vista {
       for (const orden of ordenes) await eliminar("ordenes-examen", orden.idOrdenExamen);
       this.notificar(
         estaConectado()
-          ? `${ordenes.length} orden(es) de examen eliminada(s).`
+          ? `${cantidad(ordenes.length, "orden de examen eliminada", "órdenes de examen eliminadas")}.`
           : "Eliminación guardada sin conexión: se enviará al recuperar la red.",
         "ok"
       );

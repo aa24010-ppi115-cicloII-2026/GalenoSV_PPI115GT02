@@ -75,7 +75,8 @@ export class AsistenteCitas extends Vista {
       }
       @media (max-width: 620px) {
         form { padding: 1.1rem 1rem 1rem; }
-        ol.pasos li { font-size: 0; gap: 0; justify-content: center; }
+        /* Arriba: la etiqueta del paso actual puede ocupar varias líneas y la marca de los hechos va arriba. */
+        ol.pasos li { font-size: 0; gap: 0; justify-content: center; align-items: flex-start; }
         ol.pasos li[aria-current="step"] { font-size: 0.75rem; gap: 0.4rem; justify-content: flex-start; }
         .marca { left: 50%; margin-left: -0.425rem; }
         .rango { grid-template-columns: 1fr; }

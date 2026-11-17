@@ -8,17 +8,48 @@ function codigoTicket(idConsulta) {
   return String(idConsulta ?? "").split("-")[0].toUpperCase();
 }
 
+/** Filas del comprobante: cada paso con lo registrado y, al final de su procedimiento, las órdenes de examen. */
+function filasTicket(cita) {
+  return cita.procedimientos.flatMap(({ procedimiento, pasos, ordenes = [] }) => {
+    const nombre = procedimiento?.nombre ?? "Procedimiento";
+    return [
+      ...pasos.map(({ paso, registro, estado, notas }) => ({
+        procedimiento: nombre,
+        paso: paso.nombre,
+        estado: etiquetaPaso(estado, Boolean(registro)),
+        fecha: registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente",
+        // Lo registrado al completar el paso; el borrador del paso en curso no es parte del comprobante.
+        observaciones: notaDelPaso(notas ?? {}),
+      })),
+      ...ordenes.map((orden) => ({
+        procedimiento: nombre,
+        paso: "Examen ordenado",
+        estado: "Ordenado",
+        fecha: orden.fecha ? fechaHora(orden.fecha) : "—",
+        observaciones: orden.texto,
+      })),
+    ];
+  });
+}
+
+/** Filas de la tabla en HTML; cada celda lleva su etiqueta para mostrarse como tarjeta en pantallas angostas. */
+function tablaTicket(cita) {
+  const columnas = ["Procedimiento", "Paso", "Estado", "Fecha", "Observaciones"];
+  const filas = filasTicket(cita)
+    .map((fila) => {
+      const valores = [fila.procedimiento, fila.paso, fila.estado, fila.fecha, fila.observaciones || "—"];
+      return `<tr>${valores
+        .map((valor, i) => `<td data-etiqueta="${columnas[i]}"${i === 3 ? ' class="fecha"' : ""}>${escapar(valor)}</td>`)
+        .join("")}</tr>`;
+    })
+    .join("");
+  return `<table>
+    <thead><tr>${columnas.map((columna) => `<th>${columna}</th>`).join("")}</tr></thead>
+    <tbody>${filas || '<tr><td colspan="5">Sin pasos registrados.</td></tr>'}</tbody>
+  </table>`;
+}
+
 export function documentoImprimible(cita) {
-  const pasos = cita.procedimientos.flatMap(({ procedimiento, pasos: lista }) =>
-    lista.map(({ paso, registro, estado, notas }) => ({
-      procedimiento: procedimiento?.nombre ?? "Procedimiento",
-      nombre: paso.nombre,
-      estado: etiquetaPaso(estado, Boolean(registro)),
-      fecha: registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente",
-      // Lo registrado al completar el paso; el borrador del paso en curso no es parte del comprobante.
-      observaciones: notaDelPaso(notas ?? {}),
-    }))
-  );
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -35,6 +66,7 @@ export function documentoImprimible(cita) {
     table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
     th, td { text-align: left; border-bottom: 1px solid #d7dee7; padding: 0.35rem 0.4rem; vertical-align: top; }
     th { background: #eef5f2; color: #2c4a63; }
+    td.fecha { white-space: nowrap; }
     footer { margin-top: 1.5rem; font-size: 0.72rem; color: #587089; }
     @media print { body { margin: 0.8rem; } }
   </style>
@@ -51,24 +83,7 @@ export function documentoImprimible(cita) {
     <div><span>Estado</span>${escapar(estadoDeCita(cita).texto)}</div>
   </section>
   <h2>Procedimientos y pasos</h2>
-  <table>
-    <thead><tr><th>Procedimiento</th><th>Paso</th><th>Estado</th><th>Fecha</th><th>Observaciones</th></tr></thead>
-    <tbody>
-      ${
-        pasos
-          .map(
-            (paso) => `<tr>
-              <td>${escapar(paso.procedimiento)}</td>
-              <td>${escapar(paso.nombre)}</td>
-              <td>${escapar(paso.estado)}</td>
-              <td>${escapar(paso.fecha)}</td>
-              <td>${escapar(paso.observaciones || "—")}</td>
-            </tr>`
-          )
-          .join("") || '<tr><td colspan="5">Sin pasos registrados.</td></tr>'
-      }
-    </tbody>
-  </table>
+  ${tablaTicket(cita)}
   <footer>Documento generado desde GalenoSV. Use Imprimir → Guardar como PDF para conservar una copia.</footer>
 </body>
 </html>`;
@@ -85,7 +100,7 @@ export function lineasTicket(cita) {
   lineas.push(`Ticket: #${codigoTicket(cita.consulta.idConsulta)}`);
   lineas.push("");
   lineas.push("PROCEDIMIENTOS Y PASOS");
-  for (const { procedimiento, pasos } of cita.procedimientos) {
+  for (const { procedimiento, pasos, ordenes = [] } of cita.procedimientos) {
     lineas.push(`- ${procedimiento?.nombre ?? "Procedimiento"}`);
     for (const { paso, registro, persona, estado, notas } of pasos) {
       const fecha = registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente";
@@ -95,6 +110,7 @@ export function lineasTicket(cita) {
       if (notas?.diagnostico) lineas.push(`      Diagnostico CIE-10: ${notas.diagnostico}`);
       if (notas?.plan) lineas.push(`      Plan: ${notas.plan}`);
     }
+    for (const orden of ordenes) lineas.push(`   Examen ordenado: ${orden.texto}`);
   }
   lineas.push("");
   lineas.push("Documento generado desde GalenoSV (aplicacion web progresiva).");
@@ -122,9 +138,21 @@ export class TicketCita extends Vista {
       th, td { text-align: left; border-bottom: 1px solid var(--borde, #d6dee7); padding: 0.5rem 0.55rem; vertical-align: top; }
       th { background: var(--superficie-suave, #f7f9fb); color: var(--mate, #2c4a63); font-size: 0.74rem; font-weight: 600; }
       tbody tr:last-child td { border-bottom: none; }
+      td.fecha { white-space: nowrap; }
       .tabla { overflow-x: auto; border: 1px solid var(--borde, #d6dee7); border-radius: var(--radio, 10px); }
       .acciones { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--borde, #d6dee7); }
-      @media (max-width: 620px) { .datos { grid-template-columns: 1fr; } .acciones button { flex: 1; } }
+      @media (max-width: 620px) {
+        .datos { grid-template-columns: 1fr; }
+        .acciones button { flex: 1; }
+        /* En pantallas angostas cada fila del ticket se lee como una tarjeta: etiqueta y valor. */
+        thead { display: none; }
+        table, tbody, tr, td { display: block; }
+        tr { padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--borde, #d6dee7); }
+        tbody tr:last-child { border-bottom: none; }
+        td { display: grid; grid-template-columns: 7.5rem 1fr; gap: 0.5rem; border: none; padding: 0.15rem 0; }
+        td::before { content: attr(data-etiqueta); color: var(--texto-tenue, #5f7387); font-weight: 600; font-size: 0.74rem; }
+        td.fecha { white-space: normal; }
+      }
       @media print {
         .fondo { position: static; background: none; padding: 0; }
         .acciones { display: none; }
@@ -186,9 +214,6 @@ export class TicketCita extends Vista {
       this.render("");
       return;
     }
-    const pasos = cita.procedimientos.flatMap(({ procedimiento, pasos: lista }) =>
-      lista.map(({ paso, registro, estado, notas }) => ({ paso, registro, estado, notas, procedimiento }))
-    );
     this.render(`
       <div class="fondo" role="dialog" aria-modal="true" aria-label="Ticket de la cita">
         <div class="hoja">
@@ -202,24 +227,7 @@ export class TicketCita extends Vista {
             <div><span>Motivo</span>${escapar(motivoDe(cita.consulta))}</div>
             <div><span>Estado</span>${escapar(estadoDeCita(cita).texto)}</div>
           </div>
-          <div class="tabla"><table>
-            <thead><tr><th>Procedimiento</th><th>Paso</th><th>Estado</th><th>Fecha</th><th>Observaciones</th></tr></thead>
-            <tbody>
-              ${
-                pasos
-                  .map(
-                    ({ paso, registro, estado, notas, procedimiento }) => `<tr>
-                      <td>${escapar(procedimiento?.nombre ?? "—")}</td>
-                      <td>${escapar(paso.nombre)}</td>
-                      <td>${escapar(etiquetaPaso(estado, Boolean(registro)))}</td>
-                      <td>${escapar(registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente")}</td>
-                      <td>${escapar(notaDelPaso(notas ?? {}) || "—")}</td>
-                    </tr>`
-                  )
-                  .join("") || '<tr><td colspan="5">Sin pasos registrados.</td></tr>'
-              }
-            </tbody>
-          </table></div>
+          <div class="tabla">${tablaTicket(cita)}</div>
           <div class="acciones">
             <button type="button" class="secundario" data-accion="cerrar">Cerrar</button>
             <button type="button" class="secundario" data-accion="imprimir">Imprimir</button>
@@ -233,29 +241,20 @@ export class TicketCita extends Vista {
   async descargar() {
     if (!this._cita) return;
     const idConsulta = this._cita.consulta.idConsulta;
+    // El archivo lleva el mismo código corto que muestra el ticket.
+    const archivo = `ticket-${codigoTicket(idConsulta)}`;
     try {
       if (estaConectado()) {
-        const tamano = await pedirBinario(
-          `tickets/consultas/${idConsulta}`,
-          `ticket-${idConsulta}.pdf`
-        );
-        this.notificar(`Ticket PDF descargado (${tamano} bytes).`, "ok");
+        await pedirBinario(`tickets/consultas/${idConsulta}`, `${archivo}.pdf`);
+        this.notificar("Ticket PDF descargado.", "ok");
         return;
       }
-      const tamano = descargarPdf(
-        `ticket-${idConsulta}`,
-        "GalenoSV - Comprobante de cita",
-        lineasTicket(this._cita)
-      );
-      this.notificar(`Ticket PDF generado sin conexión (${tamano} bytes).`, "ok");
-    } catch (error) {
+      descargarPdf(archivo, "GalenoSV - Comprobante de cita", lineasTicket(this._cita));
+      this.notificar("Ticket PDF generado sin conexión.", "ok");
+    } catch {
       try {
-        const tamano = descargarPdf(
-          `ticket-${idConsulta}`,
-          "GalenoSV - Comprobante de cita",
-          lineasTicket(this._cita)
-        );
-        this.notificar(`Ticket PDF generado en el dispositivo (${tamano} bytes).`, "ok");
+        descargarPdf(archivo, "GalenoSV - Comprobante de cita", lineasTicket(this._cita));
+        this.notificar("Ticket PDF generado en el dispositivo.", "ok");
       } catch (fallo) {
         this.notificar(`No se pudo generar el PDF: ${fallo.message}`, "error");
       }

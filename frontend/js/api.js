@@ -59,7 +59,6 @@ export async function pedirBinario(ruta, nombreArchivo) {
   enlace.click();
   enlace.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
-  return blob.size;
 }
 
 export async function listar(ruta, { first = 0, max = 20 } = {}) {

@@ -1,4 +1,4 @@
-import { Vista, escapar } from "../base.js";
+import { Vista, escapar, cantidad } from "../base.js";
 import { leerSesion, cerrarSesion, alCambiarSesion } from "../estado.js";
 import { estaConectado, sincronizar, listarPendientes } from "../pendientes.js";
 import { ejecutarPendiente, servicioNoResponde } from "../api.js";
@@ -176,7 +176,7 @@ export class AppShell extends Vista {
     const motivo = sinRed ? "Sin conexión" : "El servidor de GalenoSV no responde";
     aviso.hidden = false;
     aviso.innerHTML = `<span>${motivo}: los datos mostrados son los guardados en este dispositivo${
-      pendientes > 0 ? ` y hay ${pendientes} cambio(s) pendiente(s) por enviar` : ""
+      pendientes > 0 ? ` y hay ${cantidad(pendientes, "cambio pendiente", "cambios pendientes")} por enviar` : ""
     }.</span>`;
   }
 
@@ -186,7 +186,8 @@ export class AppShell extends Vista {
     if (resultado.enviadas > 0) {
       // Lo guardado en memoria no incluye lo recién enviado: la próxima vista lo pide al servidor.
       limpiarCache();
-      this.notificar(`Se enviaron ${resultado.enviadas} cambio(s) acumulado(s).`, "ok");
+      const enviadas = cantidad(resultado.enviadas, "cambio acumulado", "cambios acumulados");
+      this.notificar(`Se ${resultado.enviadas === 1 ? "envió" : "enviaron"} ${enviadas}.`, "ok");
     }
     return resultado;
   }

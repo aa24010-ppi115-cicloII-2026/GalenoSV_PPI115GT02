@@ -204,6 +204,8 @@ export class AppDashboard extends Vista {
     this.describirRango(desde, hasta);
     const lista = this.q("#lista");
     if (desde && hasta && desde > hasta) {
+      // Sin descripción del rango: contradiría el aviso.
+      this.q("#rango-aviso").textContent = "";
       this.q("#resumen").innerHTML = "";
       lista.innerHTML = `<p class="error" role="alert">La fecha «Desde» es posterior a «Hasta». Corrija el rango.</p>`;
       return;

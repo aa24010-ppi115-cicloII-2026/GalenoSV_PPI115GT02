@@ -94,12 +94,14 @@ export class CitaCard extends Vista {
       ? `${paciente.documento.tipo}: ${paciente.documento.valor}`
       : null;
     const { clave: estado, texto: textoEstado } = estadoDeCita(cita);
+    // Con todos los pasos completos ya no hay nada que atender: solo revisar o finalizar.
+    const accion = estado === "completada" || cita.consulta?.fechaFin ? "Ver atención" : "Atender consulta";
     const sesion = leerSesion();
     const fecha = consulta.fechaInicio ? fechaHora(consulta.fechaInicio) : "Sin fecha";
     const acciones = `
       <div class="acciones">
         <button type="button" class="secundario" data-accion="ticket">Ver ticket</button>
-        ${sesion && this.getAttribute("vista") !== "paciente" ? `<button type="button" data-accion="atender">Atender consulta</button>` : ""}
+        ${sesion && this.getAttribute("vista") !== "paciente" ? `<button type="button" data-accion="atender">${accion}</button>` : ""}
       </div>
     `;
     const etiquetaPaciente = `${paciente?.nombres ?? "Paciente"} ${paciente?.apellidos ?? ""}`.trim();

@@ -150,6 +150,11 @@ export class Vista extends HTMLElement {
   }
 }
 
+/** Cantidad con la palabra en singular o plural: «1 examen asignado», «2 exámenes asignados». */
+export function cantidad(numero, singular, plural) {
+  return `${numero} ${numero === 1 ? singular : plural}`;
+}
+
 export function escapar(texto) {
   return String(texto ?? "").replace(/[&<>"']/g, (caracter) => {
     const mapa = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
