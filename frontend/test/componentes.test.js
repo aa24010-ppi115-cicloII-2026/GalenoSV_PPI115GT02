@@ -1381,6 +1381,15 @@ describe("componentes Web Components", () => {
       expect(evento.prompt.called).to.be.false;
     });
 
+    it("app-shell salta al contenido principal sin cambiar la ruta", async () => {
+      dom.window.location.hash = "#/buscar";
+      const shell = montar("app-shell");
+      await esperar(() => shell.shadowRoot.querySelector("app-busqueda"));
+      shell.shadowRoot.querySelector(".saltar").click();
+      expect(dom.window.location.hash).to.equal("#/buscar");
+      expect(shell.shadowRoot.activeElement?.id).to.equal("vista");
+    });
+
     it("app-shell muestra la invitación a instalar abajo a la derecha, fuera del encabezado", async () => {
       const shell = montar("app-shell");
       await esperar(() => shell.shadowRoot.querySelector("pwa-instalar"));

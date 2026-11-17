@@ -48,24 +48,28 @@ frontend/
 
 ### 3.1 Base de datos
 
+PostgreSQL 17 en Docker: contenedor `pg_container` con la base `basedatos_pg`.
+
 ```bash
-docker run --name db17 -e POSTGRES_USER=admin -e POSTGRES_PASSWORD=admin \
-  -e POSTGRES_DB=GalenoSV -p 5432:5432 -d postgres:17.5-alpine
+docker start pg_container
 ```
 
 La base de datos es la del proyecto original y **no se modifica**: el frontend solo
-consulta la API REST existente.
+consulta la API REST existente. La conexión (`jdbc/GalenoSV`) la define el servidor
+Open Liberty configurado en cada equipo.
 
 ### 3.2 Backend (API REST)
 
 ```bash
-mvn clean package
-mvn liberty:dev            # o bien: <LIBERTY>/bin/server start GalenoSv
+mvn clean package liberty:run
 ```
 
+Use siempre `clean`: así el WAR incluye OpenPDF y el ticket PDF se descarga del backend.
 La API queda disponible en `http://localhost:9080/GalenoSV-1.0-SNAPSHOT/api`.
 
 ### 3.3 Frontend
+
+En otra terminal:
 
 ```bash
 cd frontend
@@ -74,17 +78,19 @@ npm start                  # BrowserSync en http://localhost:3000
 ```
 
 > La PWA (service worker e instalación) requiere `localhost` o HTTPS.
-> En Chrome o Edge aparecerá el botón **Instalar aplicación**.
+> En Chrome o Edge aparece abajo a la derecha la invitación **Instale GalenoSV**.
 
 ## 4. Pruebas unitarias
 
 ```bash
 cd frontend
-npm test
+npm test                   # todas las pruebas
+npm run coverage           # cobertura (resumen en consola y detalle en coverage/index.html)
 ```
 
 Cada comportamiento observable de la aplicación tiene su prueba: API, composición de datos,
-CIE-10, sesión, cola sin conexión, generador de PDF y cada Web Component.
+CIE-10, sesión, cola sin conexión, generador de PDF y cada Web Component. Las pruebas de
+componentes están agrupadas por historia de usuario (HU1 a HU4) y por el shell de la PWA.
 
 ## 5. Rutas de la aplicación
 

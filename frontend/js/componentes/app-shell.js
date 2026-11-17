@@ -140,6 +140,12 @@ export class AppShell extends Vista {
       else this.navegar(leerSesion() ? "dashboard" : "login");
     });
 
+    // Las rutas usan el hash, así que el enlace de salto mueve el foco sin cambiar la dirección.
+    this.q(".saltar").addEventListener("click", (evento) => {
+      evento.preventDefault();
+      this.q("#vista").focus();
+    });
+
     this.addEventListener("navegar", (evento) => {
       const destino = evento.detail;
       window.location.hash = `#/${destino}`;
