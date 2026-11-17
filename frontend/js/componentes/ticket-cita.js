@@ -1,0 +1,278 @@
+import { Vista, escapar, fechaHora } from "../base.js";
+import { motivoDe, estadoDeCita, etiquetaPaso, notaDelPaso } from "../datos.js";
+import { descargarPdf } from "../pdf.js";
+import { pedirBinario, estaConectado } from "../api.js";
+
+/** Código corto y legible del ticket: el primer bloque del identificador de la consulta. */
+function codigoTicket(idConsulta) {
+  return String(idConsulta ?? "").split("-")[0].toUpperCase();
+}
+
+/** Filas del comprobante: cada paso con lo registrado y, al final de su procedimiento, las órdenes de examen. */
+function filasTicket(cita) {
+  return cita.procedimientos.flatMap(({ procedimiento, pasos, ordenes = [] }) => {
+    const nombre = procedimiento?.nombre ?? "Procedimiento";
+    return [
+      ...pasos.map(({ paso, registro, estado, notas }) => ({
+        procedimiento: nombre,
+        paso: paso.nombre,
+        estado: etiquetaPaso(estado, Boolean(registro)),
+        fecha: registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente",
+        // Lo registrado al completar el paso; el borrador del paso en curso no es parte del comprobante.
+        observaciones: notaDelPaso(notas ?? {}),
+      })),
+      ...ordenes.map((orden) => ({
+        procedimiento: nombre,
+        paso: "Examen ordenado",
+        estado: "Ordenado",
+        fecha: orden.fecha ? fechaHora(orden.fecha) : "—",
+        observaciones: orden.texto,
+      })),
+    ];
+  });
+}
+
+/** Filas de la tabla en HTML; cada celda lleva su etiqueta para mostrarse como tarjeta en pantallas angostas. */
+function tablaTicket(cita) {
+  const columnas = ["Procedimiento", "Paso", "Estado", "Fecha", "Observaciones"];
+  const filas = filasTicket(cita)
+    .map((fila) => {
+      const valores = [fila.procedimiento, fila.paso, fila.estado, fila.fecha, fila.observaciones || "—"];
+      return `<tr>${valores
+        .map((valor, i) => `<td data-etiqueta="${columnas[i]}"${i === 3 ? ' class="fecha"' : ""}>${escapar(valor)}</td>`)
+        .join("")}</tr>`;
+    })
+    .join("");
+  return `<table>
+    <thead><tr>${columnas.map((columna) => `<th>${columna}</th>`).join("")}</tr></thead>
+    <tbody>${filas || '<tr><td colspan="5">Sin pasos registrados.</td></tr>'}</tbody>
+  </table>`;
+}
+
+export function documentoImprimible(cita) {
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Ticket de cita ${escapar(codigoTicket(cita.consulta.idConsulta))}</title>
+  <style>
+    body { font-family: system-ui, "Segoe UI", sans-serif; margin: 2rem; color: #14202b; }
+    header { border-bottom: 3px solid #0f7b6c; padding-bottom: 0.7rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.25rem; margin: 0; }
+    .codigo { color: #0f7b6c; font-weight: 700; }
+    .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1rem; font-size: 0.9rem; margin: 1rem 0; }
+    .datos span { color: #587089; display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    h2 { font-size: 0.95rem; margin: 1rem 0 0.4rem; color: #2c4a63; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { text-align: left; border-bottom: 1px solid #d7dee7; padding: 0.35rem 0.4rem; vertical-align: top; }
+    th { background: #eef5f2; color: #2c4a63; }
+    td.fecha { white-space: nowrap; }
+    footer { margin-top: 1.5rem; font-size: 0.72rem; color: #587089; }
+    @media print { body { margin: 0.8rem; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GalenoSV · Comprobante de cita</h1>
+    <p>Ticket <span class="codigo">#${escapar(codigoTicket(cita.consulta.idConsulta))}</span> · ${escapar(fechaHora(cita.consulta.fechaInicio))}</p>
+  </header>
+  <section class="datos">
+    <div><span>Paciente</span>${escapar(`${cita.paciente?.nombres ?? ""} ${cita.paciente?.apellidos ?? ""}`.trim())}</div>
+    <div><span>Clínica</span>${escapar(cita.clinica?.nombre ?? "—")}</div>
+    <div><span>Motivo</span>${escapar(motivoDe(cita.consulta))}</div>
+    <div><span>Estado</span>${escapar(estadoDeCita(cita).texto)}</div>
+  </section>
+  <h2>Procedimientos y pasos</h2>
+  ${tablaTicket(cita)}
+  <footer>Documento generado desde GalenoSV. Use Imprimir → Guardar como PDF para conservar una copia.</footer>
+</body>
+</html>`;
+}
+
+export function lineasTicket(cita) {
+  const lineas = [];
+  const paciente = `${cita.paciente?.nombres ?? ""} ${cita.paciente?.apellidos ?? ""}`.trim() || "-";
+  lineas.push(`Paciente: ${paciente}`);
+  lineas.push(`Clinica: ${cita.clinica?.nombre ?? "-"}`);
+  lineas.push(`Fecha de la cita: ${fechaHora(cita.consulta.fechaInicio)}`);
+  lineas.push(`Motivo: ${motivoDe(cita.consulta)}`);
+  lineas.push(`Estado: ${estadoDeCita(cita).texto}`);
+  lineas.push(`Ticket: #${codigoTicket(cita.consulta.idConsulta)}`);
+  lineas.push("");
+  lineas.push("PROCEDIMIENTOS Y PASOS");
+  for (const { procedimiento, pasos, ordenes = [] } of cita.procedimientos) {
+    lineas.push(`- ${procedimiento?.nombre ?? "Procedimiento"}`);
+    for (const { paso, registro, persona, estado, notas } of pasos) {
+      const fecha = registro?.fechaInicio ? fechaHora(registro.fechaInicio) : "Pendiente";
+      const quien = persona ? `${persona.nombres} ${persona.apellidos}` : "Sin asignar";
+      lineas.push(`   ${paso.nombre} | ${etiquetaPaso(estado, Boolean(registro))} | ${fecha} | ${quien}`);
+      if (notas?.notas) lineas.push(`      Notas: ${notas.notas}`);
+      if (notas?.diagnostico) lineas.push(`      Diagnostico CIE-10: ${notas.diagnostico}`);
+      if (notas?.plan) lineas.push(`      Plan: ${notas.plan}`);
+    }
+    for (const orden of ordenes) lineas.push(`   Examen ordenado: ${orden.texto}`);
+  }
+  lineas.push("");
+  lineas.push("Documento generado desde GalenoSV (aplicacion web progresiva).");
+  return lineas;
+}
+
+export class TicketCita extends Vista {
+  get estilos() {
+    return `
+      .fondo {
+        position: fixed; inset: 0; background: rgba(15, 25, 35, 0.5);
+        display: grid; place-items: center; padding: 1rem; z-index: 60;
+      }
+      .hoja {
+        background: var(--superficie, #fff); border-radius: var(--radio-grande, 14px); padding: 1.5rem 1.6rem 1.25rem;
+        width: min(700px, 100%); max-height: 90vh; overflow: auto;
+        box-shadow: var(--sombra-alta);
+      }
+      header { display: grid; gap: 0.25rem; padding-bottom: 0.85rem; margin-bottom: 1rem; border-bottom: 2px solid var(--acento, #0f7b6c); }
+      h2 { font-size: 1.2rem; }
+      .codigo { color: var(--acento-fuerte, #0b6155); font-weight: 700; font-variant-numeric: tabular-nums; word-break: break-all; }
+      .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem 1.25rem; font-size: 0.92rem; margin: 0 0 1.1rem; }
+      .datos span { color: var(--texto-tenue, #5f7387); display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.1rem; }
+      table { width: 100%; border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+      th, td { text-align: left; border-bottom: 1px solid var(--borde, #d6dee7); padding: 0.5rem 0.55rem; vertical-align: top; }
+      th { background: var(--superficie-suave, #f7f9fb); color: var(--mate, #2c4a63); font-size: 0.74rem; font-weight: 600; }
+      tbody tr:last-child td { border-bottom: none; }
+      td.fecha { white-space: nowrap; }
+      .tabla { overflow-x: auto; border: 1px solid var(--borde, #d6dee7); border-radius: var(--radio, 10px); }
+      .acciones { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--borde, #d6dee7); }
+      @media (max-width: 620px) {
+        .datos { grid-template-columns: 1fr; }
+        .acciones button { flex: 1; }
+        /* En pantallas angostas cada fila del ticket se lee como una tarjeta: etiqueta y valor. */
+        thead { display: none; }
+        table, tbody, tr, td { display: block; }
+        tr { padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--borde, #d6dee7); }
+        tbody tr:last-child { border-bottom: none; }
+        td { display: grid; grid-template-columns: 7.5rem 1fr; gap: 0.5rem; border: none; padding: 0.15rem 0; }
+        td::before { content: attr(data-etiqueta); color: var(--texto-tenue, #5f7387); font-weight: 600; font-size: 0.74rem; }
+        td.fecha { white-space: normal; }
+      }
+      @media print {
+        .fondo { position: static; background: none; padding: 0; }
+        .acciones { display: none; }
+        .hoja { box-shadow: none; max-height: none; }
+      }
+    `;
+  }
+
+  set cita(valor) {
+    this._cita = valor;
+    if (this.isConnected) this.pintar();
+  }
+
+  get cita() {
+    return this._cita;
+  }
+
+  disconnectedCallback() {
+    document.removeEventListener("keydown", this._tecla);
+    // Al cerrar, el foco vuelve al botón que abrió el comprobante.
+    this._previo?.focus?.();
+  }
+
+  connectedCallback() {
+    if (!this._escucha) {
+      this._escucha = (evento) => {
+        const boton = evento.target.closest("button[data-accion]");
+        if (!boton) return;
+        if (boton.dataset.accion === "cerrar") this.remove();
+        if (boton.dataset.accion === "imprimir") this.imprimir();
+        if (boton.dataset.accion === "descargar") this.descargar();
+      };
+      this.shadowRoot.addEventListener("click", this._escucha);
+      this._tecla = (evento) => {
+        if (evento.key === "Escape") this.remove();
+        // Es un diálogo modal: Tab recorre solo sus botones.
+        if (evento.key === "Tab") {
+          const botones = this.qa("button");
+          if (botones.length === 0) return;
+          evento.preventDefault();
+          const actual = botones.indexOf(this.shadowRoot.activeElement);
+          const siguiente = (actual + (evento.shiftKey ? -1 : 1) + botones.length) % botones.length;
+          botones[siguiente].focus();
+        }
+      };
+      document.addEventListener("keydown", this._tecla);
+    }
+    // El botón que lo abrió suele estar dentro de otros Shadow DOM.
+    let previo = document.activeElement;
+    while (previo?.shadowRoot?.activeElement) previo = previo.shadowRoot.activeElement;
+    this._previo = previo;
+    this.pintar();
+    this.q("button[data-accion='cerrar']")?.focus();
+  }
+
+  pintar() {
+    const cita = this._cita;
+    if (!cita) {
+      this.render("");
+      return;
+    }
+    this.render(`
+      <div class="fondo" role="dialog" aria-modal="true" aria-label="Ticket de la cita">
+        <div class="hoja">
+          <header>
+            <h2>GalenoSV · Comprobante de cita</h2>
+            <p class="aviso">Ticket <span class="codigo">#${escapar(codigoTicket(cita.consulta.idConsulta))}</span> · ${escapar(fechaHora(cita.consulta.fechaInicio))}</p>
+          </header>
+          <div class="datos">
+            <div><span>Paciente</span>${escapar(`${cita.paciente?.nombres ?? ""} ${cita.paciente?.apellidos ?? ""}`.trim() || "—")}</div>
+            <div><span>Clínica</span>${escapar(cita.clinica?.nombre ?? "—")}</div>
+            <div><span>Motivo</span>${escapar(motivoDe(cita.consulta))}</div>
+            <div><span>Estado</span>${escapar(estadoDeCita(cita).texto)}</div>
+          </div>
+          <div class="tabla">${tablaTicket(cita)}</div>
+          <div class="acciones">
+            <button type="button" class="secundario" data-accion="cerrar">Cerrar</button>
+            <button type="button" class="secundario" data-accion="imprimir">Imprimir</button>
+            <button type="button" data-accion="descargar">Descargar PDF</button>
+          </div>
+        </div>
+      </div>
+    `);
+  }
+
+  async descargar() {
+    if (!this._cita) return;
+    const idConsulta = this._cita.consulta.idConsulta;
+    // El archivo lleva el mismo código corto que muestra el ticket.
+    const archivo = `ticket-${codigoTicket(idConsulta)}`;
+    try {
+      if (estaConectado()) {
+        await pedirBinario(`tickets/consultas/${idConsulta}`, `${archivo}.pdf`);
+        this.notificar("Ticket PDF descargado.", "ok");
+        return;
+      }
+      descargarPdf(archivo, "GalenoSV - Comprobante de cita", lineasTicket(this._cita));
+      this.notificar("Ticket PDF generado sin conexión.", "ok");
+    } catch {
+      try {
+        descargarPdf(archivo, "GalenoSV - Comprobante de cita", lineasTicket(this._cita));
+        this.notificar("Ticket PDF generado en el dispositivo.", "ok");
+      } catch (fallo) {
+        this.notificar(`No se pudo generar el PDF: ${fallo.message}`, "error");
+      }
+    }
+  }
+
+  imprimir() {
+    if (!this._cita) return;
+    const ventana = window.open("", "_blank");
+    if (!ventana) {
+      this.notificar("Permita las ventanas emergentes para imprimir el ticket.", "error");
+      return;
+    }
+    ventana.document.write(documentoImprimible(this._cita));
+    ventana.document.close();
+    ventana.focus();
+    ventana.print();
+  }
+}
+
+customElements.define("ticket-cita", TicketCita);
