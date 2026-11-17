@@ -62,3 +62,33 @@ describe("manifest PWA", () => {
     expect(manifest.orientation).to.equal("portrait-primary");
   });
 });
+
+describe("actualización de la PWA", () => {
+  const swFalso = (controller) => {
+    const oyentes = [];
+    return {
+      controller,
+      addEventListener: (tipo, oyente) => oyentes.push({ tipo, oyente }),
+      emitir: (tipo) => oyentes.filter((o) => o.tipo === tipo).forEach((o) => o.oyente()),
+    };
+  };
+
+  it("recarga una sola vez cuando una versión nueva toma el control de la página", async () => {
+    const { recargarAlActualizar } = await import("../js/pwa.js");
+    const sw = swFalso({});
+    let recargas = 0;
+    recargarAlActualizar(sw, () => recargas++);
+    sw.emitir("controllerchange");
+    sw.emitir("controllerchange");
+    expect(recargas).to.equal(1);
+  });
+
+  it("no recarga en la primera instalación, cuando aún no había versión anterior", async () => {
+    const { recargarAlActualizar } = await import("../js/pwa.js");
+    const sw = swFalso(null);
+    let recargas = 0;
+    recargarAlActualizar(sw, () => recargas++);
+    sw.emitir("controllerchange");
+    expect(recargas).to.equal(0);
+  });
+});

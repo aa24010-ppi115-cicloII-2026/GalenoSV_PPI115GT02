@@ -64,7 +64,7 @@ export class CitaCard extends Vista {
     if (!fecha || Number.isNaN(fecha.getTime())) return `<div class="fecha sin">Sin fecha</div>`;
     const mes = fecha.toLocaleDateString("es-SV", { month: "short" }).replace(".", "");
     const dia = fecha.toLocaleDateString("es-SV", { day: "2-digit" });
-    const hora = fecha.toLocaleTimeString("es-SV", { hour: "2-digit", minute: "2-digit" });
+    const hora = fecha.toLocaleTimeString("es-SV", { hour: "numeric", minute: "2-digit" });
     return `<div class="fecha" role="img" aria-label="${escapar(textoCompleto)}">
       <span class="mes">${escapar(mes)}</span><span class="dia">${escapar(dia)}</span><span class="hora">${escapar(hora)}</span>
     </div>`;

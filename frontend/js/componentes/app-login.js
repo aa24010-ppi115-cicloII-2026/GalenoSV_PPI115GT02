@@ -127,6 +127,8 @@ export class AppLogin extends Vista {
       guardarSesion({
         idPersona: persona.idPersona,
         nombre: `${persona.nombres} ${persona.apellidos}`.trim(),
+        // Para el encabezado: primer nombre y primer apellido, sin que el nombre completo se corte.
+        nombreCorto: `${String(persona.nombres ?? "").split(" ")[0]} ${String(persona.apellidos ?? "").split(" ")[0]}`.trim(),
         documento: { tipo: tipo?.nombre ?? "", valor: numero },
         roles,
         clinicas: [...clinicas].map(([idClinica, nombre]) => ({ idClinica, nombre })),

@@ -706,6 +706,7 @@ describe("componentes Web Components", () => {
       const sesion = JSON.parse(sessionStorage.getItem("galenosv.sesion"));
       expect(sesion.idPersona).to.equal(300);
       expect(sesion.nombre).to.equal("Elena Martínez");
+      expect(sesion.nombreCorto).to.equal("Elena Martínez");
       expect(sesion.roles[0].nombreRol).to.equal("Enfermero");
       expect(navegaciones).to.include("dashboard");
     });
@@ -789,6 +790,12 @@ describe("componentes Web Components", () => {
 
       guardarSesion({ ...SESION_ENFERMERO, idPersona: 100, nombre: "Ana López" });
       expect(encabezado()).to.contain("Ana López").and.not.contain("Elena Martínez");
+
+      // Un nombre largo se muestra corto, con el nombre completo como título.
+      guardarSesion({ ...SESION_ENFERMERO, nombre: "Roberto Antonio Hernández Flores", nombreCorto: "Roberto Hernández" });
+      const nombre = shell.shadowRoot.querySelector(".usuario .nombre");
+      expect(nombre.textContent).to.equal("Roberto Hernández");
+      expect(nombre.title).to.equal("Roberto Antonio Hernández Flores");
     });
   });
 

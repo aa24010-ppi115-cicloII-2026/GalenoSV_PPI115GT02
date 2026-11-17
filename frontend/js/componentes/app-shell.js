@@ -207,7 +207,7 @@ export class AppShell extends Vista {
     if (sesion) {
       botonAcceso.textContent = "Mi panel";
       botonAcceso.dataset.ruta = "dashboard";
-      usuario.innerHTML = `<span class="nombre">${escapar(sesion.nombre)}</span><button class="enlace" type="button" id="salir">Salir</button>`;
+      usuario.innerHTML = `<span class="nombre" title="${escapar(sesion.nombre)}">${escapar(sesion.nombreCorto ?? sesion.nombre)}</span><button class="enlace" type="button" id="salir">Salir</button>`;
       this.q("#salir").addEventListener("click", () => {
         cerrarSesion();
         this.navegar("login");
