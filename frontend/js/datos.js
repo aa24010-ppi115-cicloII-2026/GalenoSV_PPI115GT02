@@ -308,7 +308,12 @@ export function documentoDePersona(datos, idPersona) {
   };
 }
 
-/** Órdenes de examen emitidas en los pasos de un procedimiento, sin repetir la palabra «Examen». */
+/** Texto de una orden de examen para mostrar: se guarda como «Examen: …», pero se lee sin repetir la palabra. */
+export function textoOrden(orden) {
+  return String(orden.indicaciones ?? "Sin indicaciones").replace(/^Examen:\s*/, "");
+}
+
+/** Órdenes de examen emitidas en los pasos de un procedimiento. */
 export function ordenesDeProcedimiento(datos, consultaProcedimiento) {
   const registros = new Set(
     datos.consultasProcedimientoPaso
@@ -319,7 +324,7 @@ export function ordenesDeProcedimiento(datos, consultaProcedimiento) {
     .filter((orden) => registros.has(orden.idConsultaProcedimientoPaso))
     .map((orden) => ({
       fecha: orden.fechaCreacion ?? null,
-      texto: String(orden.indicaciones ?? "Sin indicaciones").replace(/^Examen:\s*/, ""),
+      texto: textoOrden(orden),
     }));
 }
 

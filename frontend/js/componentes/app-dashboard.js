@@ -82,7 +82,7 @@ export class AppDashboard extends Vista {
         </div>
       </form>
       <p id="rango-aviso" role="status"></p>
-      <section id="resumen" aria-label="Resumen de consultas"></section>
+      <section id="resumen" aria-label="Resumen de consultas" aria-busy="true">${this.indicadores()}</section>
       <section id="lista" aria-live="polite" aria-label="Consultas"><div class="vacio">Cargando agenda…</div></section>
     `);
     const campoClinica = this.q("#clinica");
@@ -111,7 +111,19 @@ export class AppDashboard extends Vista {
     } else {
       this.ponerRango("hoy");
     }
+    // El rango y el resumen ocupan su lugar desde el inicio: la lista no salta al llegar los datos.
+    this.describirRango(this.q("#desde").value, this.q("#hasta").value);
     this.cargar();
+  }
+
+  /** Indicadores del resumen; sin conteos (mientras carga) muestran «—» en el mismo espacio. */
+  indicadores(conteos = { total: "—", programada: "—", proceso: "—", completada: "—" }) {
+    return `
+      <div class="indicador"><span>Total</span><strong>${conteos.total}</strong></div>
+      <div class="indicador"><span>Programadas</span><strong>${conteos.programada}</strong></div>
+      <div class="indicador proceso"><span>En proceso</span><strong>${conteos.proceso}</strong></div>
+      <div class="indicador completada"><span>Completadas</span><strong>${conteos.completada}</strong></div>
+    `;
   }
 
   cargarRoles() {
@@ -187,6 +199,7 @@ export class AppDashboard extends Vista {
       if (idPaciente) this.q("#paciente").value = idPaciente;
       this.aplicar();
     } catch {
+      this.q("#resumen").innerHTML = "";
       this.q("#lista").innerHTML = `<div class="vacio">No se pudo cargar la agenda. Intente de nuevo.</div>`;
     }
   }
@@ -218,12 +231,9 @@ export class AppDashboard extends Vista {
       const { clave } = estadoDeCita(cita);
       if (conteos[clave] !== undefined) conteos[clave] += 1;
     }
-    this.q("#resumen").innerHTML = `
-      <div class="indicador"><span>Total</span><strong>${conteos.total}</strong></div>
-      <div class="indicador"><span>Programadas</span><strong>${conteos.programada}</strong></div>
-      <div class="indicador proceso"><span>En proceso</span><strong>${conteos.proceso}</strong></div>
-      <div class="indicador completada"><span>Completadas</span><strong>${conteos.completada}</strong></div>
-    `;
+    const resumen = this.q("#resumen");
+    resumen.removeAttribute("aria-busy");
+    resumen.innerHTML = this.indicadores(conteos);
     lista.innerHTML = "";
     if (citas.length === 0) {
       lista.innerHTML = `<div class="vacio">No hay consultas para las fechas y filtros seleccionados.</div>`;

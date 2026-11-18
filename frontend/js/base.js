@@ -167,7 +167,7 @@ export function fechaHora(valor) {
   const fecha = new Date(valor);
   if (Number.isNaN(fecha.getTime())) return "—";
   return fecha.toLocaleString("es-SV", {
-    day: "2-digit",
+    day: "numeric",
     month: "short",
     year: "numeric",
     hour: "numeric",
@@ -179,7 +179,7 @@ export function fechaCorta(valor) {
   if (!valor) return "—";
   const fecha = new Date(valor);
   if (Number.isNaN(fecha.getTime())) return "—";
-  return fecha.toLocaleDateString("es-SV", { day: "2-digit", month: "short", year: "numeric" });
+  return fecha.toLocaleDateString("es-SV", { day: "numeric", month: "short", year: "numeric" });
 }
 
 /**
@@ -190,7 +190,7 @@ export function fechaCalendario(valor) {
   if (!valor) return "—";
   const fecha = new Date(valor);
   if (Number.isNaN(fecha.getTime())) return "—";
-  return fecha.toLocaleDateString("es-SV", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+  return fecha.toLocaleDateString("es-SV", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 }
 
 export function hoyISO() {

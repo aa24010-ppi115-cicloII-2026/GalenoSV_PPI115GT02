@@ -321,34 +321,47 @@ describe("componentes Web Components", () => {
         expect(raiz.querySelector("#numero").value).to.equal("11111111-1");
       });
 
-      it("busca por clínica y rango de fechas, sin ocultar citas futuras por defecto", async () => {
-        const { busqueda, raiz } = await abrirAsistente();
-        await completarDocumento(raiz, "11111111-1");
-        await hastaPaso(raiz, "3");
-        expect(raiz.querySelector("#clinica").textoElegido).to.equal("Clínica Central");
-        clic(raiz, "#siguiente");
-        expect(pasoVisible(raiz)).to.equal("4");
-        expect(raiz.querySelector("#desde").value).to.equal("");
-        expect(raiz.querySelector("#hasta").value).to.equal("");
+      it("busca por clínica y rango de fechas, con las citas de hoy por defecto", async () => {
+        // Hoy es el 12 de noviembre: la paciente tiene una cita hoy y otra el 5 de enero.
+        const reloj = sinon.useFakeTimers({ now: new Date("2026-11-12T08:00:00-06:00"), toFake: ["Date"] });
+        try {
+          const { busqueda, raiz } = await abrirAsistente();
+          await completarDocumento(raiz, "11111111-1");
+          await hastaPaso(raiz, "3");
+          expect(raiz.querySelector("#clinica").textoElegido).to.equal("Clínica Central");
+          clic(raiz, "#siguiente");
+          expect(pasoVisible(raiz)).to.equal("4");
+          expect(raiz.querySelector("#desde").value).to.equal("2026-11-12");
+          expect(raiz.querySelector("#hasta").value).to.equal("2026-11-12");
 
-        raiz.querySelector("#desde").value = "2026-12-01";
-        raiz.querySelector("#hasta").value = "2026-11-01";
-        clic(raiz, "#buscar");
-        expect(error(raiz)).to.contain("fecha inicial");
-        expect(busqueda.shadowRoot.querySelectorAll("cita-card")).to.have.length(0);
+          raiz.querySelector("#desde").value = "2026-12-01";
+          raiz.querySelector("#hasta").value = "2026-11-01";
+          clic(raiz, "#buscar");
+          expect(error(raiz)).to.contain("fecha inicial");
+          expect(busqueda.shadowRoot.querySelectorAll("cita-card")).to.have.length(0);
 
-        raiz.querySelector("#desde").value = "";
-        raiz.querySelector("#hasta").value = "";
-        clic(raiz, "#buscar");
-        await esperar(() => busqueda.shadowRoot.querySelectorAll("cita-card").length === 2);
+          // Con las dos fechas vacías se buscan las de hoy, no todas.
+          raiz.querySelector("#desde").value = "";
+          raiz.querySelector("#hasta").value = "";
+          clic(raiz, "#buscar");
+          await esperar(() => busqueda.shadowRoot.querySelector(".resumen"));
+          expect(busqueda.shadowRoot.querySelectorAll("cita-card")).to.have.length(1);
 
-        raiz.querySelector("#desde").value = "2026-11-01";
-        clic(raiz, "#buscar");
-        await esperar(() => busqueda.shadowRoot.querySelectorAll("cita-card").length === 1);
-        const tarjeta = busqueda.shadowRoot.querySelector("cita-card").shadowRoot;
-        expect(tarjeta.textContent).to.contain("Clínica Central");
-        expect(tarjeta.textContent).to.contain("Limpieza dental");
-        expect(tarjeta.querySelector(".fecha").getAttribute("aria-label")).to.contain("12 nov 2026");
+          // Con una sola fecha, el otro extremo queda abierto.
+          raiz.querySelector("#desde").value = "2026-01-01";
+          clic(raiz, "#buscar");
+          await esperar(() => busqueda.shadowRoot.querySelectorAll("cita-card").length === 2);
+
+          raiz.querySelector("#desde").value = "2026-11-01";
+          clic(raiz, "#buscar");
+          await esperar(() => busqueda.shadowRoot.querySelectorAll("cita-card").length === 1);
+          const tarjeta = busqueda.shadowRoot.querySelector("cita-card").shadowRoot;
+          expect(tarjeta.textContent).to.contain("Clínica Central");
+          expect(tarjeta.textContent).to.contain("Limpieza dental");
+          expect(tarjeta.querySelector(".fecha").getAttribute("aria-label")).to.contain("12 nov 2026");
+        } finally {
+          reloj.restore();
+        }
       });
 
       it("informa cuando no hay citas en la clínica y las fechas elegidas", async () => {
@@ -357,6 +370,7 @@ describe("componentes Web Components", () => {
         await hastaPaso(raiz, "3");
         clic(raiz, "#siguiente");
         raiz.querySelector("#desde").value = "2027-01-01";
+        raiz.querySelector("#hasta").value = "";
         clic(raiz, "#buscar");
         await esperar(() => busqueda.shadowRoot.querySelector(".resumen"));
         expect(busqueda.shadowRoot.querySelector(".resumen").textContent).to.contain("0 citas");
@@ -395,6 +409,9 @@ describe("componentes Web Components", () => {
         await completarDocumento(raiz, "11111111-1");
         await hastaPaso(raiz, "3");
         clic(raiz, "#siguiente");
+        // Todo el año, para encontrar las dos citas de la paciente.
+        raiz.querySelector("#desde").value = "2026-01-01";
+        raiz.querySelector("#hasta").value = "2026-12-31";
         clic(raiz, "#buscar");
         await esperar(() => busqueda.shadowRoot.querySelector("cita-card"));
         const verTicket = busqueda.shadowRoot.querySelector("cita-card").shadowRoot.querySelector('[data-accion="ticket"]');
@@ -420,6 +437,9 @@ describe("componentes Web Components", () => {
         await completarDocumento(raiz, "11111111-1");
         await hastaPaso(raiz, "3");
         clic(raiz, "#siguiente");
+        // Todo el año, para encontrar las dos citas de la paciente.
+        raiz.querySelector("#desde").value = "2026-01-01";
+        raiz.querySelector("#hasta").value = "2026-12-31";
         clic(raiz, "#buscar");
         await esperar(() => busqueda.shadowRoot.querySelectorAll("cita-card").length === 2);
         // Los datos del paciente se muestran una sola vez y la vista se lleva a los resultados.
@@ -433,6 +453,10 @@ describe("componentes Web Components", () => {
 
         busqueda.shadowRoot.querySelector("#nueva").click();
         expect(pasoVisible(raiz)).to.equal("1");
+        // La nueva búsqueda vuelve a proponer las citas de hoy.
+        const hoy = new Date();
+        const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+        expect([raiz.querySelector("#desde").value, raiz.querySelector("#hasta").value]).to.deep.equal([hoyISO, hoyISO]);
         expect(busqueda.shadowRoot.querySelectorAll("cita-card")).to.have.length(0);
       });
     });
@@ -525,6 +549,13 @@ describe("componentes Web Components", () => {
         expect(fechaCalendario("1992-09-30")).to.match(/^30 /);
         expect(fechaCalendario(null)).to.equal("—");
         expect(fechaCalendario("no es fecha")).to.equal("—");
+      });
+
+      it("las fechas se muestran sin cero inicial en el día, como «5 nov 2026»", async () => {
+        const { fechaCalendario, fechaCorta, fechaHora } = await import("../js/base.js");
+        expect(fechaCalendario("2026-11-05")).to.match(/^5 nov/);
+        expect(fechaCorta("2026-11-05T12:00:00-06:00")).to.match(/^5 nov/);
+        expect(fechaHora("2026-11-05T14:00:00-06:00")).to.match(/^5 nov/);
       });
     });
 
@@ -831,11 +862,23 @@ describe("componentes Web Components", () => {
       reloj = sinon.useFakeTimers({ now: new Date(hoy), toFake: ["Date"] });
       sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
       const panel = montar("app-dashboard");
-      await esperar(() => panel.shadowRoot.querySelectorAll("#resumen .indicador").length === 4);
+      await esperar(() => panel.shadowRoot.querySelectorAll("#resumen:not([aria-busy]) .indicador").length === 4);
       return panel.shadowRoot;
     }
     let reloj;
     afterEach(() => reloj?.restore());
+
+    it("reserva el resumen y describe el rango mientras carga, para que la agenda no salte", async () => {
+      reloj = sinon.useFakeTimers({ now: new Date("2026-11-12T08:00:00-06:00"), toFake: ["Date"] });
+      sessionStorage.setItem("galenosv.sesion", JSON.stringify(SESION_ENFERMERO));
+      const raiz = montar("app-dashboard").shadowRoot;
+      // Antes de que lleguen los datos: mismo lugar ocupado, con «—» en lugar de los conteos.
+      expect(raiz.querySelector("#resumen").getAttribute("aria-busy")).to.equal("true");
+      expect([...raiz.querySelectorAll("#resumen strong")].map((n) => n.textContent)).to.deep.equal(["—", "—", "—", "—"]);
+      expect(raiz.querySelector("#rango-aviso").textContent).to.contain("Consultas de hoy");
+      await esperar(() => !raiz.querySelector("#resumen").hasAttribute("aria-busy"));
+      expect(raiz.querySelector("#resumen strong").textContent).not.to.equal("—");
+    });
 
     it("conserva las fechas y el paciente elegidos al volver de una consulta", async () => {
       const raiz = await abrirPanel();
@@ -846,7 +889,7 @@ describe("componentes Web Components", () => {
       raiz.host.remove();
 
       const panel = montar("app-dashboard");
-      await esperar(() => panel.shadowRoot.querySelectorAll("#resumen .indicador").length === 4);
+      await esperar(() => panel.shadowRoot.querySelectorAll("#resumen:not([aria-busy]) .indicador").length === 4);
       const nueva = panel.shadowRoot;
       expect(nueva.querySelector("#desde").value).to.equal("");
       expect(nueva.querySelector("#hasta").value).to.equal("2026-11-11");
@@ -897,7 +940,7 @@ describe("componentes Web Components", () => {
       rango(raiz, "2026-11-01", "2026-11-30");
       await esperar(() => tarjetas(raiz).length === 2);
       expect(raiz.querySelector('[aria-pressed="true"]')).to.be.null;
-      expect(raiz.querySelector("#rango-aviso").textContent).to.contain("01 nov 2026");
+      expect(raiz.querySelector("#rango-aviso").textContent).to.contain("1 nov 2026");
 
       rango(raiz, "2026-11-30", "2026-11-01");
       await esperar(() => raiz.querySelector("#lista [role=alert]"));
@@ -940,6 +983,9 @@ describe("componentes Web Components", () => {
         { idConsultaProcedimientoPaso: 9002, idConsultaProcedimiento: 8000, idPersonaRol: 3000, fechaInicio: "2026-11-12T10:00:00-06:00", estado: "FINALIZADO" }
       );
       const vista = await abrirConsulta();
+      // Sin paso en curso no hay formulario de notas: lo escrito no quedaría en ningún paso.
+      expect(vista.shadowRoot.querySelector(".paso-panel.completada")).to.exist;
+      expect(vista.shadowRoot.querySelector("[data-accion='guardar-notas']")).to.be.null;
       vista.shadowRoot.querySelector("[data-accion='retroceder']").click();
       expect(await responderDialogo(true)).to.contain("Alta");
       await esperar(() => pasoActualizado().length === 1);
@@ -1096,6 +1142,9 @@ describe("componentes Web Components", () => {
       const [sinResultado, conResultado] = casillas();
       expect(conResultado.disabled).to.be.true;
       expect(conResultado.closest("li").textContent).to.contain("Con resultado");
+      // La lista no repite «Examen:», igual que el ticket.
+      expect(sinResultado.closest("li").textContent).to.contain("Radiografía periapical");
+      expect(raiz.querySelector(".ordenes").textContent).not.to.contain("Examen:");
 
       sinResultado.click();
       expect(boton().disabled).to.be.false;
@@ -1103,7 +1152,7 @@ describe("componentes Web Components", () => {
 
       const borrados = () => fetch.getCalls().filter((llamada) => llamada.args[1]?.method === "DELETE");
       boton().click();
-      expect(await responderDialogo(false)).to.contain("Radiografía periapical");
+      expect(await responderDialogo(false)).to.contain("«Radiografía periapical»");
       expect(borrados()).to.have.length(0);
 
       boton().click();
@@ -1375,45 +1424,83 @@ describe("componentes Web Components", () => {
   });
 
   describe("App shell y PWA", () => {
-    it("pwa-instalar muestra el botón cuando el navegador ofrece instalar", async () => {
+    /** Monta el componente y simula que el navegador ofrece instalar la PWA. */
+    async function ofrecerInstalacion(userChoice = Promise.resolve({ outcome: "accepted" })) {
       const instalar = montar("pwa-instalar");
       await esperar(() => instalar.shadowRoot.querySelector(".tarjeta"));
-      const tarjeta = instalar.shadowRoot.querySelector(".tarjeta");
-      expect(tarjeta.hidden).to.be.true;
-      const prompt = sinon.spy();
-      const evento = new dom.window.Event("beforeinstallprompt");
-      evento.prompt = prompt;
-      evento.userChoice = Promise.resolve({ outcome: "accepted" });
-      dom.window.dispatchEvent(evento);
-      await esperar(() => !tarjeta.hidden);
-      instalar.shadowRoot.querySelector("#instalar").click();
-      await esperar(() => prompt.called);
-      expect(tarjeta.hidden).to.be.true;
-    });
-
-    it("pwa-instalar se puede cerrar con «Ahora no» sin abrir la instalación", async () => {
-      const instalar = montar("pwa-instalar");
-      await esperar(() => instalar.shadowRoot.querySelector(".tarjeta"));
-      const tarjeta = instalar.shadowRoot.querySelector(".tarjeta");
+      const raiz = instalar.shadowRoot;
+      expect(raiz.querySelector("#abrir").hidden).to.be.true;
+      expect(raiz.querySelector(".tarjeta").hidden).to.be.true;
       const evento = new dom.window.Event("beforeinstallprompt");
       evento.prompt = sinon.spy();
+      evento.userChoice = userChoice;
       dom.window.dispatchEvent(evento);
-      await esperar(() => !tarjeta.hidden);
-      instalar.shadowRoot.querySelector('[aria-label="Ahora no"]').click();
-      expect(tarjeta.hidden).to.be.true;
+      await esperar(() => !raiz.querySelector("#abrir").hidden);
+      return { raiz, evento };
+    }
+
+    it("pwa-instalar muestra solo un botón discreto hasta que el usuario lo pulsa", async () => {
+      const { raiz, evento } = await ofrecerInstalacion();
+      const abrir = raiz.querySelector("#abrir");
+      expect(raiz.querySelector(".tarjeta").hidden).to.be.true;
+      expect(abrir.getAttribute("aria-label")).to.equal("Instalar la aplicación");
+      expect(abrir.getAttribute("aria-expanded")).to.equal("false");
+
+      abrir.click();
+      expect(raiz.querySelector(".tarjeta").hidden).to.be.false;
+      expect(abrir.hidden).to.be.true;
+      expect(abrir.getAttribute("aria-expanded")).to.equal("true");
+      expect(raiz.activeElement).to.equal(raiz.querySelector("#instalar"));
       expect(evento.prompt.called).to.be.false;
+    });
+
+    it("pwa-instalar abre la instalación del navegador y luego desaparece", async () => {
+      const { raiz, evento } = await ofrecerInstalacion();
+      raiz.querySelector("#abrir").click();
+      raiz.querySelector("#instalar").click();
+      await esperar(() => evento.prompt.called && raiz.querySelector(".tarjeta").hidden);
+      expect(raiz.querySelector("#abrir").hidden).to.be.true;
+    });
+
+    it("pwa-instalar vuelve a plegarse en el botón con «Ahora no»", async () => {
+      const { raiz, evento } = await ofrecerInstalacion();
+      raiz.querySelector("#abrir").click();
+      raiz.querySelector('[aria-label="Ahora no"]').click();
+      expect(raiz.querySelector(".tarjeta").hidden).to.be.true;
+      expect(raiz.querySelector("#abrir").hidden).to.be.false;
+      expect(raiz.activeElement).to.equal(raiz.querySelector("#abrir"));
+      expect(evento.prompt.called).to.be.false;
+    });
+
+    it("pwa-instalar se oculta cuando la aplicación ya quedó instalada", async () => {
+      const { raiz } = await ofrecerInstalacion();
+      dom.window.dispatchEvent(new dom.window.Event("appinstalled"));
+      expect(raiz.querySelector("#abrir").hidden).to.be.true;
+      expect(raiz.querySelector(".tarjeta").hidden).to.be.true;
+    });
+
+    it("app-shell extiende el encabezado a todo el ancho y deja centrado el contenido", async () => {
+      const shell = montar("app-shell");
+      await esperar(() => shell.shadowRoot.querySelector("header .barra"));
+      const barra = shell.shadowRoot.querySelector("header .barra");
+      expect(barra.classList.contains("ancho")).to.be.true;
+      expect(barra.classList.contains("contenedor")).to.be.false;
+      expect(shell.shadowRoot.querySelector("main").classList.contains("contenedor")).to.be.true;
     });
 
     it("app-shell salta al contenido principal sin cambiar la ruta", async () => {
       dom.window.location.hash = "#/buscar";
       const shell = montar("app-shell");
       await esperar(() => shell.shadowRoot.querySelector("app-busqueda"));
-      shell.shadowRoot.querySelector(".saltar").click();
+      const saltar = shell.shadowRoot.querySelector(".saltar");
+      expect(saltar.tagName).to.equal("BUTTON");
+      expect(saltar.textContent).to.equal("Ir al contenido principal");
+      saltar.click();
       expect(dom.window.location.hash).to.equal("#/buscar");
       expect(shell.shadowRoot.activeElement?.id).to.equal("vista");
     });
 
-    it("app-shell muestra la invitación a instalar abajo a la derecha, fuera del encabezado", async () => {
+    it("app-shell muestra el botón de instalar abajo a la derecha, fuera del encabezado", async () => {
       const shell = montar("app-shell");
       await esperar(() => shell.shadowRoot.querySelector("pwa-instalar"));
       const instalar = shell.shadowRoot.querySelector("pwa-instalar");

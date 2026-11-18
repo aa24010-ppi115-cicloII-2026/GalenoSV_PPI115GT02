@@ -35,6 +35,11 @@ export class AppShell extends Vista {
         background: var(--fondo, #f3f6f9);
       }
       .contenedor { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 1rem; }
+      /* El encabezado ocupa todo el ancho (marca a la izquierda, navegación a la derecha);
+         el contenido de las HU sigue centrado en .contenedor. */
+      .ancho { width: 100%; padding-inline: 1rem; }
+      /* Por debajo de este ancho el contenido ya llega a los bordes: el encabezado se alinea con él. */
+      @media (min-width: 1200px) { .ancho { padding-inline: 2rem; } }
       header {
         background: linear-gradient(110deg, #14202b 0%, var(--mate-fuerte, #1f3a50) 55%, #134f4a 100%);
         color: #f3f6f9;
@@ -73,6 +78,7 @@ export class AppShell extends Vista {
         padding: 0.5rem 0.8rem;
         border-radius: 8px;
         z-index: 100;
+        border: none; font: inherit; font-weight: 600; cursor: pointer;
       }
       .saltar:focus { left: 0.5rem; }
       .estado-conexion {
@@ -88,7 +94,7 @@ export class AppShell extends Vista {
       footer { padding-block: 1.25rem 1.5rem; color: var(--texto-tenue, #5f7387); font-size: 0.75rem; text-align: center; border-top: 1px solid var(--borde, #d6dee7); }
       @media (max-width: 620px) {
         .barra { gap: 0.4rem 0.5rem; }
-        .contenedor { padding: 0 0.75rem; }
+        .contenedor, .ancho { padding-inline: 0.75rem; }
         .marca p { display: none; }
         .marca { margin-right: 0; }
         .usuario { margin-left: auto; }
@@ -103,9 +109,9 @@ export class AppShell extends Vista {
     if (this._iniciado) return;
     this._iniciado = true;
     this.render(`
-      <a class="saltar" href="#vista">Ir al contenido principal</a>
+      <button type="button" class="saltar">Ir al contenido principal</button>
       <header>
-        <div class="contenedor barra">
+        <div class="ancho barra">
           <div class="marca">
             <div class="logo" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -140,11 +146,8 @@ export class AppShell extends Vista {
       else this.navegar(leerSesion() ? "dashboard" : "login");
     });
 
-    // Las rutas usan el hash, así que el enlace de salto mueve el foco sin cambiar la dirección.
-    this.q(".saltar").addEventListener("click", (evento) => {
-      evento.preventDefault();
-      this.q("#vista").focus();
-    });
+    // Las rutas usan el hash: el salto es un botón que mueve el foco, no un enlace que cambiaría la dirección.
+    this.q(".saltar").addEventListener("click", () => this.q("#vista").focus());
 
     this.addEventListener("navegar", (evento) => {
       const destino = evento.detail;

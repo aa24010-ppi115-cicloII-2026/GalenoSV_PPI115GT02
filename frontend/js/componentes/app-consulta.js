@@ -6,6 +6,7 @@ import {
   leerObservaciones,
   motivoDe,
   serializarObservaciones,
+  textoOrden,
 } from "../datos.js";
 import { crear, crearConId, actualizar, eliminar } from "../api.js";
 import { leerSesion } from "../estado.js";
@@ -27,8 +28,12 @@ export class AppConsulta extends Vista {
       .volver { margin-bottom: 0.8rem; }
       .aviso-carga { display: grid; gap: 0.9rem; justify-items: center; }
       .aviso-carga .fila { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
-      .encabezado { display: flex; align-items: flex-start; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
-      .encabezado { align-items: center; }
+      .encabezado { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+      /* En móvil «Ticket / PDF» y «Finalizar consulta» ocupan el ancho: lado a lado si caben, si no uno bajo el otro. */
+      @media (max-width: 620px) {
+        .encabezado > .fila { width: 100%; gap: 0.5rem; }
+        .encabezado > .fila button { flex: 1 1 auto; white-space: nowrap; }
+      }
       .encabezado .paciente { display: grid; gap: 0.3rem; min-width: 0; }
       .encabezado .titulo { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
       .encabezado h2 { font-size: 1.4rem; letter-spacing: -0.015em; }
@@ -214,7 +219,7 @@ export class AppConsulta extends Vista {
           ${finalizado ? '<span class="estado-pill completada">Completado</span>' : ""}
         </div>
         <linea-pasos data-cp="${escapar(cp.idConsultaProcedimiento)}"></linea-pasos>
-        ${finalizado ? this.panelFinalizado(cp, puedeRetroceder, notas) : this.panelPaso(cp, actual, puedeRetroceder, esUltimo, pasos.length, notas)}
+        ${finalizado ? this.panelFinalizado(cp, puedeRetroceder) : this.panelPaso(cp, actual, puedeRetroceder, esUltimo, pasos.length, notas)}
       </article>
     `;
   }
@@ -259,7 +264,8 @@ export class AppConsulta extends Vista {
     return `<button type="button" class="secundario" data-accion="retroceder" data-cp="${idCp}">← Paso anterior</button>`;
   }
 
-  panelFinalizado(cp, puedeRetroceder, notas) {
+  /** Con todos los pasos completos no hay dónde registrar notas: lo registrado se corrige retrocediendo. */
+  panelFinalizado(cp, puedeRetroceder) {
     const idCp = escapar(cp.idConsultaProcedimiento);
     const finalizada = Boolean(this._cita.consulta.fechaFin);
     return `
@@ -270,7 +276,6 @@ export class AppConsulta extends Vista {
             ? `Consulta finalizada el ${escapar(fechaHora(this._cita.consulta.fechaFin))}.`
             : "Si la atención terminó, use «Finalizar consulta». Para corregir un paso, vuelva al anterior."
         }</p>
-        ${this.formularioNotas(cp, notas)}
         ${puedeRetroceder ? `<div class="acciones-paso pie">${this.botonAnterior(idCp)}</div>` : ""}
       </div>
     `;
@@ -353,7 +358,7 @@ export class AppConsulta extends Vista {
       <li>
         <label>
           <input type="checkbox" name="orden" value="${escapar(orden.idOrdenExamen)}" ${tieneResultado ? "disabled" : ""} />
-          <span>${escapar(fechaHora(orden.fechaCreacion))} · ${escapar(orden.indicaciones ?? "Sin indicaciones")}</span>
+          <span>${escapar(fechaHora(orden.fechaCreacion))} · ${escapar(textoOrden(orden))}</span>
           ${tieneResultado ? '<span class="con-resultado">Con resultado</span>' : ""}
         </label>
       </li>`;
@@ -634,7 +639,7 @@ export class AppConsulta extends Vista {
     const ids = this.qa(`[data-cp="${idCp}"] .ordenes input:checked`).map((casilla) => casilla.value);
     const ordenes = this._datos.ordenesExamen.filter((orden) => ids.includes(String(orden.idOrdenExamen)));
     if (ordenes.length === 0) return;
-    const nombres = ordenes.map((orden) => `«${orden.indicaciones ?? "Orden sin indicaciones"}»`).join(", ");
+    const nombres = ordenes.map((orden) => `«${textoOrden(orden)}»`).join(", ");
     const aceptado = await confirmar({
       titulo: ordenes.length === 1 ? "¿Eliminar la orden de examen?" : `¿Eliminar ${ordenes.length} órdenes de examen?`,
       mensaje: `Se eliminará de este paso: ${nombres}. Esta acción no se puede deshacer.`,

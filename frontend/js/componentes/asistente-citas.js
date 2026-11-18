@@ -1,4 +1,4 @@
-import { Vista, escapar } from "../base.js";
+import { Vista, escapar, hoyISO } from "../base.js";
 import { personaDeDocumento, clinicasDePaciente, cumpleFormato } from "../datos.js";
 import "./ui-autocompletar.js";
 
@@ -73,12 +73,16 @@ export class AsistenteCitas extends Vista {
       @media (prefers-reduced-motion: reduce) {
         section[data-paso] { animation: none; }
       }
-      @media (max-width: 620px) {
-        form { padding: 1.1rem 1rem 1rem; }
-        /* Arriba: la etiqueta del paso actual puede ocupar varias líneas y la marca de los hechos va arriba. */
+      /* En tablet las cuatro etiquetas caben en una línea con letra un poco menor. */
+      @media (min-width: 721px) and (max-width: 900px) { ol.pasos li { font-size: 0.74rem; gap: 0.35rem; } }
+      /* Más angosto ya no caben: solo se lee la etiqueta del paso actual; la marca de los hechos va arriba. */
+      @media (max-width: 720px) {
         ol.pasos li { font-size: 0; gap: 0; justify-content: center; align-items: flex-start; }
         ol.pasos li[aria-current="step"] { font-size: 0.75rem; gap: 0.4rem; justify-content: flex-start; }
         .marca { left: 50%; margin-left: -0.425rem; }
+      }
+      @media (max-width: 620px) {
+        form { padding: 1.1rem 1rem 1rem; }
         .rango { grid-template-columns: 1fr; }
         .acciones button { flex: 1; }
       }
@@ -119,14 +123,14 @@ export class AsistenteCitas extends Vista {
           <div class="rango">
             <div class="campo">
               <label for="desde">Desde</label>
-              <input type="date" id="desde" />
+              <input type="date" id="desde" value="${hoyISO()}" />
             </div>
             <div class="campo">
               <label for="hasta">Hasta</label>
-              <input type="date" id="hasta" />
+              <input type="date" id="hasta" value="${hoyISO()}" />
             </div>
           </div>
-          <small class="ayuda">Deje las fechas vacías para ver todas sus citas, pasadas y futuras.</small>
+          <small class="ayuda">Por defecto se buscan las citas de hoy. Cambie las fechas para ver otro rango; deje una vacía para no limitar ese extremo.</small>
         </section>
 
         <p class="error" id="error" role="alert" hidden></p>
@@ -237,8 +241,10 @@ export class AsistenteCitas extends Vista {
 
   buscar() {
     this.mostrarError("");
-    const desde = this.q("#desde").value || null;
-    const hasta = this.q("#hasta").value || null;
+    let desde = this.q("#desde").value || null;
+    let hasta = this.q("#hasta").value || null;
+    // Sin ninguna fecha se buscan las citas de hoy, igual que el valor inicial del formulario.
+    if (!desde && !hasta) desde = hasta = hoyISO();
     if (desde && hasta && desde > hasta) {
       this.mostrarError("La fecha inicial no puede ser posterior a la fecha final.");
       return;
@@ -289,8 +295,8 @@ export class AsistenteCitas extends Vista {
   reiniciar() {
     this.q("#tipo").value = "";
     this.q("#numero").value = "";
-    this.q("#desde").value = "";
-    this.q("#hasta").value = "";
+    this.q("#desde").value = hoyISO();
+    this.q("#hasta").value = hoyISO();
     this.q("#clinica").opciones = [];
     this._persona = null;
     this._clinicas = [];

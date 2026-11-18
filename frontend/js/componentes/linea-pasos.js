@@ -44,7 +44,7 @@ export class LineaPasos extends Vista {
       details.registro { font-size: 0.8rem; margin: 0.3rem 0 0 0.65rem; }
       details.registro summary {
         cursor: pointer; color: var(--acento, #0f7b6c); font-weight: 600; width: fit-content;
-        border-radius: 6px; padding: 0.1rem 0.2rem;
+        border-radius: 6px; padding: 0.2rem; min-height: 24px; box-sizing: border-box;
       }
       details.registro summary:hover { color: var(--acento-fuerte, #0b6155); }
       details.registro summary:focus-visible { outline: none; box-shadow: var(--anillo); }
@@ -55,7 +55,11 @@ export class LineaPasos extends Vista {
       }
       details.registro dt { font-weight: 600; color: var(--mate, #2c4a63); }
       details.registro dd { margin: 0; }
-      @media (max-width: 620px) { .fila { flex-wrap: wrap; row-gap: 0.1rem; } }
+      /* En móvil el estado pasa debajo del nombre, alineado con él, en lugar de partirse a la derecha. */
+      @media (max-width: 620px) {
+        .fila { flex-wrap: wrap; row-gap: 0.1rem; }
+        .quien { flex-basis: 100%; margin-left: 1.85rem; text-align: left; }
+      }
     `;
   }
 

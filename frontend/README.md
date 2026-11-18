@@ -78,7 +78,8 @@ npm start                  # BrowserSync en http://localhost:3000
 ```
 
 > La PWA (service worker e instalación) requiere `localhost` o HTTPS.
-> En Chrome o Edge aparece abajo a la derecha la invitación **Instale GalenoSV**.
+> En Chrome o Edge aparece abajo a la derecha un botón redondo de descarga; al pulsarlo se
+> despliega la opción **Instalar**.
 
 ## 4. Pruebas unitarias
 

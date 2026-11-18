@@ -49,7 +49,9 @@
 
 html, body { margin: 0; padding: 0; }
 
-html { scrollbar-color: var(--borde-fuerte) transparent; }
+/* Se reserva el espacio de la barra de desplazamiento: al cargar los datos y crecer la página,
+   el contenido no se corre de lado (evita el salto de diseño que mide Lighthouse). */
+html { scrollbar-color: var(--borde-fuerte) transparent; scrollbar-gutter: stable; }
 
 body {
   min-height: 100vh;

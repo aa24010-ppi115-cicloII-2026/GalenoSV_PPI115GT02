@@ -10,6 +10,28 @@
   <link rel="icon" type="image/png" sizes="192x192" href="recursos/imagenes/icono-192.png">
   <link rel="apple-touch-icon" href="recursos/imagenes/icono-192.png">
   <link rel="stylesheet" href="css/principal.css">
+  <!-- Los módulos se piden en paralelo en lugar de descubrirse uno tras otro al importar. -->
+  <link rel="modulepreload" href="js/base.js">
+  <link rel="modulepreload" href="js/api.js">
+  <link rel="modulepreload" href="js/estado.js">
+  <link rel="modulepreload" href="js/datos.js">
+  <link rel="modulepreload" href="js/pendientes.js">
+  <link rel="modulepreload" href="js/cie10.js">
+  <link rel="modulepreload" href="js/pdf.js">
+  <link rel="modulepreload" href="js/pwa.js">
+  <link rel="modulepreload" href="js/componentes/ui-toast.js">
+  <link rel="modulepreload" href="js/componentes/ui-confirmar.js">
+  <link rel="modulepreload" href="js/componentes/ui-autocompletar.js">
+  <link rel="modulepreload" href="js/componentes/linea-pasos.js">
+  <link rel="modulepreload" href="js/componentes/pwa-instalar.js">
+  <link rel="modulepreload" href="js/componentes/ticket-cita.js">
+  <link rel="modulepreload" href="js/componentes/cita-card.js">
+  <link rel="modulepreload" href="js/componentes/asistente-citas.js">
+  <link rel="modulepreload" href="js/componentes/app-login.js">
+  <link rel="modulepreload" href="js/componentes/app-busqueda.js">
+  <link rel="modulepreload" href="js/componentes/app-dashboard.js">
+  <link rel="modulepreload" href="js/componentes/app-consulta.js">
+  <link rel="modulepreload" href="js/componentes/app-shell.js">
 </head>
 <body>
   <app-shell></app-shell>
