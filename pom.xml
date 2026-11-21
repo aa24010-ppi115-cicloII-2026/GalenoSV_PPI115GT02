@@ -33,7 +33,6 @@
             <groupId>com.github.librepdf</groupId>
             <artifactId>openpdf</artifactId>
             <version>1.3.30</version>
-            <scope>provided</scope>
         </dependency>
         
         <dependency>
@@ -57,36 +56,18 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Implementación de JSON-P solo para pruebas: en Liberty la aporta el servidor. -->
+        <dependency>
+            <groupId>org.eclipse.parsson</groupId>
+            <artifactId>parsson</artifactId>
+            <version>1.1.7</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
     
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.6.1</version>
-                <executions>
-                    <execution>
-                        <id>unpack-openpdf</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>com.github.librepdf</groupId>
-                                    <artifactId>openpdf</artifactId>
-                                    <version>1.3.30</version>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                    <excludes>META-INF/MANIFEST.MF,META-INF/maven/**,META-INF/versions/**,module-info.class</excludes>
-                                </artifactItem>
-                            </artifactItems>
-                            <overWriteReleases>false</overWriteReleases>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -106,7 +87,7 @@
                 <artifactId>liberty-maven-plugin</artifactId>
                 <version>3.10.2</version>
                 <configuration>
-                    <installDirectory>/home/mrxto/openliberty/wlp</installDirectory>
+                    <installDirectory>/home/duran/wlp</installDirectory>
                     <serverName>miServidor</serverName>
                 </configuration>
             </plugin>

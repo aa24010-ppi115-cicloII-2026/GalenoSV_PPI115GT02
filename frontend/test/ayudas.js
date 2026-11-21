@@ -1,4 +1,5 @@
 import sinon from "sinon";
+import { FUENTES, CAMPO_ID } from "../js/recursos.js";
 
 export function datosBase() {
   return {
@@ -34,7 +35,12 @@ export function datosBase() {
         idConsultaProcedimiento: 8000,
         idConsulta: 5000,
         idProcedimiento: 6000,
-        observaciones: JSON.stringify({ notas: "Sin dolor", diagnostico: "K02.1 · Caries de la dentina", plan: "Control" }),
+        observaciones: JSON.stringify({
+          notas: "Sin dolor",
+          diagnostico: "K02.1 · Caries de la dentina",
+          plan: "Control",
+          pasos: { 7000: { notas: "Sin dolor", diagnostico: "K02.1 · Caries de la dentina", plan: "Control" } },
+        }),
       },
       { idConsultaProcedimiento: 8001, idConsulta: 5002, idProcedimiento: 6001, observaciones: null },
     ],
@@ -74,58 +80,6 @@ export function datosBase() {
   };
 }
 
-const CAMPO_ID = {
-  clinicas: "idClinica",
-  roles: "idRol",
-  personas: "idPersona",
-  personasRol: "idPersonaRol",
-  documentos: "idDocumento",
-  tiposDocumento: "idTipoDocumento",
-  consultas: "idConsulta",
-  consultasProcedimiento: "idConsultaProcedimiento",
-  consultasProcedimientoPaso: "idConsultaProcedimientoPaso",
-  procedimientos: "idProcedimiento",
-  procedimientosPaso: "idProcedimientoPaso",
-  procedimientosPasoSecuencia: "idProcedimientoPasoSecuencia",
-  procedimientosPasoExamen: "idProcedimientoPasoExamen",
-  examenes: "idExamen",
-  tiposExamen: "idTipoExamen",
-  examenesTipoExamen: "idExamenTipoExamen",
-  ordenesExamen: "idOrdenExamen",
-  examenesResultado: "idExamenResultado",
-  mediosContacto: "idMedioContacto",
-};
-
-export function indizar(datos) {
-  const copia = { ...datos, porId: {} };
-  for (const [clave, lista] of Object.entries(datos)) {
-    copia.porId[clave] = new Map(lista.map((item) => [item[CAMPO_ID[clave]], item]));
-  }
-  return copia;
-}
-
-export const RUTAS = {
-  clinicas: "clinicas",
-  roles: "roles",
-  personas: "personas",
-  personasRol: "personas-rol",
-  documentos: "documentos",
-  tiposDocumento: "tipos-documento",
-  consultas: "consultas",
-  consultasProcedimiento: "consultas-procedimiento",
-  consultasProcedimientoPaso: "consultas-procedimiento-paso",
-  procedimientos: "procedimientos",
-  procedimientosPaso: "procedimientos-paso",
-  procedimientosPasoSecuencia: "procedimientos-paso-secuencia",
-  procedimientosPasoExamen: "procedimientos-paso-examen",
-  examenes: "examenes",
-  tiposExamen: "tipos-examen",
-  examenesTipoExamen: "examenes-tipo-examen",
-  ordenesExamen: "ordenes-examen",
-  examenesResultado: "examenes-resultado",
-  mediosContacto: "medios-contacto",
-};
-
 export function stubApi(datos) {
   let secuencia = 10000;
   return sinon.stub(globalThis, "fetch").callsFake(async (url, opciones = {}) => {
@@ -134,17 +88,7 @@ export function stubApi(datos) {
     const ruta = limpia.split("/api/")[1] ?? "";
     const [recurso, id] = ruta.split("/");
 
-    if (recurso === "tickets" && id === "consultas") {
-      // Igual que el backend real: @Produces("application/pdf") responde 406 a otro Accept.
-      const acepta = String(opciones.headers?.Accept ?? "");
-      if (!acepta.includes("application/pdf")) return new Response(null, { status: 406 });
-      return new Response("%PDF-1.4 fake", {
-        status: 200,
-        headers: { "Content-Type": "application/pdf" },
-      });
-    }
-
-    const clave = Object.keys(RUTAS).find((nombre) => RUTAS[nombre] === recurso);
+    const clave = Object.keys(FUENTES).find((nombre) => FUENTES[nombre] === recurso);
     if (!clave) return new Response(null, { status: 404 });
     const lista = datos[clave];
     if (metodo === "GET") {
@@ -155,8 +99,10 @@ export function stubApi(datos) {
     }
     if (metodo === "POST") {
       const cuerpo = JSON.parse(opciones.body ?? "{}");
-      const nuevoId = ++secuencia;
-      lista.push({ [CAMPO_ID[clave]]: nuevoId, ...cuerpo });
+      // Como el backend: respeta el id que envía el cliente y no duplica un reintento.
+      const nuevoId = cuerpo[CAMPO_ID[clave]] ?? ++secuencia;
+      if (!lista.some((item) => String(item[CAMPO_ID[clave]]) === String(nuevoId)))
+        lista.push({ [CAMPO_ID[clave]]: nuevoId, ...cuerpo });
       return new Response(null, {
         status: 201,
         headers: { Location: `http://localhost:9080/api/${recurso}/${nuevoId}` },

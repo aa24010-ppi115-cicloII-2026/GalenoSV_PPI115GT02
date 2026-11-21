@@ -1,0 +1,31 @@
+.cabecera { display: grid; gap: 0.3rem; margin-bottom: 1rem; }
+      .cabecera h2 { font-size: 1.4rem; letter-spacing: -0.015em; }
+      .filtros { display: grid; gap: 0.9rem; }
+      .datos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
+      .fechas { display: grid; grid-template-columns: repeat(2, minmax(0, 11rem)) 1fr; gap: 0.8rem; align-items: end; }
+      .rangos { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; }
+      .rangos button {
+        min-height: 2.25rem; padding: 0.3rem 0.9rem; font-size: 0.82rem; border-radius: 62.4375rem;
+        background: var(--superficie); color: var(--mate); border: 0.0625rem solid var(--borde-fuerte); box-shadow: none;
+      }
+      .rangos button:hover { background: var(--mate-suave); }
+      .rangos button[aria-pressed="true"] { background: var(--mate); color: #fff; border-color: var(--mate); }
+      #rango-aviso { font-size: 0.85rem; color: var(--texto-suave); margin: 1rem 0 0; }
+      #resumen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem; margin: 0.6rem 0 1.1rem; }
+      .indicador {
+        background: var(--superficie); border: 0.0625rem solid var(--borde); border-radius: var(--radio-grande);
+        padding: 0.7rem 0.85rem; display: grid; gap: 0.1rem;
+      }
+      .indicador span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--texto-suave); }
+      .indicador strong { font-size: 1.5rem; color: var(--mate); font-variant-numeric: tabular-nums; }
+      .indicador.proceso strong { color: var(--alerta); }
+      .indicador.completada strong { color: var(--exito); }
+      #lista { display: grid; gap: 0.85rem; }
+      @media (max-width: 56.25rem) {
+        .datos { grid-template-columns: 1fr 1fr; }
+        .datos #paciente { grid-column: 1 / -1; }
+        .fechas { grid-template-columns: 1fr 1fr; }
+        .rangos { grid-column: 1 / -1; justify-content: flex-start; }
+        #resumen { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 32.5rem) { .datos, .fechas { grid-template-columns: minmax(0, 1fr); } }

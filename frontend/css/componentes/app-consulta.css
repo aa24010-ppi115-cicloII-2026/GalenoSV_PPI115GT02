@@ -1,0 +1,77 @@
+.volver { margin-bottom: 0.8rem; }
+      .aviso-carga { display: grid; gap: 0.9rem; justify-items: center; }
+      .aviso-carga .fila { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+      .encabezado { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+      /* En móvil «Ticket» y «Finalizar consulta» ocupan el ancho: lado a lado si caben, si no uno bajo el otro. */
+      @media (max-width: 38.75rem) {
+        .encabezado > .fila { width: 100%; gap: 0.5rem; }
+        .encabezado > .fila button { flex: 1 1 auto; white-space: nowrap; }
+      }
+      .encabezado .paciente { display: grid; gap: 0.3rem; min-width: 0; }
+      .encabezado .titulo { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+      .encabezado h2 { font-size: 1.4rem; letter-spacing: -0.015em; }
+      .encabezado .datos { font-size: 0.9rem; color: var(--texto-suave); font-variant-numeric: tabular-nums; }
+      .procedimientos { display: grid; gap: 1rem; margin-top: 1rem; }
+      .proc { display: grid; gap: 0.8rem; }
+      .proc h3 { font-size: 1.05rem; }
+      .estado-pill {
+        font-size: 0.7rem; font-weight: 700; text-transform: uppercase; padding: 0.22rem 0.6rem;
+        border-radius: 62.4375rem; background: var(--mate-suave); color: var(--mate); white-space: nowrap;
+      }
+      .estado-pill.completada { background: var(--exito-suave); color: var(--exito); }
+      .estado-pill.proceso { background: var(--alerta-suave); color: var(--alerta); }
+      .bloque { display: grid; gap: 0.7rem; padding-top: 0.85rem; border-top: 0.0625rem solid var(--borde); }
+      .bloque h5 { font-size: 0.8rem; font-weight: 700; color: var(--mate); text-transform: uppercase; letter-spacing: 0.05em; }
+      .bloque h5 small { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--texto-suave); }
+      .paso-cabecera { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+      .paso-cabecera .meta { font-size: 0.78rem; color: var(--texto-suave); font-variant-numeric: tabular-nums; }
+      .acciones-paso { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+      .acciones-paso .separador { flex: 1; }
+      h4, h5 { margin: 0; }
+      .paso-panel { display: grid; gap: 0.75rem; padding-top: 1rem; border-top: 0.0625rem solid var(--borde); }
+      .paso-panel h4 { font-size: 1.05rem; color: var(--texto); }
+      .paso-panel.completada h4 { color: var(--exito); }
+      /* Paso en espera: lo atiende otro rol, así que se muestra como aviso sin acciones. */
+      .paso-panel.espera {
+        gap: 0.6rem; margin: 0.25rem 0; padding: 0.9rem 1rem; border: 0.0625rem solid var(--alerta);
+        border-radius: var(--radio); background: var(--alerta-suave);
+      }
+      .paso-panel.espera .aviso { color: var(--texto); }
+      .paso-panel.espera strong { color: var(--alerta); }
+      /* Pie con las acciones del paso, separado de las acciones de cada sección. */
+      .acciones-paso.pie { padding-top: 0.9rem; border-top: 0.0625rem solid var(--borde); }
+      details.examenes > summary {
+        cursor: pointer; width: fit-content; border-radius: 0.375rem; padding: 0.1rem 0.2rem; margin-left: -0.2rem;
+        font-size: 0.8rem; font-weight: 700; color: var(--mate); text-transform: uppercase; letter-spacing: 0.05em;
+      }
+      details.examenes > summary small { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--texto-suave); }
+      details.examenes > summary:focus-visible { outline: none; box-shadow: var(--anillo); }
+      details.examenes[open] { gap: 0.6rem; }
+      .asignacion { display: grid; gap: 0.6rem; }
+      .elegidos { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+      .elegidos li {
+        display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.84rem; color: var(--mate);
+        background: var(--mate-suave); border: 0.0625rem solid var(--borde); border-radius: 62.4375rem; padding: 0.15rem 0.2rem 0.15rem 0.7rem;
+      }
+      .elegidos li small { color: var(--texto-suave); }
+      .elegidos .quitar {
+        min-height: 0; width: 1.6rem; height: 1.6rem; padding: 0; border-radius: 62.4375rem; line-height: 1;
+        background: transparent; color: var(--mate); border: none; box-shadow: none; font-size: 1rem;
+      }
+      .elegidos .quitar:hover { background: var(--superficie); }
+      .ordenes { margin-top: 0.5rem; font-size: 0.84rem; color: var(--mate); display: grid; gap: 0.4rem; }
+      .barra-ordenes { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+      .barra-ordenes button { min-height: 2rem; padding: 0.2rem 0.75rem; font-size: 0.8rem; }
+      .barra-ordenes button:disabled { border-color: var(--borde); color: var(--texto-tenue); background: transparent; }
+      .ordenes ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+      .ordenes label {
+        display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; cursor: pointer;
+        padding: 0.5rem 0.7rem; background: var(--superficie); border: 0.0625rem solid var(--borde); border-radius: var(--radio);
+      }
+      .ordenes label:has(input:checked) { border-color: var(--peligro); background: var(--peligro-suave); }
+      .ordenes label:has(input:disabled) { cursor: default; }
+      .ordenes label > span { flex: 1; min-width: 12rem; }
+      .con-resultado { font-size: 0.72rem; font-weight: 600; color: var(--exito); background: var(--exito-suave); border-radius: 62.4375rem; padding: 0.15rem 0.55rem; }
+        font-size: 0.66rem; text-transform: uppercase; font-weight: 700; padding: 0.1rem 0.4rem;
+        border-radius: 62.4375rem; background: var(--mate-suave); color: var(--mate); margin-left: 0.35rem;
+      }

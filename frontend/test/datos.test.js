@@ -1,11 +1,14 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import { datosBase, indizar, stubApi } from "./ayudas.js";
-import { cargarTodo, limpiarCache } from "../js/datos.js";
+import { datosBase, stubApi } from "./ayudas.js";
+import { cargarTodo, limpiarCache, aplicarPendientes } from "../js/datos.js";
 import {
   personaDeDocumento,
   documentoDe,
   cumpleFormato,
+  errorDeFormatoDocumento,
+  mensajeFormatoDocumento,
+  tipoDocumentoElegido,
   clinicasDePaciente,
   empleadoDePersona,
   pasosDeProcedimiento,
@@ -26,7 +29,7 @@ describe("datos.js", () => {
   let datos;
 
   beforeEach(() => {
-    datos = indizar(datosBase());
+    datos = datosBase();
   });
 
   it("cumpleFormato valida con la expresión del tipo y no bloquea si el catálogo no la trae o está mal escrita", () => {
@@ -36,6 +39,20 @@ describe("datos.js", () => {
     expect(cumpleFormato({ expresionRegular: "" }, "A123")).to.be.true;
     expect(cumpleFormato({ expresionRegular: "([" }, "A123")).to.be.true;
     expect(cumpleFormato(null, "A123")).to.be.true;
+  });
+
+  it("compone el mensaje de formato con el nombre del tipo de documento", () => {
+    const tipo = tipoDocumentoElegido(datos, "1");
+    expect(tipo.nombre).to.equal("DUI");
+    expect(mensajeFormatoDocumento({ ...tipo, indicaciones: "8 dígitos, guion y dígito verificador" })).to.equal(
+      "El número de DUI no tiene el formato esperado: 8 dígitos, guion y dígito verificador."
+    );
+  });
+
+  it("errorDeFormatoDocumento devuelve el mensaje solo cuando el número no cumple el formato", () => {
+    const dui = { nombre: "DUI", expresionRegular: "^[0-9]{8}-[0-9]$" };
+    expect(errorDeFormatoDocumento(dui, "01234567-8")).to.equal("");
+    expect(errorDeFormatoDocumento(dui, "123")).to.contain("no tiene el formato esperado");
   });
 
   it("encuentra una persona por tipo y número de documento, sin distinguir espacios", () => {
@@ -57,6 +74,8 @@ describe("datos.js", () => {
   it("traduce el estado interno del paso a un texto legible", () => {
     expect(etiquetaPaso("completado")).to.equal("Completado");
     expect(etiquetaPaso("actual")).to.equal("En curso");
+    // El paso siguiente que nadie ha iniciado no está «en curso».
+    expect(etiquetaPaso("actual", false)).to.equal("Por iniciar");
     expect(etiquetaPaso("pendiente")).to.equal("Pendiente");
   });
 
@@ -83,14 +102,20 @@ describe("datos.js", () => {
   });
 
   it("empareja registros con pasos y calcula el estado de cada paso", () => {
-    const pasos = pasosConRegistros(datos, datos.porId.consultasProcedimiento.get(8000));
+    const pasos = pasosConRegistros(datos, datos.consultasProcedimiento.find((item) => String(item.idConsultaProcedimiento) === "8000"));
     expect(pasos.map((paso) => paso.estado)).to.deep.equal(["completado", "actual", "pendiente"]);
     expect(pasos[0].persona.nombres).to.equal("Elena");
     expect(pasos[1].rol.nombre).to.equal("Odontólogo");
   });
 
+  it("no deja pasos en curso cuando la consulta ya fue finalizada", () => {
+    const procedimiento = datos.consultasProcedimiento.find((item) => String(item.idConsultaProcedimiento) === "8000");
+    const pasos = pasosConRegistros(datos, procedimiento, { finalizada: true });
+    expect(pasos.map((paso) => paso.estado)).to.deep.equal(["completado", "pendiente", "pendiente"]);
+  });
+
   it("compone el resumen de una cita con paciente, clínica y procedimientos", () => {
-    const cita = resumenCita(datos, datos.porId.consultas.get(5000));
+    const cita = resumenCita(datos, datos.consultas.find((item) => String(item.idConsulta) === "5000"));
     expect(cita.paciente.nombres).to.equal("Ana");
     expect(cita.paciente.documento.tipo).to.equal("DUI");
     expect(cita.paciente.documento.valor).to.equal("11111111-1");
@@ -127,7 +152,19 @@ describe("datos.js", () => {
       desde: "2026-11-12",
       hasta: "2026-11-12",
     });
-    expect(enfermero.map((cita) => cita.consulta.idConsulta)).to.deep.equal([5000, 5002]);
+    expect(enfermero.map((cita) => cita.consulta.idConsulta)).to.deep.equal([5002]);
+  });
+
+  it("mantiene una cita finalizada en la agenda del rol que participa en sus pasos", () => {
+    datos.consultas.find((item) => String(item.idConsulta) === "5000").fechaFin = "2026-11-12T12:00:00-06:00";
+    const odontologo = citasDeEmpleado(datos, {
+      idClinica: 10,
+      idRol: 2,
+      desde: "2026-11-12",
+      hasta: "2026-11-12",
+    });
+    expect(odontologo.map((cita) => cita.consulta.idConsulta)).to.deep.equal([5000]);
+    expect(odontologo[0].procedimientos[0].pasos.some((paso) => paso.estado === "actual")).to.be.false;
   });
 
   it("filtra la agenda del empleado por el paciente elegido", () => {
@@ -141,10 +178,25 @@ describe("datos.js", () => {
     expect(pacientesDeClinica(datos, 99)).to.deep.equal([]);
   });
 
+  it("tras retroceder solo el primer paso sin terminar queda en curso y el siguiente conserva su registro", () => {
+    // Paso 1 reabierto (PENDIENTE) cuando el paso 2 ya se había iniciado.
+    datos.consultasProcedimientoPaso[0].estado = "PENDIENTE";
+    datos.consultasProcedimientoPaso.push({
+      idConsultaProcedimientoPaso: 9001,
+      idConsultaProcedimiento: 8000,
+      idPersonaRol: 3000,
+      fechaInicio: "2026-11-12T09:40:00-06:00",
+      estado: "EN_PROCESO",
+    });
+    const pasos = pasosConRegistros(datos, datos.consultasProcedimiento.find((item) => String(item.idConsultaProcedimiento) === "8000"));
+    expect(pasos.map((paso) => paso.estado)).to.deep.equal(["actual", "pendiente", "pendiente"]);
+    expect(pasos[1].registro.idConsultaProcedimientoPaso).to.equal(9001);
+  });
+
   it("calcula el estado de la cita segun los pasos realizados", () => {
-    const enProceso = resumenCita(datos, datos.porId.consultas.get(5000));
+    const enProceso = resumenCita(datos, datos.consultas.find((item) => String(item.idConsulta) === "5000"));
     expect(estadoDeCita(enProceso)).to.deep.equal({ clave: "proceso", texto: "En proceso" });
-    const programada = resumenCita(datos, datos.porId.consultas.get(5002));
+    const programada = resumenCita(datos, datos.consultas.find((item) => String(item.idConsulta) === "5002"));
     expect(estadoDeCita(programada).clave).to.equal("programada");
     const completada = {
       ...enProceso,
@@ -156,6 +208,13 @@ describe("datos.js", () => {
     expect(estadoDeCita(completada)).to.deep.equal({ clave: "completada", texto: "Completada" });
   });
 
+  it("considera completada una cita cerrada aunque conserve pasos pendientes", () => {
+    const cita = resumenCita(datos, datos.consultas.find((item) => String(item.idConsulta) === "5000"));
+    cita.consulta = { ...cita.consulta, fechaFin: "2026-11-12T12:00:00-06:00" };
+
+    expect(estadoDeCita(cita)).to.deep.equal({ clave: "completada", texto: "Completada" });
+  });
+
   it("obtiene los exámenes configurados para el procedimiento con sus tipos", () => {
     const examenes = examenesAsignables(datos, 6000);
     expect(examenes).to.have.length(1);
@@ -164,7 +223,7 @@ describe("datos.js", () => {
     expect(examenesAsignables(datos, 6001)).to.deep.equal([]);
   });
 
-  it("indexa por el identificador propio aunque el JSON tenga otros campos id primero", async () => {
+  it("conserva como listas los recursos del backend aunque los objetos tengan otros campos primero", async () => {
     const fuente = datosBase();
     fuente.personasRol = fuente.personasRol.map((item) => ({
       fechaCreacion: "2026-01-01T08:00-06:00",
@@ -176,8 +235,9 @@ describe("datos.js", () => {
     stubApi(fuente);
     try {
       const cargados = await cargarTodo();
-      expect(cargados.porId.personasRol.size).to.equal(3);
-      expect(cargados.porId.personasRol.get(1000).idPersona).to.equal(100);
+      expect(cargados.personasRol).to.have.length(3);
+      expect(cargados.personasRol.find((item) => item.idPersonaRol === 1000).idPersona).to.equal(100);
+      expect(cargados).not.to.have.property("porId");
     } finally {
       sinon.restore();
       limpiarCache();
@@ -207,5 +267,45 @@ describe("datos.js", () => {
         serializarObservaciones({ ...notas, pasos: { 7000: { notas: "Paso 1", fecha: "2026-11-12T09:00:00-06:00" } } })
       ).pasos["7000"].notas
     ).to.equal("Paso 1");
+  });
+  it("muestra sobre los datos del servidor los cambios guardados sin conexión, sin alterar la copia original", () => {
+    datos.ordenesExamen.push({ idOrdenExamen: 4000, idConsultaProcedimientoPaso: 9000 });
+    const vista = aplicarPendientes(datos, [
+      {
+        metodo: "POST",
+        ruta: "consultas-procedimiento-paso",
+        cuerpo: { idConsultaProcedimientoPaso: "c1", idConsultaProcedimiento: 8000, estado: "EN_PROCESO" },
+      },
+      { metodo: "PUT", ruta: "consultas-procedimiento-paso/c1", cuerpo: { estado: "FINALIZADO" } },
+      { metodo: "PUT", ruta: "consultas-procedimiento-paso/9000", cuerpo: { observaciones: "Editado" } },
+      { metodo: "DELETE", ruta: "ordenes-examen/4000", cuerpo: null },
+    ]);
+    expect(vista.consultasProcedimientoPaso.find((item) => item.idConsultaProcedimientoPaso === "c1").estado).to.equal("FINALIZADO");
+    expect(vista.consultasProcedimientoPaso.find((item) => item.idConsultaProcedimientoPaso === 9000).observaciones).to.equal("Editado");
+    expect(vista.ordenesExamen).to.deep.equal([]);
+    expect(datos.consultasProcedimientoPaso).to.have.length(1);
+    expect(datos.consultasProcedimientoPaso[0].observaciones).to.be.undefined;
+    expect(datos.ordenesExamen).to.have.length(1);
+    expect(aplicarPendientes(datos, [])).to.equal(datos);
+  });
+
+  it("proyecta una alta pendiente con el mismo identificador sin duplicar la fila", () => {
+    const pendiente = {
+      metodo: "POST",
+      ruta: "consultas-procedimiento-paso/pendiente",
+      cuerpo: {
+        idConsultaProcedimientoPaso: "9000",
+        estado: "REVISADO",
+      },
+    };
+
+    const vista = aplicarPendientes(datos, [pendiente]);
+
+    expect(vista.consultasProcedimientoPaso).to.have.length(1);
+    expect(vista.consultasProcedimientoPaso[0]).to.include({
+      idConsultaProcedimientoPaso: "9000",
+      estado: "REVISADO",
+    });
+    expect(datos.consultasProcedimientoPaso[0].estado).to.equal("FINALIZADO");
   });
 });

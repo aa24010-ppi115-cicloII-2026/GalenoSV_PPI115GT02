@@ -1,20 +1,55 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GalenoSV · Gestión clínica</title>
-  <meta name="theme-color" content="#2c4a63">
-  <meta name="description" content="Gestión de citas y atenciones odontológicas. Aplicación web progresiva.">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" sizes="192x192" href="recursos/imagenes/icono-192.png">
-  <link rel="apple-touch-icon" href="recursos/imagenes/icono-192.png">
-  <link rel="stylesheet" href="css/principal.css">
-</head>
-<body>
-  <app-shell></app-shell>
-  <pwa-instalar></pwa-instalar>
-  <noscript>GalenoSV necesita JavaScript para funcionar.</noscript>
-  <script type="module" src="js/app.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GalenoSV · Gestión clínica</title>
+    <meta name="theme-color" content="#2c4a63" />
+    <meta
+      name="description"
+      content="Gestión de citas y atenciones odontológicas. Aplicación web progresiva."
+    />
+    <link rel="manifest" href="manifest.json" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="recursos/imagenes/icono-192.png"
+    />
+    <link rel="apple-touch-icon" href="recursos/imagenes/icono-192.png" />
+    <link rel="stylesheet" href="css/principal.css" />
+    <!-- Los módulos se piden en paralelo en lugar de descubrirse uno tras otro al importar. -->
+    <link rel="modulepreload" href="js/base.js" />
+    <link rel="modulepreload" href="js/configuracion-estilos.js" />
+    <link rel="modulepreload" href="js/texto.js" />
+    <link rel="modulepreload" href="js/fechas.js" />
+    <link rel="modulepreload" href="js/presentacion.js" />
+    <link rel="modulepreload" href="js/presentacion-consulta.js" />
+    <link rel="modulepreload" href="js/api.js" />
+    <link rel="modulepreload" href="js/estado.js" />
+    <link rel="modulepreload" href="js/datos.js" />
+    <link rel="modulepreload" href="js/recursos.js" />
+    <link rel="modulepreload" href="js/pendientes.js" />
+    <link rel="modulepreload" href="js/cie10.js" />
+    <link rel="modulepreload" href="js/pwa.js" />
+    <link rel="modulepreload" href="js/componentes/reutilizables.js" />
+    <link rel="modulepreload" href="js/componentes/ui-toast.js" />
+    <link rel="modulepreload" href="js/componentes/ui-confirmar.js" />
+    <link rel="modulepreload" href="js/componentes/ui-autocompletar.js" />
+    <link rel="modulepreload" href="js/componentes/linea-pasos.js" />
+    <link rel="modulepreload" href="js/componentes/pwa-instalar.js" />
+    <link rel="modulepreload" href="js/componentes/ticket-cita.js" />
+    <link rel="modulepreload" href="js/componentes/cita-card.js" />
+    <link rel="modulepreload" href="js/componentes/asistente-citas.js" />
+    <link rel="modulepreload" href="js/componentes/app-login.js" />
+    <link rel="modulepreload" href="js/componentes/app-busqueda.js" />
+    <link rel="modulepreload" href="js/componentes/app-dashboard.js" />
+    <link rel="modulepreload" href="js/componentes/app-consulta.js" />
+    <link rel="modulepreload" href="js/componentes/app-shell.js" />
+  </head>
+  <body>
+    <app-shell></app-shell>
+    <noscript>GalenoSV necesita JavaScript para funcionar.</noscript>
+    <script type="module" src="js/app.js"></script>
+  </body>
 </html>

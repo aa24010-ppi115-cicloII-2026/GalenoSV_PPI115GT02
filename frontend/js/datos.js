@@ -1,87 +1,128 @@
 import { listarTodo } from "./api.js";
+import { listarPendientes } from "./pendientes.js";
+import { FUENTES, CAMPO_ID, CLAVE_DE_RUTA } from "./recursos.js";
+import { nombreCompleto, normalizarTexto } from "./texto.js";
 
-const FUENTES = {
-  clinicas: "clinicas",
-  roles: "roles",
-  personas: "personas",
-  personasRol: "personas-rol",
-  documentos: "documentos",
-  tiposDocumento: "tipos-documento",
-  consultas: "consultas",
-  consultasProcedimiento: "consultas-procedimiento",
-  consultasProcedimientoPaso: "consultas-procedimiento-paso",
-  procedimientos: "procedimientos",
-  procedimientosPaso: "procedimientos-paso",
-  procedimientosPasoSecuencia: "procedimientos-paso-secuencia",
-  procedimientosPasoExamen: "procedimientos-paso-examen",
-  examenes: "examenes",
-  tiposExamen: "tipos-examen",
-  examenesTipoExamen: "examenes-tipo-examen",
-  ordenesExamen: "ordenes-examen",
-  examenesResultado: "examenes-resultado",
-  mediosContacto: "medios-contacto",
-};
+/** Busca un registro en la lista recibida del backend usando su identificador. */
+function buscarPorId(datos, clave, id) {
+  if (id === null || id === undefined) return null;
+  const campo = CAMPO_ID[clave];
+  return (datos[clave] ?? []).find((item) => String(item[campo]) === String(id)) ?? null;
+}
 
-const CAMPO_ID = {
-  clinicas: "idClinica",
-  roles: "idRol",
-  personas: "idPersona",
-  personasRol: "idPersonaRol",
-  documentos: "idDocumento",
-  tiposDocumento: "idTipoDocumento",
-  consultas: "idConsulta",
-  consultasProcedimiento: "idConsultaProcedimiento",
-  consultasProcedimientoPaso: "idConsultaProcedimientoPaso",
-  procedimientos: "idProcedimiento",
-  procedimientosPaso: "idProcedimientoPaso",
-  procedimientosPasoSecuencia: "idProcedimientoPasoSecuencia",
-  procedimientosPasoExamen: "idProcedimientoPasoExamen",
-  examenes: "idExamen",
-  tiposExamen: "idTipoExamen",
-  examenesTipoExamen: "idExamenTipoExamen",
-  ordenesExamen: "idOrdenExamen",
-  examenesResultado: "idExamenResultado",
-  mediosContacto: "idMedioContacto",
-};
+function mismoId(a, b) {
+  return a !== null && a !== undefined && b !== null && b !== undefined && String(a) === String(b);
+}
+
+/**
+ * Muestra sobre los datos del servidor los cambios guardados sin conexión, para que la pantalla
+ * refleje lo hecho antes de sincronizar. Trabaja sobre copias: los datos originales no cambian.
+ */
+export function aplicarPendientes(datos, pendientes) {
+  if (pendientes.length === 0) return datos;
+  const tablas = { ...datos };
+  for (const { metodo, ruta, cuerpo } of pendientes) {
+    const [recurso, id] = ruta.split("/");
+    const clave = CLAVE_DE_RUTA[recurso];
+    if (!clave) continue;
+    const campo = CAMPO_ID[clave];
+    if (tablas[clave] === datos[clave]) tablas[clave] = [...(datos[clave] ?? [])];
+    const lista = tablas[clave];
+    const indice = lista.findIndex((item) => String(item[campo]) === id);
+    // Un alta sin id del cliente no se puede referenciar todavía; se verá al sincronizar.
+    if (metodo === "POST" && cuerpo?.[campo]) {
+      const existente = lista.findIndex((item) => String(item[campo]) === String(cuerpo[campo]));
+      if (existente >= 0) lista[existente] = { ...lista[existente], ...cuerpo };
+      else lista.push({ ...cuerpo });
+    }
+    else if (metodo === "PUT" && indice >= 0) lista[indice] = { ...lista[indice], ...cuerpo };
+    else if (metodo === "DELETE" && indice >= 0) lista.splice(indice, 1);
+  }
+  return tablas;
+}
 
 let cache = null;
 let carga = null;
+let revisionCache = 0;
 
 export async function cargarTodo({ recargar = false } = {}) {
-  if (cache && !recargar) return cache;
-  if (carga && !recargar) return carga;
-  carga = Promise.all(
-    Object.entries(FUENTES).map(async ([clave, ruta]) => [clave, await listarTodo(ruta)])
-  ).then((entradas) => {
-    cache = Object.fromEntries(entradas);
-    cache.porId = {};
-    for (const [clave, lista] of Object.entries(cache)) {
-      if (!Array.isArray(lista)) continue;
-      const campo = CAMPO_ID[clave];
-      cache.porId[clave] = new Map(campo ? lista.map((item) => [item[campo], item]) : []);
-    }
-    return cache;
-  });
-  try {
-    return await carga;
-  } finally {
+  if (recargar) {
+    revisionCache += 1;
+    cache = null;
     carga = null;
+  }
+  if (cache) return aplicarPendientes(cache, listarPendientes());
+  if (!carga) {
+    const revision = revisionCache;
+    carga = Promise.all(
+      Object.entries(FUENTES).map(async ([clave, ruta]) => [clave, await listarTodo(ruta)])
+    ).then((entradas) => {
+      const datos = Object.fromEntries(entradas);
+      if (revision === revisionCache) cache = datos;
+      return datos;
+    });
+  }
+  const solicitud = carga;
+  const revision = revisionCache;
+  try {
+    const datos = await solicitud;
+    if (revision !== revisionCache) return cargarTodo();
+    return aplicarPendientes(datos, listarPendientes());
+  } finally {
+    if (carga === solicitud) carga = null;
   }
 }
 
+export async function recargarTablas(claves) {
+  const desconocidas = claves.filter((clave) => !Object.hasOwn(FUENTES, clave));
+  if (desconocidas.length) throw new Error(`No se pueden recargar estos recursos: ${desconocidas.join(", ")}.`);
+  if (claves.length === 0) return cargarTodo();
+  if (!cache) await cargarTodo();
+
+  const revision = revisionCache;
+  const base = cache;
+  const entradas = await Promise.all(
+    claves.map(async (clave) => [clave, await listarTodo(FUENTES[clave])])
+  );
+  if (revision !== revisionCache) return cargarTodo();
+  cache = { ...(cache ?? base), ...Object.fromEntries(entradas) };
+  return aplicarPendientes(cache, listarPendientes());
+}
+
 export function limpiarCache() {
+  revisionCache += 1;
   cache = null;
   carga = null;
 }
 
-const normalizar = (valor) => String(valor ?? "").trim().toLowerCase();
-
 export function documentoDe(datos, idTipoDocumento, valor) {
   return datos.documentos.find(
     (documento) =>
-      String(documento.idTipoDocumento) === String(idTipoDocumento) &&
-      normalizar(documento.valor) === normalizar(valor)
+      mismoId(documento.idTipoDocumento, idTipoDocumento) &&
+      normalizarTexto(documento.valor) === normalizarTexto(valor)
   );
+}
+
+export function tiposDocumentoActivos(datos) {
+  return [...(datos.tiposDocumento ?? [])]
+    .filter((tipo) => tipo.activo !== false)
+    .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+}
+
+export function tipoDocumentoElegido(datos, id) {
+  return (datos?.tiposDocumento ?? []).find((tipo) => mismoId(tipo.idTipoDocumento, id)) ?? null;
+}
+
+export function indicacionesDocumento(tipo) {
+  return {
+    texto: tipo?.indicaciones || (tipo?.expresionRegular ? `Formato: ${tipo.expresionRegular}` : ""),
+    ejemplo: tipo?.nombre === "DUI" ? "Ej. 00000000-0" : "",
+  };
+}
+
+export function mensajeFormatoDocumento(tipo) {
+  const detalle = tipo?.indicaciones || tipo?.expresionRegular || "el formato del documento";
+  return `El número${tipo?.nombre ? ` de ${tipo.nombre}` : ""} no tiene el formato esperado: ${detalle}.`;
 }
 
 /**
@@ -97,38 +138,45 @@ export function cumpleFormato(tipo, valor) {
   }
 }
 
-export function personaDeDocumento(datos, idTipoDocumento, valor) {
-  const documento = documentoDe(datos, idTipoDocumento, valor);
-  return documento ? datos.porId.personas.get(documento.idPersona) ?? null : null;
+export function errorDeFormatoDocumento(tipo, valor) {
+  return cumpleFormato(tipo, valor) ? "" : mensajeFormatoDocumento(tipo);
 }
 
-export function rolesDePersona(datos, idPersona) {
+export function personaDeDocumento(datos, idTipoDocumento, valor) {
+  const documento = documentoDe(datos, idTipoDocumento, valor);
+  return documento ? buscarPorId(datos, "personas", documento.idPersona) : null;
+}
+
+function rolesDePersona(datos, idPersona) {
   return datos.personasRol
-    .filter((personaRol) => personaRol.idPersona === idPersona)
+    .filter((personaRol) => mismoId(personaRol.idPersona, idPersona))
     .map((personaRol) => ({
       personaRol,
-      rol: datos.porId.roles.get(personaRol.idRol) ?? null,
-      clinica: datos.porId.clinicas.get(personaRol.idClinica) ?? null,
+      rol: buscarPorId(datos, "roles", personaRol.idRol),
+      clinica: buscarPorId(datos, "clinicas", personaRol.idClinica),
     }));
 }
 
 export function clinicasDePaciente(datos, idPersona) {
   const asignaciones = rolesDePersona(datos, idPersona);
-  const pacientes = asignaciones.filter(({ rol }) => normalizar(rol?.nombre) === "paciente");
-  const unicas = new Map();
+  const pacientes = asignaciones.filter(
+    ({ rol }) => normalizarTexto(rol?.nombre) === "paciente" && rol?.activo !== false
+  );
+  const unicas = [];
   for (const { clinica } of pacientes) {
-    if (clinica) unicas.set(clinica.idClinica, clinica);
+    if (clinica && !unicas.some((item) => String(item.idClinica) === String(clinica.idClinica))) unicas.push(clinica);
   }
-  return [...unicas.values()];
+  return unicas;
 }
 
 export function empleadoDePersona(datos, idPersona) {
   return rolesDePersona(datos, idPersona).filter(
-    ({ rol }) => rol && normalizar(rol.nombre) !== "paciente" && rol.activo !== false
+    ({ rol }) => rol && normalizarTexto(rol.nombre) !== "paciente" && rol.activo !== false
   );
 }
 
 export function estadoDeCita(cita) {
+  if (cita.consulta?.fechaFin) return { clave: "completada", texto: "Completada" };
   const pasos = cita.procedimientos.flatMap(({ pasos: lista }) => lista);
   if (pasos.length === 0) return { clave: "sin-pasos", texto: "Sin pasos" };
   const completados = pasos.filter(({ estado }) => estado === "completado").length;
@@ -152,9 +200,24 @@ export function edadDe(persona) {
 
 const ETIQUETAS_PASO = { completado: "Completado", actual: "En curso", pendiente: "Pendiente" };
 
-/** Texto legible del estado interno de un paso (completado, actual, pendiente). */
-export function etiquetaPaso(estado) {
+/**
+ * Registro que se muestra de un paso. Un paso pendiente puede conservar el registro de antes de
+ * retroceder (para retomarlo al avanzar), pero no se muestra: no tiene fecha ni responsable vigentes.
+ */
+export function registroVisible({ estado, registro }) {
+  return estado === "pendiente" ? null : registro ?? null;
+}
+
+export function etiquetaPaso(estado, iniciado = true) {
+  if (estado === "actual" && !iniciado) return "Por iniciar";
   return ETIQUETAS_PASO[estado] ?? String(estado ?? "");
+}
+
+/** Resumen en una línea de lo registrado en un paso: diagnóstico, notas y plan. */
+export function notaDelPaso({ notas = "", diagnostico = "", plan = "" } = {}) {
+  return [diagnostico && `CIE-10: ${diagnostico}`, notas && `Notas: ${notas}`, plan && `Plan: ${plan}`]
+    .filter(Boolean)
+    .join(" | ");
 }
 
 export function motivoDe(consulta) {
@@ -169,89 +232,95 @@ function dentroDeRango(fecha, desde, hasta) {
   if (Number.isNaN(valor)) return false;
   if (desde) {
     const inicio = new Date(`${desde}T00:00:00`).getTime();
+    if (Number.isNaN(inicio)) return false;
     if (valor < inicio) return false;
   }
   if (hasta) {
-    const fin = new Date(`${hasta}T23:59:59`).getTime();
-    if (valor > fin) return false;
+    const fin = new Date(`${hasta}T00:00:00`);
+    if (Number.isNaN(fin.getTime())) return false;
+    fin.setDate(fin.getDate() + 1);
+    if (valor >= fin.getTime()) return false;
   }
   return true;
 }
 
 export function pasosDeProcedimiento(datos, idProcedimiento) {
-  const pasos = datos.procedimientosPaso.filter((paso) => paso.idProcedimiento === idProcedimiento);
-  const ids = new Set(pasos.map((paso) => paso.idProcedimientoPaso));
+  const pasos = datos.procedimientosPaso.filter((paso) => mismoId(paso.idProcedimiento, idProcedimiento));
+  const ids = pasos.map((paso) => paso.idProcedimientoPaso);
   const secuencias = datos.procedimientosPasoSecuencia.filter(
     (secuencia) =>
-      ids.has(secuencia.idProcedimientoPaso) &&
-      ids.has(secuencia.idProcedimientoPasoReferencia) &&
-      normalizar(secuencia.tipoSecuencia) === "despues_de"
+      ids.some((id) => mismoId(id, secuencia.idProcedimientoPaso)) &&
+      ids.some((id) => mismoId(id, secuencia.idProcedimientoPasoReferencia)) &&
+      normalizarTexto(secuencia.tipoSecuencia) === "despues_de"
   );
-  const siguiente = new Map();
-  const conPredecesor = new Set();
+  const siguiente = [];
+  const conPredecesor = [];
   for (const secuencia of secuencias) {
-    siguiente.set(secuencia.idProcedimientoPasoReferencia, secuencia.idProcedimientoPaso);
-    conPredecesor.add(secuencia.idProcedimientoPaso);
+    siguiente.push({ actual: secuencia.idProcedimientoPasoReferencia, siguiente: secuencia.idProcedimientoPaso });
+    conPredecesor.push(secuencia.idProcedimientoPaso);
   }
-  const porId = new Map(pasos.map((paso) => [paso.idProcedimientoPaso, paso]));
   const ordenados = [];
-  const visitados = new Set();
+  const visitados = [];
   const visitar = (id) => {
-    if (!id || visitados.has(id)) return;
-    visitados.add(id);
-    const paso = porId.get(id);
+    if (id === null || id === undefined || visitados.some((visitado) => mismoId(visitado, id))) return;
+    visitados.push(id);
+    const paso = pasos.find((item) => String(item.idProcedimientoPaso) === String(id));
     if (paso) ordenados.push(paso);
-    visitar(siguiente.get(id));
+    visitar(siguiente.find((item) => String(item.actual) === String(id))?.siguiente);
   };
   for (const paso of pasos) {
-    if (!conPredecesor.has(paso.idProcedimientoPaso)) visitar(paso.idProcedimientoPaso);
+    if (!conPredecesor.some((id) => mismoId(id, paso.idProcedimientoPaso))) visitar(paso.idProcedimientoPaso);
   }
   for (const paso of pasos) {
-    if (!visitados.has(paso.idProcedimientoPaso)) visitar(paso.idProcedimientoPaso);
+    if (!visitados.some((id) => mismoId(id, paso.idProcedimientoPaso))) visitar(paso.idProcedimientoPaso);
   }
   return ordenados;
 }
 
-export function pasosConRegistros(datos, consultaProcedimiento) {
+export function pasosConRegistros(datos, consultaProcedimiento, { finalizada = false } = {}) {
   const pasos = pasosDeProcedimiento(datos, consultaProcedimiento.idProcedimiento);
   const registros = datos.consultasProcedimientoPaso
-    .filter((registro) => registro.idConsultaProcedimiento === consultaProcedimiento.idConsultaProcedimiento)
+    .filter((registro) => mismoId(registro.idConsultaProcedimiento, consultaProcedimiento.idConsultaProcedimiento))
     .sort((a, b) => new Date(a.fechaInicio ?? 0) - new Date(b.fechaInicio ?? 0));
   const observaciones = leerObservaciones(consultaProcedimiento.observaciones);
   let actualAsignado = false;
   return pasos.map((paso, indice) => {
     const registro = registros[indice] ?? null;
-    const finalizado = registro ? normalizar(registro.estado) === "finalizado" : false;
+    const finalizado = registro ? normalizarTexto(registro.estado) === "finalizado" : false;
     let estado = "pendiente";
     if (finalizado) {
       estado = "completado";
-    } else if (registro) {
-      estado = "actual";
-      actualAsignado = true;
-    } else if (!actualAsignado) {
+    } else if (!actualAsignado && !finalizada) {
+      // Solo el primer paso sin terminar está en curso. Un paso posterior puede conservar su
+      // registro (se inició antes de retroceder) y se retoma al volver a avanzar.
       estado = "actual";
       actualAsignado = true;
     }
-    const personaRol = registro ? datos.porId.personasRol.get(registro.idPersonaRol) ?? null : null;
-    const persona = personaRol ? datos.porId.personas.get(personaRol.idPersona) ?? null : null;
+    const personaRol = registro ? buscarPorId(datos, "personasRol", registro.idPersonaRol) : null;
+    const persona = personaRol ? buscarPorId(datos, "personas", personaRol.idPersona) : null;
     return {
       paso,
       registro,
-      personaRol,
       persona,
       indice,
       estado,
       notas: observaciones.pasos?.[paso.idProcedimientoPaso] ?? null,
-      rol: paso.idRol ? datos.porId.roles.get(paso.idRol) ?? null : null,
+      rol: buscarPorId(datos, "roles", paso.idRol),
     };
   });
 }
 
+function pasoActualDeCita(cita) {
+  return cita.procedimientos
+    .flatMap(({ pasos }) => pasos)
+    .find(({ estado }) => estado === "actual") ?? null;
+}
+
 export function documentoDePersona(datos, idPersona) {
-  const documentos = datos.documentos.filter((documento) => documento.idPersona === idPersona);
+  const documentos = datos.documentos.filter((documento) => mismoId(documento.idPersona, idPersona));
   if (documentos.length === 0) return null;
   const documento = documentos[0];
-  const tipo = datos.porId.tiposDocumento.get(documento.idTipoDocumento);
+  const tipo = buscarPorId(datos, "tiposDocumento", documento.idTipoDocumento);
   return {
     idDocumento: documento.idDocumento,
     valor: documento.valor,
@@ -259,22 +328,40 @@ export function documentoDePersona(datos, idPersona) {
   };
 }
 
+/** Texto de una orden de examen para mostrar: se guarda como «Examen: …», pero se lee sin repetir la palabra. */
+export function textoOrden(orden) {
+  return String(orden.indicaciones ?? "Sin indicaciones").replace(/^Examen:\s*/, "");
+}
+
+/** Órdenes de examen emitidas en los pasos de un procedimiento. */
+function ordenesDeProcedimiento(datos, consultaProcedimiento) {
+  const registros = datos.consultasProcedimientoPaso
+    .filter((registro) => mismoId(registro.idConsultaProcedimiento, consultaProcedimiento.idConsultaProcedimiento))
+    .map((registro) => registro.idConsultaProcedimientoPaso);
+  return datos.ordenesExamen
+    .filter((orden) => registros.some((id) => mismoId(id, orden.idConsultaProcedimientoPaso)))
+    .map((orden) => ({
+      fecha: orden.fechaCreacion ?? null,
+      texto: textoOrden(orden),
+    }));
+}
+
 export function resumenCita(datos, consulta) {
-  const personaRol = datos.porId.personasRol.get(consulta.idPersonaRol) ?? null;
-  const paciente = personaRol ? datos.porId.personas.get(personaRol.idPersona) ?? null : null;
+  const personaRol = buscarPorId(datos, "personasRol", consulta.idPersonaRol);
+  const paciente = personaRol ? buscarPorId(datos, "personas", personaRol.idPersona) : null;
   const documento = paciente ? documentoDePersona(datos, paciente.idPersona) : null;
-  const clinica = personaRol ? datos.porId.clinicas.get(personaRol.idClinica) ?? null : null;
+  const clinica = personaRol ? buscarPorId(datos, "clinicas", personaRol.idClinica) : null;
   const procedimientos = datos.consultasProcedimiento
-    .filter((consultaProcedimiento) => consultaProcedimiento.idConsulta === consulta.idConsulta)
+    .filter((consultaProcedimiento) => mismoId(consultaProcedimiento.idConsulta, consulta.idConsulta))
     .map((consultaProcedimiento) => ({
       consultaProcedimiento,
-      procedimiento: datos.porId.procedimientos.get(consultaProcedimiento.idProcedimiento) ?? null,
+      procedimiento: buscarPorId(datos, "procedimientos", consultaProcedimiento.idProcedimiento),
       notas: leerObservaciones(consultaProcedimiento.observaciones),
-      pasos: pasosConRegistros(datos, consultaProcedimiento),
+      pasos: pasosConRegistros(datos, consultaProcedimiento, { finalizada: Boolean(consulta.fechaFin) }),
+      ordenes: ordenesDeProcedimiento(datos, consultaProcedimiento),
     }));
   return {
     consulta,
-    personaRol,
     paciente: paciente ? { ...paciente, documento, edad: edadDe(paciente) } : null,
     clinica,
     procedimientos,
@@ -283,72 +370,83 @@ export function resumenCita(datos, consulta) {
 
 export function citasDePaciente(datos, { idPersona, idClinica = null, desde = null, hasta = null }) {
   const asignaciones = rolesDePersona(datos, idPersona).filter(
-    ({ personaRol }) => !idClinica || String(personaRol.idClinica) === String(idClinica)
+    ({ personaRol, rol }) =>
+      normalizarTexto(rol?.nombre) === "paciente" &&
+      rol?.activo !== false &&
+      (!idClinica || String(personaRol.idClinica) === String(idClinica))
   );
-  const ids = new Set(asignaciones.map(({ personaRol }) => personaRol.idPersonaRol));
+  const ids = asignaciones.map(({ personaRol }) => personaRol.idPersonaRol);
   return datos.consultas
-    .filter((consulta) => ids.has(consulta.idPersonaRol) && dentroDeRango(consulta.fechaInicio, desde, hasta))
+    .filter((consulta) => ids.some((id) => mismoId(id, consulta.idPersonaRol)) && dentroDeRango(consulta.fechaInicio, desde, hasta))
     .sort((a, b) => new Date(b.fechaInicio ?? 0) - new Date(a.fechaInicio ?? 0))
     .map((consulta) => resumenCita(datos, consulta));
 }
 
 export function citasDeEmpleado(datos, { idClinica, idRol, desde = null, hasta = null, idPaciente = null }) {
   return datos.consultas
+    .filter((consulta) => {
+      if (!dentroDeRango(consulta.fechaInicio, desde, hasta)) return false;
+      const asignacion = buscarPorId(datos, "personasRol", consulta.idPersonaRol);
+      if (!asignacion) return false;
+      if (idClinica && String(asignacion.idClinica) !== String(idClinica)) return false;
+      if (idPaciente && String(asignacion.idPersona) !== String(idPaciente)) return false;
+      return true;
+    })
     .map((consulta) => resumenCita(datos, consulta))
     .filter((cita) => {
-      if (idClinica && String(cita.clinica?.idClinica) !== String(idClinica)) return false;
-      if (!dentroDeRango(cita.consulta.fechaInicio, desde, hasta)) return false;
-      if (idPaciente && String(cita.paciente?.idPersona) !== String(idPaciente)) return false;
-      if (idRol) {
-        const tieneRol = cita.procedimientos.some(({ pasos }) =>
-          pasos.some(({ paso }) => String(paso.idRol) === String(idRol))
-        );
-        if (!tieneRol) return false;
-      }
-      return true;
+      if (!idRol) return true;
+      const actual = pasoActualDeCita(cita);
+      if (actual) return mismoId(actual.paso.idRol, idRol);
+      // Una consulta finalizada no tiene paso en curso; se conserva en la agenda del rol
+      // que participa en sus procedimientos para poder revisar lo registrado.
+      return cita.procedimientos.some(({ pasos }) =>
+        pasos.some(({ paso }) => mismoId(paso.idRol, idRol))
+      );
     })
     .sort((a, b) => new Date(a.consulta.fechaInicio ?? 0) - new Date(b.consulta.fechaInicio ?? 0));
 }
 
 export function consultaCompleta(datos, idConsulta) {
-  const consulta =
-    datos.porId.consultas.get(idConsulta) ??
-    datos.consultas.find((item) => String(item.idConsulta) === String(idConsulta)) ??
-    null;
+  const consulta = buscarPorId(datos, "consultas", idConsulta);
   if (!consulta) return null;
   return resumenCita(datos, consulta);
 }
 
-export function examenesAsignables(datos, idProcedimiento) {
+export function examenesAsignables(datos, idProcedimiento, idPaso = null) {
   const pasos = pasosDeProcedimiento(datos, idProcedimiento);
-  const ids = new Set(pasos.map((paso) => paso.idProcedimientoPaso));
+  const ids = pasos.map((paso) => paso.idProcedimientoPaso);
   const relaciones = datos.procedimientosPasoExamen.filter(
-    (relacion) => ids.has(relacion.idProcedimientoPaso) && relacion.activo !== false
+    (relacion) =>
+      ids.some((id) => mismoId(id, relacion.idProcedimientoPaso)) &&
+      (!idPaso || mismoId(relacion.idProcedimientoPaso, idPaso)) &&
+      relacion.activo !== false
   );
-  const unicos = new Map();
+  const unicos = [];
   for (const relacion of relaciones) {
-    const examen = datos.porId.examenes.get(relacion.idExamen);
+    const examen = buscarPorId(datos, "examenes", relacion.idExamen);
     if (!examen || examen.activo === false) continue;
     const tipos = datos.examenesTipoExamen
-      .filter((vinculo) => vinculo.idExamen === examen.idExamen)
-      .map((vinculo) => datos.porId.tiposExamen.get(vinculo.idTipoExamen)?.nombre)
+      .filter((vinculo) => mismoId(vinculo.idExamen, examen.idExamen))
+      .map((vinculo) => buscarPorId(datos, "tiposExamen", vinculo.idTipoExamen)?.nombre)
       .filter(Boolean);
-    unicos.set(examen.idExamen, { examen, tipos, paso: relacion.idProcedimientoPaso });
+    const existente = unicos.findIndex((item) => String(item.examen.idExamen) === String(examen.idExamen));
+    const item = { examen, tipos };
+    if (existente < 0) unicos.push(item);
+    else unicos[existente] = item;
   }
-  return [...unicos.values()];
+  return unicos;
 }
 
 export function pacientesDeClinica(datos, idClinica) {
-  const vistos = new Map();
+  const vistos = [];
   for (const personaRol of datos.personasRol) {
     if (String(personaRol.idClinica) !== String(idClinica)) continue;
-    const rol = datos.porId.roles.get(personaRol.idRol);
-    if (normalizar(rol?.nombre) !== "paciente") continue;
-    const persona = datos.porId.personas.get(personaRol.idPersona);
-    if (persona) vistos.set(persona.idPersona, persona);
+    const rol = buscarPorId(datos, "roles", personaRol.idRol);
+    if (normalizarTexto(rol?.nombre) !== "paciente" || rol?.activo === false) continue;
+    const persona = buscarPorId(datos, "personas", personaRol.idPersona);
+    if (persona && !vistos.some((item) => mismoId(item.idPersona, persona.idPersona))) vistos.push(persona);
   }
-  const nombre = (persona) => `${persona.nombres ?? ""} ${persona.apellidos ?? ""}`.trim();
-  return [...vistos.values()].sort((a, b) => nombre(a).localeCompare(nombre(b)));
+  return vistos.sort((a, b) => nombreCompleto(a).localeCompare(nombreCompleto(b)));
 }
 
 export function leerObservaciones(valor) {

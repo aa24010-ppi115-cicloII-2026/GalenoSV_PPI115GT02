@@ -40,7 +40,7 @@ describe("estado.js", () => {
 
   it("notifica a los suscriptores cuando cambia la sesión", () => {
     const cambios = [];
-    const quitar = alCambiarSesion((evento) => cambios.push(evento.detail));
+    const quitar = alCambiarSesion((sesion) => cambios.push(sesion));
     guardarSesion({ idPersona: 1 });
     actualizarSesion({ nombre: "Prueba" });
     cerrarSesion();

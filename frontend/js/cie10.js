@@ -37,16 +37,3 @@ export const CODIGOS_CIE10 = [
   { codigo: "Z29.0", descripcion: "Aislamiento profiláctico" },
   { codigo: "Z76.0", descripcion: "Emisión de receta repetida" },
 ];
-
-export function buscarCie10(texto, limite = 8) {
-  const consulta = String(texto ?? "").trim().toLowerCase();
-  if (!consulta) return [];
-  return CODIGOS_CIE10.filter(
-    ({ codigo, descripcion }) =>
-      codigo.toLowerCase().includes(consulta) || descripcion.toLowerCase().includes(consulta)
-  ).slice(0, limite);
-}
-
-export function cie10PorCodigo(codigo) {
-  return CODIGOS_CIE10.find((item) => item.codigo === codigo) ?? null;
-}

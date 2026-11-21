@@ -8,7 +8,8 @@ export function estaConectado() {
 function leer() {
   try {
     const crudo = localStorage.getItem(CLAVE);
-    return crudo ? JSON.parse(crudo) : [];
+    const pendientes = crudo ? JSON.parse(crudo) : [];
+    return Array.isArray(pendientes) ? pendientes : [];
   } catch {
     return [];
   }
@@ -18,14 +19,17 @@ function escribir(pendientes) {
   try {
     localStorage.setItem(CLAVE, JSON.stringify(pendientes));
   } catch {
-    // Almacenamiento no disponible: el cambio se pierde, pero la app sigue operando.
+    return false;
   }
+  // Avisa a la interfaz (aviso de conexión) que cambió la cantidad de pendientes.
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("pendientes-cambio"));
+  return true;
 }
 
 export function encolar(operacion) {
   const pendientes = leer();
   pendientes.push({ ...operacion, id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` });
-  escribir(pendientes);
+  if (!escribir(pendientes)) throw new Error("No se pudo guardar el cambio en este dispositivo.");
   return pendientes.length;
 }
 
@@ -34,14 +38,13 @@ export function listarPendientes() {
 }
 
 export function quitarPendiente(id) {
-  const pendientes = leer().filter((pendiente) => pendiente.id !== id);
-  escribir(pendientes);
-  return pendientes.length;
+  const actuales = leer();
+  const pendientes = actuales.filter((pendiente) => pendiente.id !== id);
+  if (pendientes.length === actuales.length) return true;
+  return escribir(pendientes);
 }
 
-export function vaciarPendientes() {
-  escribir([]);
-}
+let sincronizacion = null;
 
 /**
  * Reintenta las operaciones guardadas mientras la aplicacion estuvo sin conexion.
@@ -49,12 +52,19 @@ export function vaciarPendientes() {
  */
 export async function sincronizar(ejecutar) {
   if (!estaConectado()) return { enviadas: 0, pendientes: leer().length };
-  const pendientes = leer();
+  if (sincronizacion) return sincronizacion;
+  sincronizacion = vaciarCola(ejecutar).finally(() => {
+    sincronizacion = null;
+  });
+  return sincronizacion;
+}
+
+async function vaciarCola(ejecutar) {
   let enviadas = 0;
-  for (const pendiente of [...pendientes]) {
+  for (const pendiente of leer()) {
     try {
       await ejecutar(pendiente);
-      quitarPendiente(pendiente.id);
+      if (!quitarPendiente(pendiente.id)) break;
       enviadas += 1;
     } catch {
       break;

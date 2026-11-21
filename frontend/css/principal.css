@@ -35,11 +35,11 @@
   --peligro-suave: #fdeceb;
 
   /* Forma y profundidad */
-  --radio: 10px;
-  --radio-grande: 14px;
-  --sombra: 0 1px 2px rgba(20, 32, 43, 0.05), 0 6px 18px rgba(20, 32, 43, 0.06);
-  --sombra-alta: 0 2px 6px rgba(20, 32, 43, 0.08), 0 24px 56px rgba(20, 32, 43, 0.22);
-  --anillo: 0 0 0 3px color-mix(in srgb, var(--acento) 32%, transparent);
+  --radio: 0.625rem;
+  --radio-grande: 0.875rem;
+  --sombra: 0 0.0625rem 0.125rem rgba(20, 32, 43, 0.05), 0 0.375rem 1.125rem rgba(20, 32, 43, 0.06);
+  --sombra-alta: 0 0.125rem 0.375rem rgba(20, 32, 43, 0.08), 0 1.5rem 3.5rem rgba(20, 32, 43, 0.22);
+  --anillo: 0 0 0 0.1875rem color-mix(in srgb, var(--acento) 32%, transparent);
 
   --fuente: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   color-scheme: light;
@@ -49,10 +49,13 @@
 
 html, body { margin: 0; padding: 0; }
 
-html { scrollbar-color: var(--borde-fuerte) transparent; }
+/* Se reserva el espacio de la barra de desplazamiento: al cargar los datos y crecer la página,
+   el contenido no se corre de lado (evita el salto de diseño que mide Lighthouse). */
+html { scrollbar-color: var(--borde-fuerte) transparent; scrollbar-gutter: stable; }
 
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--fondo);
   color: var(--texto);
   font-family: var(--fuente);

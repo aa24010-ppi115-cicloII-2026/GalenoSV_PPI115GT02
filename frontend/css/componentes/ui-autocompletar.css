@@ -1,0 +1,21 @@
+.caja { position: relative; }
+      .caja input { padding-right: 2.4rem; }
+      .caja input:disabled { background: var(--superficie-suave, #f7f9fb); cursor: not-allowed; }
+      .flecha {
+        position: absolute; right: 0.8rem; top: 50%; width: 1rem; height: 1rem; margin-top: -0.5rem;
+        background: var(--texto-suave, #4d6378); pointer-events: none;
+        -webkit-mask: var(--icono-flecha) center / contain no-repeat; mask: var(--icono-flecha) center / contain no-repeat;
+        transition: transform 0.15s ease;
+      }
+      input[aria-expanded="true"] + .flecha { transform: rotate(180deg); }
+      ul {
+        position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 0.35rem);
+        margin: 0; padding: 0.3rem; list-style: none; max-height: 15rem; overflow: auto;
+        background: var(--superficie, #fff); border: 0.0625rem solid var(--borde, #d6dee7);
+        border-radius: var(--radio, 0.625rem); box-shadow: var(--sombra-alta);
+      }
+      li { padding: 0.55rem 0.7rem; border-radius: 0.4375rem; cursor: pointer; font-size: 0.92rem; }
+      li[aria-selected="true"] { color: var(--acento-fuerte, #0b6155); font-weight: 600; }
+      li.activa, li:hover { background: var(--mate-suave, #e9eff4); }
+      li.vacia { color: var(--texto-suave, #4d6378); cursor: default; background: none; }
+      mark { background: var(--acento-suave, #e6f3f0); color: inherit; font-weight: 700; border-radius: 0.1875rem; }

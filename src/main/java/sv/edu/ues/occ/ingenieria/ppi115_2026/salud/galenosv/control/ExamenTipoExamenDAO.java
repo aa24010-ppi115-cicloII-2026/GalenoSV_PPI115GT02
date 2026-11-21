@@ -102,15 +102,6 @@ public class ExamenTipoExamenDAO extends DefaultDAO<ExamenTipoExamen> {
     }
 
 
-    public java.util.List<ExamenTipoExamen> findByTipo(java.util.UUID id) {
-        if (id == null) {
-            return java.util.Collections.emptyList();
-        }
-        return getEntityManager().createQuery(
-                "SELECT e FROM ExamenTipoExamen e WHERE e.idTipoExamen.idTipoExamen = :id ORDER BY e.idExamenTipoExamen", ExamenTipoExamen.class)
-                .setParameter("id", id).setMaxResults(1000).getResultList();
-    }
-
     public Long countByTipo(java.util.UUID id) {
         if (id == null) {
             return 0L;

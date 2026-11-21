@@ -2,10 +2,17 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control;
 
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonException;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonValue;
+import java.io.StringReader;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,59 +53,105 @@ public class TicketService {
     @Inject
     private OrdenExamenDAO ordenExamenDAO;
 
-    /** Lineas del comprobante; devuelve null cuando la consulta no existe. */
-    public List<String> lineas(UUID idConsulta) {
+    /** Datos estructurados del comprobante; null cuando la consulta no existe. */
+    public Datos datos(UUID idConsulta) {
         Consulta consulta = consultaDAO.find(idConsulta);
         if (consulta == null) {
             return null;
         }
-        List<String> lineas = new ArrayList<>();
         PersonaRol personaRol = consulta.getIdPersonaRol();
         Persona persona = personaRol == null ? null : personaRol.getIdPersona();
         Clinica clinica = personaRol == null ? null : personaRol.getIdClinica();
 
-        lineas.add("Paciente: " + nombre(persona));
-        lineas.add("Clinica: " + (clinica == null ? "-" : clinica.getNombre()));
-        lineas.add("Fecha de la cita: " + fecha(consulta.getFechaInicio()));
-        lineas.add("Motivo: " + (consulta.getObservaciones() == null || consulta.getObservaciones().isBlank()
-                ? "Consulta registrada" : consulta.getObservaciones()));
-        lineas.add("Estado: " + estado(consulta));
-        lineas.add("Ticket: #" + consulta.getIdConsulta());
-        lineas.add("");
-        lineas.add("PROCEDIMIENTOS Y PASOS");
-
-        List<ConsultaProcedimiento> procedimientos = consultaProcedimientoDAO.findByConsulta(idConsulta);
-        if (procedimientos.isEmpty()) {
-            lineas.add("La consulta no tiene procedimientos asignados.");
-        }
-        for (ConsultaProcedimiento procedimiento : procedimientos) {
-            Procedimiento definicion = procedimiento.getIdProcedimiento() == null
-                    ? null : procedimientoDAO.find(procedimiento.getIdProcedimiento());
-            lineas.add("- " + (definicion == null ? "Procedimiento" : definicion.getNombre()));
+        List<ProcedimientoTicket> procedimientos = new ArrayList<>();
+        for (ConsultaProcedimiento cp : consultaProcedimientoDAO.findByConsulta(idConsulta)) {
+            Procedimiento def = cp.getIdProcedimiento() == null ? null : procedimientoDAO.find(cp.getIdProcedimiento());
+            String nombreProc = def == null ? "Procedimiento" : def.getNombre();
+            List<PasoTicket> pasos = new ArrayList<>();
+            Map<String, String> notas = notasPorPaso(cp.getObservaciones());
             boolean actualAsignado = false;
-            for (Object[] paso : pasosDe(procedimiento)) {
-                ProcedimientoPaso definicionPaso = (ProcedimientoPaso) paso[0];
-                ConsultaProcedimientoPaso registro = (ConsultaProcedimientoPaso) paso[1];
-                // Mismas etiquetas que la tarjeta de la cita en el frontend.
+            for (Object[] par : pasosDe(cp)) {
+                ProcedimientoPaso dp = (ProcedimientoPaso) par[0];
+                ConsultaProcedimientoPaso registro = (ConsultaProcedimientoPaso) par[1];
+                // Mismas etiquetas que la tarjeta de la cita en el frontend: solo el primer paso sin
+                // terminar está en curso. Un paso posterior puede conservar su registro de antes de
+                // retroceder; queda pendiente y ese registro no se muestra.
                 String etiqueta = "Pendiente";
+                ConsultaProcedimientoPaso visible = registro;
                 if (finalizado(registro)) {
                     etiqueta = "Completado";
-                } else if (registro != null || !actualAsignado) {
-                    etiqueta = "En curso";
+                } else if (!actualAsignado) {
+                    etiqueta = registro != null ? "En curso" : "Por iniciar";
                     actualAsignado = true;
+                } else {
+                    visible = null;
                 }
-                lineas.add("   " + (definicionPaso == null ? "Paso" : definicionPaso.getNombre())
-                        + " | " + etiqueta
-                        + " | " + (registro == null ? "Sin fecha" : fecha(registro.getFechaInicio()))
-                        + " | " + quien(registro));
+                pasos.add(new PasoTicket(
+                        dp == null ? "Paso" : dp.getNombre(),
+                        etiqueta,
+                        visible == null ? "Sin fecha" : fecha(visible.getFechaInicio()),
+                        quien(visible),
+                        dp == null ? "" : notas.getOrDefault(String.valueOf(dp.getIdProcedimientoPaso()), "")));
             }
-            for (String orden : ordenesDe(procedimiento)) {
-                lineas.add("   " + orden);
-            }
+            procedimientos.add(new ProcedimientoTicket(nombreProc, pasos, ordenesDe(cp)));
         }
-        lineas.add("");
-        lineas.add("Documento generado por el backend de GalenoSV.");
-        return lineas;
+
+        String motivo = consulta.getObservaciones() == null || consulta.getObservaciones().isBlank()
+                ? "Consulta registrada" : consulta.getObservaciones();
+        // Mismo código corto que muestra el frontend.
+        String codigo = String.valueOf(consulta.getIdConsulta()).split("-")[0].toUpperCase();
+        return new Datos(codigo, nombre(persona),
+                clinica == null ? "-" : clinica.getNombre(),
+                fecha(consulta.getFechaInicio()), motivo, estado(consulta), procedimientos);
+    }
+
+    public static class Datos {
+        public final String codigo;
+        public final String paciente;
+        public final String clinica;
+        public final String fecha;
+        public final String motivo;
+        public final String estado;
+        public final List<ProcedimientoTicket> procedimientos;
+
+        public Datos(String codigo, String paciente, String clinica, String fecha, String motivo, String estado,
+                List<ProcedimientoTicket> procedimientos) {
+            this.codigo = codigo;
+            this.paciente = paciente;
+            this.clinica = clinica;
+            this.fecha = fecha;
+            this.motivo = motivo;
+            this.estado = estado;
+            this.procedimientos = procedimientos;
+        }
+    }
+
+    public static class ProcedimientoTicket {
+        public final String nombre;
+        public final List<PasoTicket> pasos;
+        public final List<String> ordenes;
+
+        public ProcedimientoTicket(String nombre, List<PasoTicket> pasos, List<String> ordenes) {
+            this.nombre = nombre;
+            this.pasos = pasos;
+            this.ordenes = ordenes;
+        }
+    }
+
+    public static class PasoTicket {
+        public final String nombre;
+        public final String estado;
+        public final String fecha;
+        public final String realizadoPor;
+        public final String observaciones;
+
+        public PasoTicket(String nombre, String estado, String fecha, String realizadoPor, String observaciones) {
+            this.nombre = nombre;
+            this.estado = estado;
+            this.fecha = fecha;
+            this.realizadoPor = realizadoPor;
+            this.observaciones = observaciones;
+        }
     }
 
     /** Empareja cada paso del procedimiento con su registro de atencion. */
@@ -181,10 +234,47 @@ public class TicketService {
         for (ConsultaProcedimientoPaso registro : consultaProcedimientoPasoDAO
                 .findByConsultaProcedimiento(procedimiento.getIdConsultaProcedimiento())) {
             for (OrdenExamen orden : ordenExamenDAO.findByConsultaProcedimientoPaso(registro.getIdConsultaProcedimientoPaso())) {
-                ordenes.add("Examen ordenado: " + (orden.getIndicaciones() == null ? "Sin indicaciones" : orden.getIndicaciones()));
+                String indicaciones = orden.getIndicaciones() == null ? "Sin indicaciones" : orden.getIndicaciones();
+                ordenes.add("Examen ordenado: " + indicaciones.replaceFirst("^Examen:\\s*", ""));
             }
         }
         return ordenes;
+    }
+
+    /**
+     * Lo registrado al completar cada paso, guardado por el frontend en las observaciones del procedimiento:
+     * {"pasos": {"idProcedimientoPaso": {"diagnostico", "notas", "plan"}}}. El borrador del paso en curso
+     * (campos de primer nivel) no forma parte del comprobante.
+     */
+    static Map<String, String> notasPorPaso(String observaciones) {
+        Map<String, String> resultado = new HashMap<>();
+        if (observaciones == null || observaciones.isBlank()) {
+            return resultado;
+        }
+        try (JsonReader lector = Json.createReader(new StringReader(observaciones))) {
+            JsonValue valor = lector.readValue();
+            JsonValue pasos = valor.getValueType() == JsonValue.ValueType.OBJECT ? valor.asJsonObject().get("pasos") : null;
+            if (pasos == null || pasos.getValueType() != JsonValue.ValueType.OBJECT) {
+                return resultado;
+            }
+            for (Map.Entry<String, JsonValue> paso : pasos.asJsonObject().entrySet()) {
+                if (paso.getValue().getValueType() != JsonValue.ValueType.OBJECT) {
+                    continue;
+                }
+                JsonObject registro = paso.getValue().asJsonObject();
+                List<String> partes = new ArrayList<>();
+                String diagnostico = registro.getString("diagnostico", "");
+                String notas = registro.getString("notas", "");
+                String plan = registro.getString("plan", "");
+                if (!diagnostico.isBlank()) partes.add("CIE-10: " + diagnostico);
+                if (!notas.isBlank()) partes.add("Notas: " + notas);
+                if (!plan.isBlank()) partes.add("Plan: " + plan);
+                resultado.put(paso.getKey(), String.join(" | ", partes));
+            }
+        } catch (JsonException ex) {
+            // Observaciones en texto libre (registros antiguos): no hay notas por paso.
+        }
+        return resultado;
     }
 
     /** La cita está completada solo cuando cada paso definido tiene un registro finalizado. */

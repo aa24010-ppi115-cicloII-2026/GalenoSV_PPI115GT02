@@ -80,7 +80,12 @@ public class OrdenExamenResource {
             String problema = validar(datos);
             if (problema != null) return RestUtil.error(422, problema, "Revise los datos enviados");
 
-            OrdenExamen entidad = new OrdenExamen(UUID.randomUUID());
+            UUID id = RestUtil.idNuevo(datos.getIdOrdenExamen(), "idOrdenExamen");
+            if (dao.find(id) != null) {
+                // Reintento de un cambio ya guardado: se responde igual, sin duplicarlo.
+                return Response.created(uriInfo.getAbsolutePathBuilder().path(id.toString()).build()).build();
+            }
+            OrdenExamen entidad = new OrdenExamen(id);
             entidad.setFechaCreacion(java.time.OffsetDateTime.now());
             copiar(datos, entidad);
             dao.crear(entidad);

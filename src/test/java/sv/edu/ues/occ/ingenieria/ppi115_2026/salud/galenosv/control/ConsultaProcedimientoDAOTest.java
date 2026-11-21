@@ -1,0 +1,121 @@
+package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import java.util.List;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimiento;
+
+/**
+ *
+ * @author david
+ */
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+public class ConsultaProcedimientoDAOTest {
+
+    @Mock
+    EntityManager em;
+
+    @Mock
+    TypedQuery<ConsultaProcedimiento> query;
+
+    @Mock
+    TypedQuery<Long> longQuery;
+
+    ConsultaProcedimientoDAO dao;
+
+    @BeforeEach
+    public void setUp() {
+        dao = new ConsultaProcedimientoDAO() {
+            @Override
+            public EntityManager getEntityManager() {
+                return em;
+            }
+        };
+    }
+
+    /**
+     * Test of findByConsulta method, of class ConsultaProcedimientoDAO.
+     */
+    @Test
+    public void testFindByConsulta() {
+        UUID id = UUID.randomUUID();
+        List<ConsultaProcedimiento> lista = List.of(mock(ConsultaProcedimiento.class));
+        when(em.createQuery(anyString(), eq(ConsultaProcedimiento.class))).thenReturn(query);
+        when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(query.setMaxResults(anyInt())).thenReturn(query);
+        when(query.getResultList()).thenReturn(lista);
+
+        List<ConsultaProcedimiento> result = dao.findByConsulta(id);
+
+        verify(query).setParameter("id", id);
+        verify(query).setMaxResults(1000);
+        assertEquals(lista, result);
+    }
+
+    @Test
+    public void testFindByConsultaNulo() {
+        assertTrue(dao.findByConsulta(null).isEmpty());
+        verifyNoInteractions(em);
+    }
+
+    /**
+     * Test of countByConsulta method, of class ConsultaProcedimientoDAO.
+     */
+    @Test
+    public void testCountByConsulta() {
+        UUID id = UUID.randomUUID();
+        when(em.createQuery(anyString(), eq(Long.class))).thenReturn(longQuery);
+        when(longQuery.setParameter(anyString(), any())).thenReturn(longQuery);
+        when(longQuery.getSingleResult()).thenReturn(4L);
+
+        assertEquals(4L, dao.countByConsulta(id));
+        verify(longQuery).setParameter("id", id);
+    }
+
+    @Test
+    public void testCountByConsultaNulo() {
+        assertEquals(0L, dao.countByConsulta(null));
+        verifyNoInteractions(em);
+    }
+
+    /**
+     * Test of countByProcedimiento method, of class ConsultaProcedimientoDAO.
+     */
+    @Test
+    public void testCountByProcedimiento() {
+        UUID id = UUID.randomUUID();
+        when(em.createQuery(anyString(), eq(Long.class))).thenReturn(longQuery);
+        when(longQuery.setParameter(anyString(), any())).thenReturn(longQuery);
+        when(longQuery.getSingleResult()).thenReturn(2L);
+
+        assertEquals(2L, dao.countByProcedimiento(id));
+        verify(longQuery).setParameter("id", id);
+    }
+
+    @Test
+    public void testCountByProcedimientoNulo() {
+        assertEquals(0L, dao.countByProcedimiento(null));
+        verifyNoInteractions(em);
+    }
+
+    /**
+     * Test of getEntityManager method, of class ConsultaProcedimientoDAO.
+     */
+    @Test
+    public void testGetEntityManager() {
+        assertSame(em, dao.getEntityManager());
+    }
+
+}
