@@ -1,18 +1,23 @@
-import { Vista, escapar, hoyISO, fechaCalendario } from "../base.js";
+import { Vista, definirElemento } from "../base.js";
+import { escapar, nombreCompleto } from "../texto.js";
+import { fechaISO, hoyISO, fechaCalendario } from "../fechas.js";
 import { cargarTodo, citasDeEmpleado, documentoDePersona, estadoDeCita, pacientesDeClinica } from "../datos.js";
 import { leerSesion, actualizarSesion } from "../estado.js";
+import { mostrarTicket } from "./ticket-cita.js";
 import "./ui-autocompletar.js";
 
 /** Atajos de fechas [desde, hasta]: hoy, todo lo anterior a hoy o todo desde mañana ("" = sin límite). */
 function atajosDeFecha() {
+  const hoy = new Date();
   const dia = (desplazamiento) => {
-    const fecha = new Date();
+    const fecha = new Date(hoy);
     fecha.setDate(fecha.getDate() + desplazamiento);
-    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
+    return fechaISO(fecha);
   };
   return { hoy: [dia(0), dia(0)], pasadas: ["", dia(-1)], proximas: [dia(1), ""] };
 }
 
+<<<<<<< HEAD
 export class AppDashboard extends Vista {
   get estilos() {
     return `
@@ -49,17 +54,20 @@ export class AppDashboard extends Vista {
       @media (max-width: 520px) { .datos, .fechas { grid-template-columns: minmax(0, 1fr); } }
     `;
   }
+=======
+class AppDashboard extends Vista {
+>>>>>>> v2modificada
 
   connectedCallback() {
     const sesion = leerSesion();
     const clinicas = sesion?.clinicas ?? [];
-    const clinicaActual = sesion?.idClinica ?? clinicas[0]?.idClinica ?? "";
+    const clinicaActual = sesion?.idClinica || clinicas[0]?.idClinica || "";
     this.render(`
       <section class="cabecera">
         <h2>Agenda de consultas</h2>
         <p class="aviso">${escapar(sesion?.nombre ?? "")} · elija clínica y rol para ver las consultas que le toca atender.</p>
       </section>
-      <form class="tarjeta filtros" id="filtros" aria-label="Filtros de la agenda">
+      <section class="tarjeta filtros" id="filtros" aria-label="Filtros de la agenda">
         <div class="datos">
           <ui-autocompletar id="clinica" etiqueta="Clínica"></ui-autocompletar>
           <ui-autocompletar id="rol" etiqueta="Rol"></ui-autocompletar>
@@ -80,9 +88,9 @@ export class AppDashboard extends Vista {
             <button type="button" data-rango="proximas" aria-pressed="false">Próximas</button>
           </div>
         </div>
-      </form>
+      </section>
       <p id="rango-aviso" role="status"></p>
-      <section id="resumen" aria-label="Resumen de consultas"></section>
+      <section id="resumen" aria-label="Resumen de consultas" aria-busy="true">${this.indicadores()}</section>
       <section id="lista" aria-live="polite" aria-label="Consultas"><div class="vacio">Cargando agenda…</div></section>
     `);
     const campoClinica = this.q("#clinica");
@@ -97,15 +105,44 @@ export class AppDashboard extends Vista {
     this.q("#desde").addEventListener("change", () => this.aplicar());
     this.q("#hasta").addEventListener("change", () => this.aplicar());
     this.q("#paciente").addEventListener("change", () => this.aplicar());
-    this.shadowRoot.addEventListener("click", (evento) => {
+    this._alClicRango ??= (evento) => {
       const boton = evento.target.closest("button[data-rango]");
       if (!boton) return;
       this.aplicarRango(boton.dataset.rango);
-    });
-    this.shadowRoot.addEventListener("ver-ticket", (evento) => this.abrirTicket(evento.detail));
+    };
+    this._alVerTicket ??= (evento) => mostrarTicket(this.shadowRoot, evento.detail);
+    this.shadowRoot.removeEventListener("click", this._alClicRango);
+    this.shadowRoot.addEventListener("click", this._alClicRango);
+    this.shadowRoot.removeEventListener("ver-ticket", this._alVerTicket);
+    this.shadowRoot.addEventListener("ver-ticket", this._alVerTicket);
+    this._alDatosSincronizados ??= () => this.cargar();
+    window.addEventListener("datos-sincronizados", this._alDatosSincronizados);
     this.cargarRoles();
-    this.ponerRango("hoy");
+    // Al volver de una consulta se recuperan las fechas elegidas; la primera vez se muestra hoy.
+    if (sesion?.filtros) {
+      this.q("#desde").value = sesion.filtros.desde;
+      this.q("#hasta").value = sesion.filtros.hasta;
+    } else {
+      this.ponerRango("hoy");
+    }
+    // El rango y el resumen ocupan su lugar desde el inicio: la lista no salta al llegar los datos.
+    this.describirRango(this.q("#desde").value, this.q("#hasta").value);
     this.cargar();
+  }
+
+  disconnectedCallback() {
+    this._cargaActual = (this._cargaActual ?? 0) + 1;
+    window.removeEventListener("datos-sincronizados", this._alDatosSincronizados);
+  }
+
+  /** Indicadores del resumen; sin conteos (mientras carga) muestran «—» en el mismo espacio. */
+  indicadores(conteos = { total: "—", programada: "—", proceso: "—", completada: "—" }) {
+    return `
+      <div class="indicador"><span>Total</span><strong>${conteos.total}</strong></div>
+      <div class="indicador"><span>Programadas</span><strong>${conteos.programada}</strong></div>
+      <div class="indicador proceso"><span>En proceso</span><strong>${conteos.proceso}</strong></div>
+      <div class="indicador completada"><span>Completadas</span><strong>${conteos.completada}</strong></div>
+    `;
   }
 
   cargarRoles() {
@@ -117,40 +154,47 @@ export class AppDashboard extends Vista {
     const campo = this.q("#rol");
     campo.opciones = roles.map((rol) => ({ valor: rol.idRol, texto: rol.nombreRol }));
     if (roles.length === 0) {
-      campo.mensaje = "Sin roles en esta clínica";
+      campo.mensaje = idClinica ? "Sin roles en esta clínica" : "Seleccione una clínica primero";
       return;
     }
-    // Se trabaja con un rol a la vez: el de la sesión si pertenece a esta clínica, o el primero.
+    // Conserva el rol de la sesión si pertenece a la clínica; si solo hay uno, no exige elegirlo.
     const enClinica = roles.some((rol) => String(rol.idRol) === String(sesion.idRol));
-    campo.value = enClinica ? sesion.idRol : roles[0].idRol;
+    campo.value = enClinica ? sesion.idRol : roles.length === 1 ? roles[0].idRol : "";
   }
 
   /** Opciones del buscador de pacientes: los registrados en la clínica elegida. */
   cargarPacientes() {
     if (!this._datos) return;
     const campo = this.q("#paciente");
-    const pacientes = pacientesDeClinica(this._datos, this.q("#clinica").value);
+    const idClinica = this.q("#clinica").value;
+    const pacientes = idClinica ? pacientesDeClinica(this._datos, idClinica) : [];
     campo.opciones = pacientes.map((persona) => {
       const documento = documentoDePersona(this._datos, persona.idPersona);
       return {
         valor: persona.idPersona,
-        texto: [`${persona.nombres} ${persona.apellidos}`.trim(), documento && `${documento.tipo} ${documento.valor}`]
+        texto: [nombreCompleto(persona), documento && `${documento.tipo} ${documento.valor}`]
           .filter(Boolean)
           .join(" · "),
       };
     });
-    if (pacientes.length === 0) campo.mensaje = "Sin pacientes en esta clínica";
+    if (pacientes.length === 0) {
+      campo.mensaje = idClinica ? "Sin pacientes en esta clínica" : "Seleccione una clínica primero";
+    }
   }
 
   ponerRango(rango) {
-    const [desde, hasta] = atajosDeFecha()[rango];
+    const fechas = atajosDeFecha()[rango];
+    if (!fechas) return false;
+    const [desde, hasta] = fechas;
     this.q("#desde").value = desde;
     this.q("#hasta").value = hasta;
+    return true;
   }
 
   aplicarRango(rango) {
-    this.ponerRango(rango);
+    if (!this.ponerRango(rango)) return false;
     this.aplicar();
+    return true;
   }
 
   /** Marca el atajo que coincide con las fechas elegidas y describe el rango en texto. */
@@ -173,13 +217,27 @@ export class AppDashboard extends Vista {
   }
 
   async cargar() {
+    const carga = (this._cargaActual ?? 0) + 1;
+    this._cargaActual = carga;
+    if (!this.isConnected) return;
+    const resumen = this.q("#resumen");
+    const lista = this.q("#lista");
+    resumen.setAttribute("aria-busy", "true");
+    resumen.innerHTML = this.indicadores();
+    lista.innerHTML = `<div class="vacio">Cargando agenda…</div>`;
     try {
       this._datos = await cargarTodo();
-      if (!this.isConnected) return;
+      if (!this.isConnected || carga !== this._cargaActual) return;
       this.cargarPacientes();
+      const idPaciente = leerSesion()?.filtros?.idPaciente;
+      if (idPaciente) this.q("#paciente").value = idPaciente;
       this.aplicar();
     } catch {
-      this.q("#lista").innerHTML = `<div class="vacio">No se pudo cargar la agenda. Intente de nuevo.</div>`;
+      if (!this.isConnected || carga !== this._cargaActual) return;
+      resumen.removeAttribute("aria-busy");
+      resumen.innerHTML = "";
+      lista.innerHTML = `<div class="vacio"><p>No se pudo cargar la agenda.</p><button type="button" id="reintentar">Reintentar</button></div>`;
+      lista.querySelector("#reintentar").addEventListener("click", () => this.cargar());
     }
   }
 
@@ -192,12 +250,22 @@ export class AppDashboard extends Vista {
     const desde = this.q("#desde").value;
     const hasta = this.q("#hasta").value;
     const idPaciente = this.q("#paciente").value || null;
-    actualizarSesion({ idClinica: idClinica ?? sesion.idClinica, idRol });
     this.describirRango(desde, hasta);
     const lista = this.q("#lista");
     if (desde && hasta && desde > hasta) {
-      this.q("#resumen").innerHTML = "";
+      this.q("#rango-aviso").textContent = "";
+      const resumen = this.q("#resumen");
+      resumen.removeAttribute("aria-busy");
+      resumen.innerHTML = "";
       lista.innerHTML = `<p class="error" role="alert">La fecha «Desde» es posterior a «Hasta». Corrija el rango.</p>`;
+      return;
+    }
+    actualizarSesion({ idClinica, idRol, filtros: { desde, hasta, idPaciente } });
+    if (!idClinica || !idRol) {
+      const resumen = this.q("#resumen");
+      resumen.removeAttribute("aria-busy");
+      resumen.innerHTML = this.indicadores({ total: 0, programada: 0, proceso: 0, completada: 0 });
+      lista.innerHTML = `<div class="vacio">Seleccione una clínica y un rol para ver las consultas que le corresponde atender.</div>`;
       return;
     }
     const citas = citasDeEmpleado(this._datos, { idClinica, idRol, desde: desde || null, hasta: hasta || null, idPaciente });
@@ -206,14 +274,12 @@ export class AppDashboard extends Vista {
     const conteos = { total: citas.length, programada: 0, proceso: 0, completada: 0 };
     for (const cita of citas) {
       const { clave } = estadoDeCita(cita);
-      if (conteos[clave] !== undefined) conteos[clave] += 1;
+      const grupo = clave === "sin-pasos" ? "programada" : clave;
+      if (conteos[grupo] !== undefined) conteos[grupo] += 1;
     }
-    this.q("#resumen").innerHTML = `
-      <div class="indicador"><span>Total</span><strong>${conteos.total}</strong></div>
-      <div class="indicador"><span>Programadas</span><strong>${conteos.programada}</strong></div>
-      <div class="indicador proceso"><span>En proceso</span><strong>${conteos.proceso}</strong></div>
-      <div class="indicador completada"><span>Completadas</span><strong>${conteos.completada}</strong></div>
-    `;
+    const resumen = this.q("#resumen");
+    resumen.removeAttribute("aria-busy");
+    resumen.innerHTML = this.indicadores(conteos);
     lista.innerHTML = "";
     if (citas.length === 0) {
       lista.innerHTML = `<div class="vacio">No hay consultas para las fechas y filtros seleccionados.</div>`;
@@ -221,17 +287,12 @@ export class AppDashboard extends Vista {
     }
     for (const cita of citas) {
       const tarjeta = document.createElement("cita-card");
+      tarjeta.setAttribute("vista", "empleado");
       tarjeta.cita = cita;
       lista.append(tarjeta);
     }
   }
 
-  abrirTicket(cita) {
-    this.q("ticket-cita")?.remove();
-    const ticket = document.createElement("ticket-cita");
-    ticket.cita = cita;
-    this.shadowRoot.append(ticket);
-  }
 }
 
-customElements.define("app-dashboard", AppDashboard);
+definirElemento("app-dashboard", AppDashboard);

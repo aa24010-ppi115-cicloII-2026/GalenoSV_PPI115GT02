@@ -1,12 +1,18 @@
+<<<<<<< HEAD
 import { Vista, escapar, fechaHora, fechaCorta, ahoraISO } from "../base.js";
+=======
+import { definirElemento } from "../base.js";
+import { cantidad } from "../texto.js";
+import { ahoraISO } from "../fechas.js";
+>>>>>>> v2modificada
 import {
   cargarTodo,
   consultaCompleta,
-  examenesAsignables,
-  leerObservaciones,
-  motivoDe,
+  recargarTablas,
   serializarObservaciones,
+  textoOrden,
 } from "../datos.js";
+<<<<<<< HEAD
 import { crear, crearConId, actualizar, eliminar } from "../api.js";
 import { leerSesion } from "../estado.js";
 import { estaConectado } from "../pendientes.js";
@@ -101,28 +107,58 @@ export class AppConsulta extends Vista {
       }
     `;
   }
+=======
+import { crear, actualizar, eliminar } from "../api.js";
+import { confirmar } from "./ui-confirmar.js";
+import { mostrarTicket } from "./ticket-cita.js";
+import {
+  PresentacionConsulta,
+  valorDeLista,
+  guardarEnLista,
+  mensajeSegunConexion,
+} from "../presentacion-consulta.js";
+import "./linea-pasos.js";
+import "./ui-autocompletar.js";
+
+class AppConsulta extends PresentacionConsulta {
+>>>>>>> v2modificada
 
   connectedCallback() {
     this._id = this.getAttribute("id-consulta");
-    if (!this._escucha) {
-      this._escucha = (evento) => this.manejarClick(evento);
-      this.shadowRoot.addEventListener("click", this._escucha);
-      this._cambio = (evento) => this.manejarCambio(evento);
-      this.shadowRoot.addEventListener("change", this._cambio);
-    }
+    this._escucha ??= (evento) => this.manejarClick(evento);
+    this._cambio ??= (evento) => this.manejarCambio(evento);
+    this.shadowRoot.removeEventListener("click", this._escucha);
+    this.shadowRoot.addEventListener("click", this._escucha);
+    this.shadowRoot.removeEventListener("change", this._cambio);
+    this.shadowRoot.addEventListener("change", this._cambio);
+    this._alDatosSincronizados ??= () => this.cargar();
+    window.addEventListener("datos-sincronizados", this._alDatosSincronizados);
     this.cargar();
   }
 
+<<<<<<< HEAD
   async cargar(recargar = false) {
+=======
+  disconnectedCallback() {
+    this._cargaActual = (this._cargaActual ?? 0) + 1;
+    window.removeEventListener("datos-sincronizados", this._alDatosSincronizados);
+  }
+
+  async cargar({ recursos = null, recargar = false } = {}) {
+    const carga = (this._cargaActual ?? 0) + 1;
+    this._cargaActual = carga;
+    if (!this.isConnected) return;
+>>>>>>> v2modificada
     // Lo escrito y aún no guardado se conserva al volver a pintar (iniciar paso, asignar exámenes…).
     const borradores = this.leerBorradores();
     const abiertos = this.qa("details.examenes[open]").map((detalle) => detalle.dataset.examenes);
     this.render(`<div class="vacio">Cargando el registro de atención…</div>`);
     try {
-      this._datos = await cargarTodo({ recargar });
+      this._datos = recursos ? await recargarTablas(recursos) : await cargarTodo({ recargar });
+      if (!this.isConnected || carga !== this._cargaActual) return;
       this._cita = consultaCompleta(this._datos, this._id);
       if (!this._cita) {
-        this.render(`<div class="vacio">La consulta solicitada no existe.</div>`);
+        this.pintarAviso("La consulta solicitada no existe.");
         return;
       }
       this.pintar();
@@ -132,10 +168,12 @@ export class AppConsulta extends Vista {
         if (detalle) detalle.open = true;
       }
     } catch {
-      this.render(`<div class="vacio">No se pudo cargar la consulta. Intente de nuevo.</div>`);
+      if (!this.isConnected || carga !== this._cargaActual) return;
+      this.pintarAviso("No se pudo cargar la consulta. Revise la conexión e intente de nuevo.", true);
     }
   }
 
+<<<<<<< HEAD
   pintar() {
     const { consulta, paciente, clinica, procedimientos } = this._cita;
     // Exámenes que se pueden asignar y los ya elegidos en el buscador, por procedimiento.
@@ -426,10 +464,12 @@ export class AppConsulta extends Vista {
   async guardarNotas(idCp, { silencioso = false, idPaso = null } = {}) {
     const item = this.buscarProcedimiento(idCp);
     if (!item) return null;
+=======
+  async persistirNotas(item, valores, idPaso = null) {
+>>>>>>> v2modificada
     const cp = item.consultaProcedimiento;
-    const valores = this.leerNotas(idCp);
     const pasos = { ...(item.notas?.pasos ?? {}) };
-    if (idPaso) {
+    if (idPaso !== null) {
       pasos[idPaso] = {
         notas: valores.notas,
         diagnostico: valores.diagnostico,
@@ -442,10 +482,37 @@ export class AppConsulta extends Vista {
       idProcedimiento: cp.idProcedimiento,
       fechaInicio: cp.fechaInicio,
       fechaFin: cp.fechaFin,
-      observaciones: serializarObservaciones({ ...valores, pasos }),
+      // Al completar un paso su registro pasa a `pasos` y el borrador queda vacío para el siguiente.
+      observaciones: serializarObservaciones(
+        idPaso !== null ? { notas: "", diagnostico: "", plan: "", pasos } : { ...valores, pasos }
+      ),
       idConsulta: cp.idConsulta,
     });
-    if (!silencioso) this.notificar("Notas de atención guardadas.", "ok");
+  }
+
+  async guardarNotas(idCp) {
+    const item = this.buscarProcedimiento(idCp);
+    if (!item) return null;
+    const actual = item.pasos.find(({ estado }) => estado === "actual");
+    if (!actual || !this.personaRolPara(actual.paso)) {
+      this.notificar("Este paso está en espera y corresponde a otro rol.", "error");
+      return null;
+    }
+    const cap = this.capacidadesDePaso(actual.rol);
+    const valores = this.leerNotas(idCp);
+    if (!cap.clinico) {
+      valores.diagnostico = "";
+      valores.plan = "";
+    }
+    await this.persistirNotas(item, valores);
+    this.notificar(
+      mensajeSegunConexion(
+        "Notas del paso guardadas.",
+        "Notas guardadas en este dispositivo; se enviarán al recuperar la conexión."
+      ),
+      "ok"
+    );
+    await this.cargar({ recursos: ["consultasProcedimiento"] });
     return valores;
   }
 
@@ -455,12 +522,16 @@ export class AppConsulta extends Vista {
     const paso = item.pasos.find(({ paso }) => String(paso.idProcedimientoPaso) === String(idPaso))?.paso;
     const personaRol = this.personaRolPara(paso);
     if (!personaRol) {
-      this.notificar("Su sesión no tiene un rol asociado a esta clínica.", "error");
+      this.notificar("Su sesión no tiene un rol compatible con esta clínica y este paso.", "error");
       return;
     }
     try {
       // El id se genera aquí para poder completar el paso aunque no haya conexión.
+<<<<<<< HEAD
       await crearConId("consultas-procedimiento-paso", {
+=======
+      await crear("consultas-procedimiento-paso", {
+>>>>>>> v2modificada
         idConsultaProcedimientoPaso: crypto.randomUUID(),
         fechaInicio: ahoraISO(),
         estado: "EN_PROCESO",
@@ -468,12 +539,13 @@ export class AppConsulta extends Vista {
         idPersonaRol: personaRol.idPersonaRol,
       });
       this.notificar(
-        estaConectado()
-          ? "Paso iniciado. Registre notas y exámenes."
-          : "Paso iniciado sin conexión: se enviará al recuperar la red.",
+        mensajeSegunConexion(
+          "Paso iniciado. Registre notas y exámenes.",
+          "Paso iniciado sin conexión: se enviará al recuperar la red."
+        ),
         "ok"
       );
-      await this.cargar(true);
+      await this.cargar({ recursos: ["consultasProcedimientoPaso"] });
     } catch (error) {
       this.notificar(`No se pudo iniciar el paso: ${error.message}`, "error");
     }
@@ -483,17 +555,31 @@ export class AppConsulta extends Vista {
     const item = this.buscarProcedimiento(idCp);
     if (!item) return;
     const actual = item.pasos.find(({ paso }) => String(paso.idProcedimientoPaso) === String(idPaso));
-    if (!actual?.registro) {
-      this.notificar("Primero inicie el paso actual.", "error");
+    if (!this.personaRolPara(actual?.paso)) {
+      this.notificar("Su sesión no tiene el rol responsable de este paso.", "error");
       return;
     }
     const notas = this.leerNotas(idCp);
+<<<<<<< HEAD
     if (!notas.diagnostico) {
+      this.notificar("Elija el diagnóstico CIE-10 de la lista antes de completar el paso.", "error");
+=======
+    const cap = this.capacidadesDePaso(actual?.rol);
+    if (cap.diagnostico && !notas.diagnostico) {
       this.notificar("Elija el diagnóstico CIE-10 de la lista antes de completar el paso.", "error");
       return;
     }
+    if (!cap.clinico) {
+      notas.diagnostico = "";
+      notas.plan = "";
+    }
+    if (!actual?.registro) {
+      this.notificar("Inicie el paso antes de completarlo.", "error");
+>>>>>>> v2modificada
+      return;
+    }
     try {
-      await this.guardarNotas(idCp, { silencioso: true, idPaso: actual.paso.idProcedimientoPaso });
+      await this.persistirNotas(item, notas, actual.paso.idProcedimientoPaso);
       const registro = actual.registro;
       await actualizar("consultas-procedimiento-paso", registro.idConsultaProcedimientoPaso, {
         fechaInicio: registro.fechaInicio,
@@ -502,13 +588,19 @@ export class AppConsulta extends Vista {
         idConsultaProcedimiento: item.consultaProcedimiento.idConsultaProcedimiento,
         idPersonaRol: registro.idPersonaRol,
       });
+      // Lo escrito ya quedó en el paso completado: no se arrastra al siguiente al volver a pintar.
+      for (const campo of ["notas", "diagnostico", "plan"]) {
+        const elemento = this.q(`[data-cp="${idCp}"] [data-campo="${campo}"]`);
+        if (elemento) elemento.value = "";
+      }
       this.notificar(
-        estaConectado()
-          ? "Paso completado. Avance registrado."
-          : "Paso completado sin conexión: se enviará al recuperar la red.",
+        mensajeSegunConexion(
+          "Paso completado. Avance registrado.",
+          "Paso completado sin conexión: se enviará al recuperar la red."
+        ),
         "ok"
       );
-      await this.cargar(true);
+      await this.cargar({ recursos: ["consultasProcedimiento", "consultasProcedimientoPaso"] });
     } catch (error) {
       this.notificar(`No se pudo completar el paso: ${error.message}`, "error");
     }
@@ -519,6 +611,14 @@ export class AppConsulta extends Vista {
     if (!item) return;
     const pasos = item.pasos;
     const indiceActual = pasos.findIndex(({ estado }) => estado === "actual");
+<<<<<<< HEAD
+=======
+    const pasoOperable = indiceActual === -1 ? pasos.at(-1) : pasos[indiceActual];
+    if (!this.personaRolPara(pasoOperable?.paso)) {
+      this.notificar("Solo el rol responsable del paso actual puede devolverlo.", "error");
+      return;
+    }
+>>>>>>> v2modificada
     // Sin paso en curso todos están completos: se reabre el último.
     const indicePrevio = indiceActual === -1 ? pasos.length - 1 : indiceActual - 1;
     const previo = pasos[indicePrevio];
@@ -540,12 +640,13 @@ export class AppConsulta extends Vista {
         idPersonaRol: previo.registro.idPersonaRol,
       });
       this.notificar(
-        estaConectado()
-          ? `Se retrocedió al paso "${previo.paso.nombre}".`
-          : `Retroceso guardado sin conexión: se enviará al recuperar la red.`,
+        mensajeSegunConexion(
+          `Se retrocedió al paso «${previo.paso.nombre}».`,
+          "Retroceso guardado sin conexión: se enviará al recuperar la red."
+        ),
         "ok"
       );
-      await this.cargar(true);
+      await this.cargar({ recursos: ["consultasProcedimientoPaso"] });
     } catch (error) {
       this.notificar(`No se pudo retroceder: ${error.message}`, "error");
     }
@@ -553,6 +654,7 @@ export class AppConsulta extends Vista {
 
   async finalizarConsulta() {
     const consulta = this._cita.consulta;
+<<<<<<< HEAD
     if (consulta.fechaFin) {
       this.notificar("La consulta ya fue finalizada.", "info");
       return;
@@ -561,6 +663,19 @@ export class AppConsulta extends Vista {
       titulo: "¿Finalizar la consulta?",
       mensaje: "Se registrará la fecha y hora de cierre de la consulta.",
       aceptar: "Finalizar",
+=======
+    const sinCompletar = this._cita.procedimientos
+      .flatMap(({ pasos }) => pasos)
+      .filter(({ estado }) => estado !== "completado").length;
+    const aceptado = await confirmar({
+      titulo: "¿Finalizar la consulta?",
+      mensaje:
+        sinCompletar > 0
+          ? `Quedan ${sinCompletar} ${sinCompletar === 1 ? "paso" : "pasos"} sin completar. Si finaliza, se registrará la fecha y hora de cierre de todos modos.`
+          : "Se registrará la fecha y hora de cierre de la consulta.",
+      aceptar: "Finalizar",
+      peligro: sinCompletar > 0,
+>>>>>>> v2modificada
     });
     if (!aceptado) return;
     try {
@@ -572,10 +687,10 @@ export class AppConsulta extends Vista {
         idPersonaRol: consulta.idPersonaRol,
       });
       this.notificar(
-        estaConectado() ? "Consulta finalizada." : "Finalización guardada sin conexión.",
+        mensajeSegunConexion("Consulta finalizada.", "Finalización guardada sin conexión."),
         "ok"
       );
-      await this.cargar(true);
+      await this.cargar({ recursos: ["consultas"] });
     } catch (error) {
       this.notificar(`No se pudo finalizar la consulta: ${error.message}`, "error");
     }
@@ -586,18 +701,28 @@ export class AppConsulta extends Vista {
     if (!item) return;
     const actual = item.pasos.find(({ estado }) => estado === "actual");
     if (!actual?.registro) {
-      this.notificar("Inicie el paso actual antes de asignar exámenes.", "error");
+      this.notificar("Inicie el paso antes de asignar exámenes.", "error");
       return;
     }
+<<<<<<< HEAD
     const seleccionados = this._elegidos.get(String(idCp)) ?? [];
     if (seleccionados.length === 0) {
       this.notificar("Busque y elija al menos un examen.", "error");
+=======
+    if (!this.personaRolPara(actual.paso) || !this.capacidadesDePaso(actual.rol).examenes) {
+      this.notificar("Solo el odontólogo puede asignar exámenes en este paso.", "error");
+>>>>>>> v2modificada
       return;
     }
+    const seleccionados = valorDeLista(this._elegidos, idCp);
     const indicaciones = this.q(`[data-cp="${idCp}"] [data-campo="indicaciones"]`)?.value.trim() ?? "";
     try {
       for (const idExamen of seleccionados) {
+<<<<<<< HEAD
         const examen = this._examenes.get(String(idCp))?.find((item) => String(item.examen.idExamen) === idExamen)?.examen;
+=======
+        const examen = valorDeLista(this._examenes, idCp).find((item) => String(item.examen.idExamen) === idExamen)?.examen;
+>>>>>>> v2modificada
         await crear("ordenes-examen", {
           idOrdenExamen: crypto.randomUUID(),
           fechaCreacion: ahoraISO(),
@@ -606,22 +731,36 @@ export class AppConsulta extends Vista {
         });
       }
       this.notificar(
-        estaConectado()
-          ? `${seleccionados.length} examen(es) asignado(s).`
-          : `${seleccionados.length} examen(es) guardado(s) sin conexión.`,
+        mensajeSegunConexion(
+          `${cantidad(seleccionados.length, "examen asignado", "exámenes asignados")}.`,
+          `${cantidad(seleccionados.length, "examen guardado", "exámenes guardados")} sin conexión.`
+        ),
         "ok"
       );
-      await this.cargar(true);
+      await this.cargar({ recursos: ["ordenesExamen"] });
     } catch (error) {
       this.notificar(`No se pudieron asignar los exámenes: ${error.message}`, "error");
     }
   }
 
   async eliminarOrdenes(idCp) {
+<<<<<<< HEAD
     const ids = this.qa(`[data-cp="${idCp}"] .ordenes input:checked`).map((casilla) => casilla.value);
     const ordenes = this._datos.ordenesExamen.filter((orden) => ids.includes(String(orden.idOrdenExamen)));
     if (ordenes.length === 0) return;
     const nombres = ordenes.map((orden) => `«${orden.indicaciones ?? "Orden sin indicaciones"}»`).join(", ");
+=======
+    const item = this.buscarProcedimiento(idCp);
+    const actual = item?.pasos.find(({ estado }) => estado === "actual");
+    if (!item || !actual || !this.personaRolPara(actual.paso) || !this.capacidadesDePaso(actual.rol).examenes) {
+      this.notificar("Solo el odontólogo puede modificar los exámenes de este paso.", "error");
+      return;
+    }
+    const ids = this.qa(`[data-cp="${idCp}"] .ordenes input:checked`).map((casilla) => casilla.value);
+    const ordenes = this._datos.ordenesExamen.filter((orden) => ids.includes(String(orden.idOrdenExamen)));
+    if (ordenes.length === 0) return;
+    const nombres = ordenes.map((orden) => `«${textoOrden(orden)}»`).join(", ");
+>>>>>>> v2modificada
     const aceptado = await confirmar({
       titulo: ordenes.length === 1 ? "¿Eliminar la orden de examen?" : `¿Eliminar ${ordenes.length} órdenes de examen?`,
       mensaje: `Se eliminará de este paso: ${nombres}. Esta acción no se puede deshacer.`,
@@ -632,6 +771,7 @@ export class AppConsulta extends Vista {
     try {
       for (const orden of ordenes) await eliminar("ordenes-examen", orden.idOrdenExamen);
       this.notificar(
+<<<<<<< HEAD
         estaConectado()
           ? `${ordenes.length} orden(es) de examen eliminada(s).`
           : "Eliminación guardada sin conexión: se enviará al recuperar la red.",
@@ -658,13 +798,43 @@ export class AppConsulta extends Vista {
     const idCp = buscador.dataset.examenBuscador;
     this._elegidos.set(idCp, [...(this._elegidos.get(idCp) ?? []), String(buscador.value)]);
     this.pintarElegidos(idCp);
+=======
+        mensajeSegunConexion(
+          `${cantidad(ordenes.length, "orden de examen eliminada", "órdenes de examen eliminadas")}.`,
+          "Eliminación guardada sin conexión: se enviará al recuperar la red."
+        ),
+        "ok"
+      );
+      await this.cargar({ recursos: ["ordenesExamen"] });
+    } catch (error) {
+      this.notificar(`No se pudo eliminar la orden: ${error.message}`, "error");
+    }
+>>>>>>> v2modificada
+  }
+
+  abrirTicket() {
+    mostrarTicket(this.shadowRoot, this._cita);
+  }
+
+  manejarCambio(evento) {
+    const orden = evento.target.closest('.ordenes input[name="orden"]');
+    if (orden) return this.actualizarEliminarOrdenes(orden.closest("article.proc").dataset.cp);
+    const buscador = evento.target.closest("[data-examen-buscador]");
+    if (!buscador?.value) return;
+    const idCp = buscador.dataset.examenBuscador;
+    guardarEnLista(this._elegidos, idCp, [...valorDeLista(this._elegidos, idCp), String(buscador.value)]);
+    this.pintarElegidos(idCp);
   }
 
   manejarClick(evento) {
     const quitar = evento.target.closest("button[data-quitar-examen]");
     if (quitar) {
       const idCp = quitar.dataset.cp;
+<<<<<<< HEAD
       this._elegidos.set(idCp, (this._elegidos.get(idCp) ?? []).filter((id) => id !== quitar.dataset.quitarExamen));
+=======
+      guardarEnLista(this._elegidos, idCp, valorDeLista(this._elegidos, idCp).filter((id) => id !== quitar.dataset.quitarExamen));
+>>>>>>> v2modificada
       this.pintarElegidos(idCp);
       this.q(`[data-examen-buscador="${idCp}"]`).focus();
       return;
@@ -672,6 +842,7 @@ export class AppConsulta extends Vista {
     const boton = evento.target.closest("button[data-accion]");
     if (!boton) return;
     const { accion, cp, paso } = boton.dataset;
+<<<<<<< HEAD
     if (accion === "volver") this.navegar("dashboard");
     if (accion === "ticket") this.abrirTicket();
     if (accion === "guardar-notas") this.guardarNotas(cp).catch((error) => this.notificar(error.message, "error"));
@@ -681,7 +852,55 @@ export class AppConsulta extends Vista {
     if (accion === "asignar") this.asignarExamenes(cp);
     if (accion === "finalizar") this.finalizarConsulta();
     if (accion === "eliminar-ordenes") this.eliminarOrdenes(cp);
+=======
+    let trabajo;
+    switch (accion) {
+      case "volver":
+        this.navegar("dashboard");
+        return;
+      case "ticket":
+        this.abrirTicket();
+        return;
+      case "reintentar":
+        trabajo = () => this.cargar({ recargar: true });
+        break;
+      case "guardar-notas":
+        trabajo = () => this.guardarNotas(cp);
+        break;
+      case "iniciar":
+        trabajo = () => this.iniciarPaso(cp, paso);
+        break;
+      case "completar":
+        trabajo = () => this.completarPaso(cp, paso);
+        break;
+      case "retroceder":
+        trabajo = () => this.retroceder(cp);
+        break;
+      case "finalizar":
+        trabajo = () => this.finalizarConsulta();
+        break;
+      case "asignar":
+        trabajo = () => this.asignarExamenes(cp);
+        break;
+      case "eliminar-ordenes":
+        trabajo = () => this.eliminarOrdenes(cp);
+        break;
+      default:
+        return;
+    }
+    if (this._operacionActiva) return;
+    this._operacionActiva = true;
+    const conservaFoco = ["retroceder", "finalizar", "eliminar-ordenes"].includes(accion);
+    this.bloquearAcciones(true, conservaFoco ? boton : null);
+    Promise.resolve()
+      .then(trabajo)
+      .catch((error) => this.notificar(error.message, "error"))
+      .finally(() => {
+        this._operacionActiva = false;
+        this.bloquearAcciones(false);
+      });
+>>>>>>> v2modificada
   }
 }
 
-customElements.define("app-consulta", AppConsulta);
+definirElemento("app-consulta", AppConsulta);

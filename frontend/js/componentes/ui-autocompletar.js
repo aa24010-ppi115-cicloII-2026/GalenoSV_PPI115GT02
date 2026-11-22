@@ -1,11 +1,5 @@
-import { Vista, escapar } from "../base.js";
-
-const flecha = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")";
-
-/** Quita acentos sin cambiar la longitud del texto, para poder resaltar la coincidencia en el original. */
-function normalizar(texto) {
-  return [...String(texto ?? "")].map((caracter) => caracter.normalize("NFD")[0]).join("").toLowerCase();
-}
+import { Vista, definirElemento } from "../base.js";
+import { escapar, normalizarTexto } from "../texto.js";
 
 /**
  * Campo de búsqueda con autocompletado para elegir un dato del catálogo (patrón combobox de ARIA).
@@ -14,31 +8,6 @@ function normalizar(texto) {
  * Mientras no hay opciones muestra `mensaje` (por ejemplo «Cargando…»).
  */
 export class UiAutocompletar extends Vista {
-  get estilos() {
-    return `
-      .caja { position: relative; }
-      .caja input { padding-right: 2.4rem; }
-      .caja input:disabled { background: var(--superficie-suave, #f7f9fb); cursor: not-allowed; }
-      .flecha {
-        position: absolute; right: 0.8rem; top: 50%; width: 1rem; height: 1rem; margin-top: -0.5rem;
-        background: var(--texto-suave, #4d6378); pointer-events: none;
-        -webkit-mask: ${flecha} center / contain no-repeat; mask: ${flecha} center / contain no-repeat;
-        transition: transform 0.15s ease;
-      }
-      input[aria-expanded="true"] + .flecha { transform: rotate(180deg); }
-      ul {
-        position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 0.35rem);
-        margin: 0; padding: 0.3rem; list-style: none; max-height: 15rem; overflow: auto;
-        background: var(--superficie, #fff); border: 1px solid var(--borde, #d6dee7);
-        border-radius: var(--radio, 10px); box-shadow: var(--sombra-alta);
-      }
-      li { padding: 0.55rem 0.7rem; border-radius: 7px; cursor: pointer; font-size: 0.92rem; }
-      li[aria-selected="true"] { color: var(--acento-fuerte, #0b6155); font-weight: 600; }
-      li.activa, li:hover { background: var(--mate-suave, #e9eff4); }
-      li.vacia { color: var(--texto-suave, #4d6378); cursor: default; background: none; }
-      mark { background: var(--acento-suave, #e6f3f0); color: inherit; font-weight: 700; border-radius: 3px; }
-    `;
-  }
 
   connectedCallback() {
     if (this._iniciado) return;
@@ -61,7 +30,7 @@ export class UiAutocompletar extends Vista {
     entrada.addEventListener("input", () => this.abrir());
     entrada.addEventListener("click", () => this.abrir());
     entrada.addEventListener("keydown", (evento) => this.tecla(evento));
-    entrada.addEventListener("blur", () => this.confirmar());
+    entrada.addEventListener("blur", () => this.confirmarTexto());
     const lista = this.q("#lista");
     // mousedown cancela el blur del campo para que el clic llegue a la opción.
     lista.addEventListener("mousedown", (evento) => evento.preventDefault());
@@ -82,6 +51,7 @@ export class UiAutocompletar extends Vista {
     if (!this._opciones.some((opcion) => String(opcion.valor) === String(this._valor))) this._valor = "";
     if (this._iniciado) {
       this.mensaje = null;
+      this.cerrar();
       this.pintarEntrada();
     }
   }
@@ -109,6 +79,7 @@ export class UiAutocompletar extends Vista {
   set mensaje(texto) {
     this._mensaje = texto;
     if (!this._iniciado) return;
+    if (texto) this.cerrar();
     this.entrada.disabled = Boolean(texto);
     this.entrada.placeholder = texto ?? "Escriba para buscar…";
   }
@@ -126,10 +97,11 @@ export class UiAutocompletar extends Vista {
   }
 
   abrir() {
+    if (this.entrada.disabled) return;
     const texto = this.entrada.value;
     // Si el texto es el de la opción ya elegida se muestran todas, como un select.
-    const consulta = texto === this.textoElegido ? "" : normalizar(texto.trim());
-    this._filtradas = this.opciones.filter((opcion) => normalizar(opcion.texto).includes(consulta));
+    const consulta = texto === this.textoElegido ? "" : normalizarTexto(texto.trim());
+    this._filtradas = this.opciones.filter((opcion) => normalizarTexto(opcion.texto).includes(consulta));
     this._activa = this._filtradas.length === 1 ? 0 : -1;
     const lista = this.q("#lista");
     lista.innerHTML =
@@ -155,7 +127,7 @@ export class UiAutocompletar extends Vista {
   }
 
   resaltar(texto, consulta) {
-    const inicio = consulta ? normalizar(texto).indexOf(consulta) : -1;
+    const inicio = consulta ? normalizarTexto(texto).indexOf(consulta) : -1;
     if (inicio < 0) return escapar(texto);
     const fin = inicio + consulta.length;
     return `${escapar(texto.slice(0, inicio))}<mark>${escapar(texto.slice(inicio, fin))}</mark>${escapar(texto.slice(fin))}`;
@@ -178,7 +150,9 @@ export class UiAutocompletar extends Vista {
       if (!this.abierta) return this.abrir();
       if (total === 0) return undefined;
       const paso = evento.key === "ArrowDown" ? 1 : -1;
-      this._activa = (this._activa + paso + total) % total;
+      this._activa = this._activa < 0
+        ? (paso > 0 ? 0 : total - 1)
+        : (this._activa + paso + total) % total;
       return this.marcarActiva();
     }
     if (evento.key === "Enter" && this.abierta) {
@@ -202,19 +176,19 @@ export class UiAutocompletar extends Vista {
     this._valor = opcion.valor;
     this.pintarEntrada();
     this.cerrar();
-    if (cambio) this.dispatchEvent(new Event("change", { bubbles: true }));
+    if (cambio) this.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
   }
 
   /** Al salir del campo: acepta un texto que coincide exactamente con una opción; si no, restaura la elegida. */
-  confirmar() {
+  confirmarTexto() {
     if (!this.abierta) return;
-    const texto = normalizar(this.entrada.value.trim());
-    const exacta = this.opciones.find((opcion) => normalizar(opcion.texto) === texto);
+    const texto = normalizarTexto(this.entrada.value.trim());
+    const exacta = this.opciones.find((opcion) => normalizarTexto(opcion.texto) === texto);
     if (exacta) return this.elegir(exacta);
     if (!texto && this._valor !== "") {
       this._valor = "";
       this.cerrar();
-      this.dispatchEvent(new Event("change", { bubbles: true }));
+      this.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
       return undefined;
     }
     this.cerrar();
@@ -223,4 +197,4 @@ export class UiAutocompletar extends Vista {
   }
 }
 
-customElements.define("ui-autocompletar", UiAutocompletar);
+definirElemento("ui-autocompletar", UiAutocompletar);

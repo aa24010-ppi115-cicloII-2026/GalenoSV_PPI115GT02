@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Vista, escapar, fechaHora, fechaCorta } from "../base.js";
 import { etiquetaPaso } from "../datos.js";
 
@@ -58,6 +59,16 @@ export class LineaPasos extends Vista {
       @media (max-width: 620px) { .fila { flex-wrap: wrap; row-gap: 0.1rem; } }
     `;
   }
+=======
+import { Vista, definirElemento } from "../base.js";
+import { escapar } from "../texto.js";
+
+/**
+ * Línea de tiempo presentacional, independiente del modelo de datos de la aplicación.
+ *   linea.pasos = [{ nombre, estado, etiqueta, resumen, detalles: [{ etiqueta, valor }] }]
+ */
+export class LineaPasos extends Vista {
+>>>>>>> v2modificada
 
   set pasos(lista) {
     this._pasos = lista ?? [];
@@ -75,12 +86,17 @@ export class LineaPasos extends Vista {
   pintar() {
     this.render(`
       <ol class="pasos" aria-label="Pasos del procedimiento">
+<<<<<<< HEAD
         ${this.pasos.map((item) => this.pintarPaso(item)).join("") || '<li class="aviso">Sin pasos definidos.</li>'}
+=======
+        ${this.pasos.map((item, indice) => this.pintarPaso(item, indice)).join("") || '<li class="aviso">Sin pasos definidos.</li>'}
+>>>>>>> v2modificada
       </ol>
     `);
   }
 
   /** Lo que se registró en un paso: quién, rol, cuándo y sus notas. Solo existe si el paso tiene registro. */
+<<<<<<< HEAD
   pintarRegistro({ registro, persona, rol, notas }) {
     if (!registro) return "";
     const filas = [
@@ -96,11 +112,20 @@ export class LineaPasos extends Vista {
       <details class="registro">
         <summary>Ver registro</summary>
         <dl>${filas.map(([clave, valor]) => `<dt>${clave}</dt><dd>${escapar(valor)}</dd>`).join("")}</dl>
+=======
+  pintarRegistro(item) {
+    if (!item.detalles?.length) return "";
+    return `
+      <details class="registro">
+        <summary>${escapar(item.textoDetalles ?? "Ver detalles")}</summary>
+        <dl>${item.detalles.map(({ etiqueta, valor }) => `<dt>${escapar(etiqueta)}</dt><dd>${escapar(valor)}</dd>`).join("")}</dl>
+>>>>>>> v2modificada
       </details>
     `;
   }
 
   /** Un paso dentro del procedimiento: número, nombre, estado, quién y cuándo, y su registro. */
+<<<<<<< HEAD
   pintarPaso(item) {
     const { paso, estado, persona, registro, indice } = item;
     const quien = [
@@ -109,12 +134,21 @@ export class LineaPasos extends Vista {
     ]
       .filter(Boolean)
       .join(" · ");
+=======
+  pintarPaso(item, indice) {
+    const estado = ["completado", "actual", "pendiente"].includes(item.estado) ? item.estado : "pendiente";
+>>>>>>> v2modificada
     return `
       <li class="paso ${escapar(estado)}">
         <div class="fila">
           <span class="num" aria-hidden="true">${indice + 1}</span>
+<<<<<<< HEAD
           <span class="nombre">${escapar(paso.nombre)}</span>
           <span class="quien">${escapar(quien)}</span>
+=======
+          <span class="nombre">${escapar(item.nombre)}</span>
+          <span class="quien">${escapar([item.etiqueta, item.resumen].filter(Boolean).join(" · "))}</span>
+>>>>>>> v2modificada
         </div>
         ${this.pintarRegistro(item)}
       </li>`;
@@ -122,4 +156,8 @@ export class LineaPasos extends Vista {
 
 }
 
+<<<<<<< HEAD
 customElements.define("linea-pasos", LineaPasos);
+=======
+definirElemento("linea-pasos", LineaPasos);
+>>>>>>> v2modificada

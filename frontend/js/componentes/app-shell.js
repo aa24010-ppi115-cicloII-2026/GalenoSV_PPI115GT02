@@ -1,103 +1,37 @@
-import { Vista, escapar } from "../base.js";
+import { Vista, definirElemento } from "../base.js";
+import { escapar, cantidad } from "../texto.js";
 import { leerSesion, cerrarSesion, alCambiarSesion } from "../estado.js";
 import { estaConectado, sincronizar, listarPendientes } from "../pendientes.js";
+<<<<<<< HEAD
 import { ejecutarPendiente } from "../api.js";
+=======
+import { comprobarServicio, ejecutarPendiente, servicioNoResponde } from "../api.js";
+>>>>>>> v2modificada
 import { limpiarCache } from "../datos.js";
 
-const VISTAS = {
-  buscar: "app-busqueda",
-  login: "app-login",
-  dashboard: "app-dashboard",
-  consulta: "app-consulta",
+/** Un solo catálogo define el elemento y el título que corresponden a cada ruta. */
+const RUTAS = {
+  buscar: { elemento: "app-busqueda", titulo: "Buscar mis citas" },
+  login: { elemento: "app-login", titulo: "Acceso de empleados" },
+  dashboard: { elemento: "app-dashboard", titulo: "Agenda de consultas" },
+  consulta: { elemento: "app-consulta", titulo: "Registro de atención" },
 };
 
 function rutaActual() {
   const hash = window.location.hash.replace(/^#\/?/, "");
   const [nombre, parametro] = hash.split("/");
-  return { nombre: VISTAS[nombre] ? nombre : "buscar", parametro: parametro ?? null };
+  return { nombre: RUTAS[nombre] ? nombre : "buscar", parametro: parametro ?? null };
 }
 
-export class AppShell extends Vista {
-  get estilos() {
-    return `
-        :host {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-        background: var(--fondo, #f3f6f9);
-      }
-      .contenedor { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 1rem; }
-      header {
-        background: linear-gradient(110deg, #14202b 0%, var(--mate-fuerte, #1f3a50) 55%, #134f4a 100%);
-        color: #f3f6f9;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      }
-      .barra { display: flex; align-items: center; gap: 1rem; padding-block: 0.8rem; flex-wrap: wrap; }
-      .marca { display: flex; align-items: center; gap: 0.7rem; margin-right: auto; }
-      .logo {
-        width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
-        background: var(--acento, #0f7b6c); color: #fff;
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-      }
-      .logo svg { width: 22px; height: 22px; }
-      .marca h1 { font-size: 1.05rem; margin: 0; letter-spacing: 0.01em; font-weight: 700; }
-      .marca p { margin: 0; font-size: 0.72rem; color: #b7c7d5; }
-      nav { display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; }
-      nav button.enlace {
-        min-height: 2.25rem; border: none; background: transparent; color: #d3e0ea; padding: 0.4rem 0.8rem;
-        border-radius: 8px; font-size: 0.86rem; font-weight: 500; text-decoration: none;
-      }
-      nav button.enlace:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
-      nav button.enlace.activo { background: rgba(255, 255, 255, 0.16); color: #fff; font-weight: 600; }
-      nav button.enlace:focus-visible, .usuario button.enlace:focus-visible { box-shadow: 0 0 0 2px #9fe3d6; }
-      .usuario { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
-      .usuario .nombre { opacity: 0.9; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .usuario button.enlace { color: #d3e0ea; font-size: 0.8rem; }
-      .usuario button.enlace:hover { color: #fff; }
-      main.contenedor { flex: 1; padding-block: 2rem 3rem; }
-      main:focus { outline: none; }
-      .saltar {
-        position: absolute;
-        left: -999px;
-        top: 0.5rem;
-        background: var(--superficie, #fff);
-        color: var(--mate, #2c4a63);
-        padding: 0.5rem 0.8rem;
-        border-radius: 8px;
-        z-index: 100;
-      }
-      .saltar:focus { left: 0.5rem; }
-      .estado-conexion {
-        display: flex; align-items: center; gap: 0.5rem; justify-content: center;
-        background: var(--alerta-suave, #fdf3e1); color: var(--alerta, #85570a); font-size: 0.8rem; padding: 0.5rem 1rem;
-        border-bottom: 1px solid #f0d9ad;
-      }
-      .estado-conexion[hidden] { display: none; }
-      .estado-conexion button {
-        background: transparent; border: 1px solid var(--alerta, #85570a); color: var(--alerta, #85570a);
-        border-radius: 8px; padding: 0.15rem 0.6rem; font-size: 0.75rem;
-      }
-      footer { padding-block: 1.25rem 1.5rem; color: var(--texto-tenue, #5f7387); font-size: 0.75rem; text-align: center; border-top: 1px solid var(--borde, #d6dee7); }
-      @media (max-width: 620px) {
-        .barra { gap: 0.4rem 0.5rem; }
-        .contenedor { padding: 0 0.75rem; }
-        .marca p { display: none; }
-        .marca { margin-right: 0; }
-        .usuario { margin-left: auto; }
-        .usuario .nombre { display: none; }
-        nav { order: 3; width: 100%; justify-content: flex-start; }
-        nav button.enlace { font-size: 0.8rem; padding: 0.4rem 0.55rem; }
-      }
-    `;
-  }
+class AppShell extends Vista {
 
   connectedCallback() {
     if (this._iniciado) return;
     this._iniciado = true;
     this.render(`
-      <a class="saltar" href="#vista">Ir al contenido principal</a>
+      <button type="button" class="saltar">Ir al contenido principal</button>
       <header>
-        <div class="contenedor barra">
+        <div class="ancho barra">
           <div class="marca">
             <div class="logo" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -120,64 +54,123 @@ export class AppShell extends Vista {
       <div class="estado-conexion" id="estado-conexion" hidden role="status"></div>
       <main class="contenedor" id="vista" tabindex="-1"></main>
       <footer class="contenedor">PPI115 2026 · GalenoSV · Aplicación web progresiva</footer>
+      <pwa-instalar></pwa-instalar>
       <ui-toast></ui-toast>
     `);
 
-    this.shadowRoot.addEventListener("click", (evento) => {
+    this._alClic = (evento) => {
       const boton = evento.target.closest("button[data-ruta]");
       if (!boton) return;
-      const ruta = boton.dataset.ruta;
-      if (ruta === "buscar") this.navegar("buscar");
-      else if (ruta === "dashboard") this.navegar("dashboard");
-      else this.navegar(leerSesion() ? "dashboard" : "login");
-    });
+      let destino = boton.dataset.ruta;
+      if (destino === "acceso") destino = leerSesion() ? "dashboard" : "login";
+      this.navegar(destino);
+    };
+    this.shadowRoot.addEventListener("click", this._alClic);
 
-    this.addEventListener("navegar", (evento) => {
+    // Las rutas usan el hash: el salto es un botón que mueve el foco, no un enlace que cambiaría la dirección.
+    this.q(".saltar").addEventListener("click", () => this.q("#vista").focus());
+
+    this._alNavegar = (evento) => {
       const destino = evento.detail;
       window.location.hash = `#/${destino}`;
-    });
+    };
+    this.addEventListener("navegar", this._alNavegar);
 
-    window.addEventListener("hashchange", () => this.montar());
-    window.addEventListener("online", () => {
+    this._alCambiarRuta = () => this.montar();
+    this._alCambiarConexion = () => {
       this.actualizarConexion();
+<<<<<<< HEAD
       this.sincronizarPendientes();
     });
     window.addEventListener("offline", () => this.actualizarConexion());
     window.addEventListener("pendientes-cambio", () => this.actualizarConexion());
+=======
+      if (estaConectado() && !servicioNoResponde() && listarPendientes().length > 0) {
+        this.sincronizarPendientes();
+      }
+    };
+    this._alReintentarServicio = async (evento) => {
+      const boton = evento.target.closest("#reintentar-servicio");
+      if (!boton) return;
+      boton.disabled = true;
+      boton.textContent = "Comprobando…";
+      await comprobarServicio();
+      this.actualizarConexion();
+    };
+    this.q("#estado-conexion").addEventListener("click", this._alReintentarServicio);
+    window.addEventListener("hashchange", this._alCambiarRuta);
+    window.addEventListener("online", this._alCambiarConexion);
+    window.addEventListener("offline", this._alCambiarConexion);
+    window.addEventListener("pendientes-cambio", this._alCambiarConexion);
+    window.addEventListener("servicio-cambio", this._alCambiarConexion);
+>>>>>>> v2modificada
     this.actualizarConexion();
     this._quitarEscucha = alCambiarSesion(() => this.actualizarSesion());
     this.actualizarSesion();
     this.montar();
+    if (estaConectado() && listarPendientes().length > 0) this.sincronizarPendientes();
   }
 
-  navegar(destino) {
-    window.location.hash = `#/${destino}`;
+  disconnectedCallback() {
+    if (!this._iniciado) return;
+    this.shadowRoot.removeEventListener("click", this._alClic);
+    this.q("#estado-conexion")?.removeEventListener("click", this._alReintentarServicio);
+    this.removeEventListener("navegar", this._alNavegar);
+    window.removeEventListener("hashchange", this._alCambiarRuta);
+    window.removeEventListener("online", this._alCambiarConexion);
+    window.removeEventListener("offline", this._alCambiarConexion);
+    window.removeEventListener("pendientes-cambio", this._alCambiarConexion);
+    window.removeEventListener("servicio-cambio", this._alCambiarConexion);
+    this._quitarEscucha?.();
+    this._iniciado = false;
   }
 
   actualizarConexion() {
     const aviso = this.q("#estado-conexion");
     if (!aviso) return;
     const pendientes = listarPendientes().length;
-    if (estaConectado()) {
+    const sinRed = !estaConectado();
+    if (!sinRed && !servicioNoResponde()) {
       aviso.hidden = true;
       aviso.innerHTML = "";
       return;
     }
+    const cola = pendientes > 0 ? ` y hay ${cantidad(pendientes, "cambio pendiente", "cambios pendientes")} por enviar` : "";
     aviso.hidden = false;
-    aviso.innerHTML = `<span>Sin conexión: los datos mostrados son los guardados en este dispositivo${
-      pendientes > 0 ? ` y hay ${pendientes} cambio(s) pendiente(s) por enviar` : ""
-    }.</span>`;
+    aviso.classList.toggle("sin-red", sinRed);
+    aviso.classList.toggle("servidor-caido", !sinRed);
+    aviso.setAttribute("role", sinRed ? "status" : "alert");
+    aviso.innerHTML = sinRed
+      ? `<span class="icono" aria-hidden="true">!</span><span class="texto"><strong>Sin conexión</strong><span class="detalle">Los datos mostrados son los guardados en este dispositivo${cola}.</span></span>`
+      : `<span class="icono" aria-hidden="true">!</span><span class="texto"><strong>Servicio no disponible</strong><span class="detalle">El servidor de GalenoSV no responde. Está viendo datos guardados en este dispositivo${cola}; los cambios se enviarán cuando vuelva.</span></span><button type="button" id="reintentar-servicio" aria-label="Reintentar conexión con el servidor">Reintentar</button>`;
   }
 
   async sincronizarPendientes() {
+<<<<<<< HEAD
     const resultado = await sincronizar((pendiente) => ejecutarPendiente(pendiente));
     this.actualizarConexion();
     if (resultado.enviadas > 0) {
       // Lo guardado en memoria no incluye lo recién enviado: la próxima vista lo pide al servidor.
       limpiarCache();
       this.notificar(`Se enviaron ${resultado.enviadas} cambio(s) acumulado(s).`, "ok");
+=======
+    if (this._sincronizandoPendientes) return;
+    this._sincronizandoPendientes = true;
+    try {
+      const resultado = await sincronizar((pendiente) => ejecutarPendiente(pendiente));
+      this.actualizarConexion();
+      if (resultado.enviadas > 0) {
+        // Lo guardado en memoria no incluye lo recién enviado: la próxima vista lo pide al servidor.
+        limpiarCache();
+        window.dispatchEvent(new Event("datos-sincronizados"));
+        const enviadas = cantidad(resultado.enviadas, "cambio acumulado", "cambios acumulados");
+        this.notificar(`Se ${resultado.enviadas === 1 ? "envió" : "enviaron"} ${enviadas}.`, "ok");
+      }
+      return resultado;
+    } finally {
+      this._sincronizandoPendientes = false;
+>>>>>>> v2modificada
     }
-    return resultado;
   }
 
   actualizarSesion() {
@@ -186,10 +179,15 @@ export class AppShell extends Vista {
     // Por id: data-ruta cambia entre "acceso" y "dashboard" según haya sesión.
     const botonAcceso = this.q("#acceso");
     if (!usuario || !botonAcceso) return;
+    const identidad = sesion
+      ? `${sesion.idPersona ?? ""}|${sesion.nombre ?? ""}|${sesion.nombreCorto ?? ""}`
+      : "";
+    if (identidad === this._identidadVisible) return;
+    this._identidadVisible = identidad;
     if (sesion) {
       botonAcceso.textContent = "Mi panel";
       botonAcceso.dataset.ruta = "dashboard";
-      usuario.innerHTML = `<span class="nombre">${escapar(sesion.nombre)}</span><button class="enlace" type="button" id="salir">Salir</button>`;
+      usuario.innerHTML = `<span class="nombre" title="${escapar(sesion.nombre)}">${escapar(sesion.nombreCorto ?? sesion.nombre)}</span><button class="enlace" type="button" id="salir">Salir</button>`;
       this.q("#salir").addEventListener("click", () => {
         cerrarSesion();
         this.navegar("login");
@@ -212,8 +210,9 @@ export class AppShell extends Vista {
       window.location.hash = "#/dashboard";
       return;
     }
+    document.title = `${RUTAS[nombre].titulo} · GalenoSV`;
     const contenedor = this.q("#vista");
-    const vista = document.createElement(VISTAS[nombre]);
+    const vista = document.createElement(RUTAS[nombre].elemento);
     if (parametro) vista.setAttribute("id-consulta", parametro);
     contenedor.replaceChildren(vista);
     for (const boton of this.qa("nav button[data-ruta]")) {
@@ -229,4 +228,4 @@ export class AppShell extends Vista {
   }
 }
 
-customElements.define("app-shell", AppShell);
+definirElemento("app-shell", AppShell);

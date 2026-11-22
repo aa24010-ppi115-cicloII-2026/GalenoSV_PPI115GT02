@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 import { Vista, escapar } from "../base.js";
+=======
+import { Vista, definirElemento, modalConFoco } from "../base.js";
+import { escapar } from "../texto.js";
+>>>>>>> v2modificada
 
 /**
  * Diálogo modal de confirmación propio (reemplaza window.confirm).
@@ -7,6 +12,7 @@ import { Vista, escapar } from "../base.js";
  * Enfoca «Cancelar», cierra con Escape y devuelve el foco al elemento que lo abrió.
  */
 export class UiConfirmar extends Vista {
+<<<<<<< HEAD
   get estilos() {
     return `
       .fondo {
@@ -28,6 +34,10 @@ export class UiConfirmar extends Vista {
     let previo = document.activeElement;
     while (previo?.shadowRoot?.activeElement) previo = previo.shadowRoot.activeElement;
     this._previo = previo;
+=======
+
+  abrir({ titulo, mensaje = "", aceptar = "Aceptar", cancelar = "Cancelar", peligro = false }) {
+>>>>>>> v2modificada
     this.render(`
       <div class="fondo">
         <div class="caja" role="alertdialog" aria-modal="true" aria-labelledby="titulo" aria-describedby="mensaje">
@@ -41,15 +51,26 @@ export class UiConfirmar extends Vista {
       </div>
     `);
     return new Promise((resolver) => {
+<<<<<<< HEAD
       const cerrar = (respuesta) => {
         this.remove();
         this._previo?.focus?.();
         resolver(respuesta);
       };
+=======
+      let liberar;
+      const cerrar = (respuesta) => {
+        liberar?.();
+        this.remove();
+        resolver(respuesta);
+      };
+      liberar = modalConFoco(this, () => cerrar(false));
+>>>>>>> v2modificada
       this.q(".botones").addEventListener("click", (evento) => {
         const boton = evento.target.closest("[data-respuesta]");
         if (boton) cerrar(boton.dataset.respuesta === "si");
       });
+<<<<<<< HEAD
       this.shadowRoot.addEventListener("keydown", (evento) => {
         if (evento.key === "Escape") cerrar(false);
         // Mantiene el foco dentro del diálogo: solo hay dos botones.
@@ -59,12 +80,18 @@ export class UiConfirmar extends Vista {
           (this.shadowRoot.activeElement === no ? si : no).focus();
         }
       });
+=======
+>>>>>>> v2modificada
       this.q('[data-respuesta="no"]').focus();
     });
   }
 }
 
+<<<<<<< HEAD
 customElements.define("ui-confirmar", UiConfirmar);
+=======
+definirElemento("ui-confirmar", UiConfirmar);
+>>>>>>> v2modificada
 
 /** Muestra el diálogo y resuelve true si se acepta. */
 export function confirmar(opciones) {

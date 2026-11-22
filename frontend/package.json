@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./componentes": "./js/componentes/reutilizables.js"
+  },
   "description": "PWA de GalenoSV con Web Components y JavaScript est\u00e1ndar",
   "scripts": {
-    "start": "browser-sync start --server --files \"index.html, css/*.css, js/**/*.js\" --port 3000 --no-notify --no-open",
+    "start": "browser-sync start --server --files \"index.html, css/**/*.css, js/**/*.js\" --port 3000 --no-notify --no-open",
     "test": "mocha \"test/**/*.test.js\"",
     "coverage": "c8 --reporter=text --reporter=html mocha \"test/**/*.test.js\""
   },

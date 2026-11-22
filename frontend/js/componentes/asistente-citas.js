@@ -1,5 +1,14 @@
-import { Vista, escapar } from "../base.js";
-import { personaDeDocumento, clinicasDePaciente, cumpleFormato } from "../datos.js";
+import { Vista, definirElemento } from "../base.js";
+import { escapar } from "../texto.js";
+import { fechaCalendario, hoyISO } from "../fechas.js";
+import {
+  personaDeDocumento,
+  clinicasDePaciente,
+  errorDeFormatoDocumento,
+  indicacionesDocumento,
+  tiposDocumentoActivos,
+  tipoDocumentoElegido,
+} from "../datos.js";
 import "./ui-autocompletar.js";
 
 const PASOS = ["Tipo de documento", "Número de documento", "Clínica", "Rango de fechas"];
@@ -10,79 +19,7 @@ const PASOS = ["Tipo de documento", "Número de documento", "Clínica", "Rango d
  * No consulta la API: recibe los datos ya cargados en `datos` y emite
  * `buscar-citas` con la persona, la clínica y el rango elegidos.
  */
-export class AsistenteCitas extends Vista {
-  get estilos() {
-    const check = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E\")";
-    return `
-      form { display: grid; gap: 1.1rem; padding: 1.35rem 1.5rem 1.25rem; }
-      ol.pasos {
-        list-style: none; margin: 0 0 0.25rem; padding: 0;
-        display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem;
-        counter-reset: paso;
-      }
-      ol.pasos li {
-        counter-increment: paso; position: relative;
-        display: flex; align-items: center; gap: 0.5rem;
-        font-size: 0.8rem; font-weight: 500; color: var(--texto-tenue, #5f7387);
-        padding-bottom: 0.65rem;
-      }
-      ol.pasos li::after {
-        content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 3px;
-        background: var(--borde, #d6dee7); transition: background-color 0.25s ease;
-      }
-      ol.pasos li::before {
-        content: counter(paso);
-        flex: none; width: 1.65rem; height: 1.65rem; border-radius: 999px;
-        display: grid; place-items: center; font-weight: 700; font-size: 0.78rem;
-        font-variant-numeric: tabular-nums;
-        background: var(--superficie, #fff); color: var(--texto-tenue, #5f7387);
-        box-shadow: inset 0 0 0 1.5px var(--borde-fuerte, #b5c3d1);
-        transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
-      }
-      ol.pasos li.hecho { color: var(--acento, #0f7b6c); }
-      ol.pasos li.hecho::after { background: var(--acento, #0f7b6c); }
-      ol.pasos li.hecho::before { content: ""; background: var(--acento, #0f7b6c); box-shadow: none; }
-      ol.pasos li.hecho .marca { display: block; }
-      ol.pasos li[aria-current="step"] { color: var(--texto, #14202b); font-weight: 700; }
-      ol.pasos li[aria-current="step"]::after { background: var(--mate, #2c4a63); }
-      ol.pasos li[aria-current="step"]::before {
-        background: var(--mate, #2c4a63); color: #fff;
-        box-shadow: 0 0 0 4px var(--mate-suave, #e9eff4);
-      }
-      .marca {
-        display: none; position: absolute; left: 0.4rem; top: 0.42rem; width: 0.85rem; height: 0.85rem;
-        background: #fff; -webkit-mask: ${check} center / contain no-repeat; mask: ${check} center / contain no-repeat;
-      }
-      section[data-paso] { display: grid; gap: 0.75rem; animation: entrar 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
-      section[data-paso] h3 { font-size: 1.12rem; line-height: 1.3; }
-      @keyframes entrar { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-      .ayuda { font-size: 0.82rem; color: var(--texto-suave, #4d6378); }
-      .rango { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
-      .rango input { font-variant-numeric: tabular-nums; }
-      .eleccion { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-      .eleccion:empty { display: none; }
-      .eleccion span {
-        font-size: 0.78rem; font-weight: 500; padding: 0.22rem 0.65rem; border-radius: 999px;
-        background: var(--acento-suave, #e6f3f0); color: var(--acento-fuerte, #0b6155);
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acento, #0f7b6c) 20%, transparent);
-      }
-      .acciones {
-        display: flex; gap: 0.6rem; justify-content: flex-end; flex-wrap: wrap;
-        padding-top: 1rem; border-top: 1px solid var(--borde, #d6dee7);
-      }
-      @media (prefers-reduced-motion: reduce) {
-        section[data-paso] { animation: none; }
-      }
-      @media (max-width: 620px) {
-        form { padding: 1.1rem 1rem 1rem; }
-        ol.pasos li { font-size: 0; gap: 0; justify-content: center; }
-        ol.pasos li[aria-current="step"] { font-size: 0.75rem; gap: 0.4rem; justify-content: flex-start; }
-        .marca { left: 50%; margin-left: -0.425rem; }
-        .rango { grid-template-columns: 1fr; }
-        .acciones button { flex: 1; }
-      }
-    `;
-  }
+class AsistenteCitas extends Vista {
 
   connectedCallback() {
     if (this._iniciado) return;
@@ -90,8 +27,12 @@ export class AsistenteCitas extends Vista {
     this.paso = 1;
     this.render(`
       <form class="tarjeta" novalidate aria-label="Asistente de búsqueda de citas">
-        <ol class="pasos">${PASOS.map((nombre) => `<li><span class="marca" aria-hidden="true"></span>${nombre}</li>`).join("")}</ol>
-        <div class="eleccion" aria-label="Datos elegidos"></div>
+        <ol class="pasos">${PASOS
+          .map(
+            (nombre) =>
+              `<li data-paso="${PASOS.indexOf(nombre) + 1}"><span class="marca" aria-hidden="true"></span><span class="texto"><span class="etiqueta">${escapar(nombre)}</span><span class="valor"></span></span></li>`
+          )
+          .join("")}</ol>
 
         <section data-paso="1">
           <h3>¿Con qué documento está registrado?</h3>
@@ -101,7 +42,7 @@ export class AsistenteCitas extends Vista {
         <section data-paso="2" hidden>
           <h3>Escriba su número de documento</h3>
           <div class="campo">
-            <label for="numero">Número de documento</label>
+            <label for="numero" id="etiqueta-numero">Número de documento</label>
             <input id="numero" autocomplete="off" inputmode="text" aria-describedby="formato" />
             <small class="ayuda" id="formato"></small>
           </div>
@@ -118,14 +59,14 @@ export class AsistenteCitas extends Vista {
           <div class="rango">
             <div class="campo">
               <label for="desde">Desde</label>
-              <input type="date" id="desde" />
+              <input type="date" id="desde" value="${hoyISO()}" />
             </div>
             <div class="campo">
               <label for="hasta">Hasta</label>
-              <input type="date" id="hasta" />
+              <input type="date" id="hasta" value="${hoyISO()}" />
             </div>
           </div>
-          <small class="ayuda">Deje las fechas vacías para ver todas sus citas, pasadas y futuras.</small>
+          <small class="ayuda">Por defecto se buscan las citas de hoy. Cambie las fechas para ver otro rango; deje una vacía para no limitar ese extremo.</small>
         </section>
 
         <p class="error" id="error" role="alert" hidden></p>
@@ -145,7 +86,21 @@ export class AsistenteCitas extends Vista {
       if (this.paso === 4) this.buscar();
       else this.avanzar();
     });
-    this.q("#tipo").addEventListener("change", () => this.mostrarFormato());
+    this.q("#tipo").addEventListener("change", () => {
+      this.invalidarIdentidad();
+      this.q("#numero").value = "";
+      this.mostrarFormato();
+    });
+    this.q("#numero").addEventListener("input", () => this.invalidarIdentidad());
+    // Un error se refiere a lo que se escribió antes: al corregir cualquier dato deja de mostrarse.
+    this.q("form").addEventListener("input", () => {
+      this.mostrarError("");
+      this.pintarEleccion();
+    });
+    this.q("form").addEventListener("change", () => {
+      this.mostrarError("");
+      this.pintarEleccion();
+    });
     this.mostrarPaso();
     if (this._datos) this.pintarTipos();
   }
@@ -160,9 +115,7 @@ export class AsistenteCitas extends Vista {
   }
 
   pintarTipos() {
-    const tipos = [...(this._datos?.tiposDocumento ?? [])]
-      .filter((tipo) => tipo.activo !== false)
-      .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+    const tipos = tiposDocumentoActivos(this._datos ?? {});
     this.q("#tipo").opciones = tipos.map((tipo) => ({ valor: tipo.idTipoDocumento, texto: tipo.nombre }));
   }
 
@@ -171,16 +124,37 @@ export class AsistenteCitas extends Vista {
     this.mostrarError(mensaje);
   }
 
+  desbloquear() {
+    this.qa("input, button").forEach((elemento) => { elemento.disabled = false; });
+    this.q("form").removeAttribute("aria-disabled");
+    this.pintarTipos();
+    this.mostrarError("");
+  }
+
   tipoElegido() {
-    const id = this.q("#tipo").value;
-    return (this._datos?.tiposDocumento ?? []).find((tipo) => String(tipo.idTipoDocumento) === String(id)) ?? null;
+    return tipoDocumentoElegido(this._datos, this.q("#tipo").value);
   }
 
   mostrarFormato() {
     const tipo = this.tipoElegido();
-    const ayuda = tipo?.indicaciones || (tipo?.expresionRegular ? `Formato: ${tipo.expresionRegular}` : "");
-    this.q("#formato").textContent = ayuda;
-    this.q("#numero").placeholder = tipo?.nombre === "DUI" ? "Ej. 01234567-8" : "";
+    const formato = indicacionesDocumento(tipo);
+    const nombre = tipo?.nombre ?? "documento";
+    const etiquetaNumero = `Número de ${nombre}`;
+    this.q("#formato").textContent = formato.texto;
+    this.q("#numero").placeholder = formato.ejemplo;
+    this.q("#etiqueta-numero").textContent = etiquetaNumero;
+    this.q('section[data-paso="2"] h3').textContent = `Escriba su ${etiquetaNumero.charAt(0).toLowerCase()}${etiquetaNumero.slice(1)}`;
+    this.q('ol.pasos li[data-paso="2"] .etiqueta').textContent = etiquetaNumero;
+    this.pintarEleccion();
+  }
+
+  /** Al modificar el documento se invalidan la persona y las clínicas del valor anterior. */
+  invalidarIdentidad() {
+    this._persona = null;
+    this._clinicas = [];
+    this._numeroValidado = null;
+    this._tipoValidado = null;
+    this.q("#clinica").opciones = [];
   }
 
   mostrarError(mensaje) {
@@ -201,34 +175,34 @@ export class AsistenteCitas extends Vista {
       if (!this.q("#clinica").value) return this.mostrarError("Seleccione una clínica.");
       return this.irA(4);
     }
-    return undefined;
   }
 
   validarDocumento() {
     const tipo = this.tipoElegido();
     const numero = this.q("#numero").value.trim();
     if (!numero) {
-      this.mostrarError("Escriba el número de documento.");
+      this.mostrarError(`Escriba el número de ${tipo?.nombre ?? "documento"}.`);
       return false;
     }
-    if (!cumpleFormato(tipo, numero)) {
-      this.mostrarError(`El número no tiene el formato esperado: ${tipo.indicaciones || tipo.expresionRegular}.`);
+    const errorFormato = errorDeFormatoDocumento(tipo, numero);
+    if (errorFormato) {
+      this.mostrarError(errorFormato);
       return false;
     }
+
     const persona = personaDeDocumento(this._datos, tipo.idTipoDocumento, numero);
-    if (!persona) {
-      this.mostrarError("El documento no está registrado en GalenoSV. Verifique el tipo y el número.");
-      return false;
-    }
-    const clinicas = clinicasDePaciente(this._datos, persona.idPersona).sort((a, b) =>
-      String(a.nombre).localeCompare(String(b.nombre))
-    );
+    const clinicas = persona
+      ? clinicasDePaciente(this._datos, persona.idPersona).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)))
+      : [];
+    // Mismo mensaje si el documento no existe o no es de un paciente: la pantalla es pública.
     if (clinicas.length === 0) {
-      this.mostrarError("El documento no tiene clínicas registradas como paciente.");
+      this.mostrarError("No hay citas registradas con ese documento. Verifique el tipo y el número.");
       return false;
     }
     this._persona = persona;
     this._clinicas = clinicas;
+    this._numeroValidado = numero;
+    this._tipoValidado = tipo.idTipoDocumento;
     const campoClinica = this.q("#clinica");
     campoClinica.opciones = clinicas.map((clinica) => ({ valor: clinica.idClinica, texto: clinica.nombre }));
     if (clinicas.length === 1) campoClinica.value = clinicas[0].idClinica;
@@ -237,8 +211,17 @@ export class AsistenteCitas extends Vista {
 
   buscar() {
     this.mostrarError("");
-    const desde = this.q("#desde").value || null;
-    const hasta = this.q("#hasta").value || null;
+    const tipo = this.tipoElegido();
+    const numero = this.q("#numero").value.trim();
+    if (!this._persona || numero !== this._numeroValidado || String(tipo?.idTipoDocumento) !== String(this._tipoValidado)) {
+      this.irA(2);
+      this.mostrarError("Vuelva a validar el número de documento antes de buscar.");
+      return;
+    }
+    let desde = this.q("#desde").value || null;
+    let hasta = this.q("#hasta").value || null;
+    // Sin ninguna fecha se buscan las citas de hoy, igual que el valor inicial del formulario.
+    if (!desde && !hasta) desde = hasta = hoyISO();
     if (desde && hasta && desde > hasta) {
       this.mostrarError("La fecha inicial no puede ser posterior a la fecha final.");
       return;
@@ -277,26 +260,40 @@ export class AsistenteCitas extends Vista {
     this.pintarEleccion();
   }
 
+  rangoElegido() {
+    const desde = this.q("#desde").value;
+    const hasta = this.q("#hasta").value;
+    if (!desde && !hasta) return "";
+    if (desde && hasta && desde === hasta) return fechaCalendario(desde);
+    return [desde, hasta].filter(Boolean).map(fechaCalendario).join(" – ");
+  }
+
   pintarEleccion() {
-    const partes = [];
-    if (this.paso > 1) partes.push(this.tipoElegido()?.nombre);
-    if (this.paso > 2) partes.push(this.q("#numero").value.trim());
-    if (this.paso > 3) partes.push(this.q("#clinica").textoElegido);
-    this.q(".eleccion").innerHTML = partes.filter(Boolean).map((parte) => `<span>${escapar(parte)}</span>`).join("");
+    const valores = [
+      this.tipoElegido()?.nombre,
+      this.q("#numero").value.trim(),
+      this.q("#clinica").textoElegido,
+      this.rangoElegido(),
+    ];
+    this.qa("ol.pasos li").forEach((li, indice) => {
+      li.querySelector(".valor").textContent = valores[indice] ?? "";
+    });
   }
 
   /** Vuelve al paso 1 con el formulario vacío. */
   reiniciar() {
     this.q("#tipo").value = "";
     this.q("#numero").value = "";
-    this.q("#desde").value = "";
-    this.q("#hasta").value = "";
+    this.q("#desde").value = hoyISO();
+    this.q("#hasta").value = hoyISO();
     this.q("#clinica").opciones = [];
     this._persona = null;
     this._clinicas = [];
+    this._numeroValidado = null;
+    this._tipoValidado = null;
     this.mostrarFormato();
     this.irA(1);
   }
 }
 
-customElements.define("asistente-citas", AsistenteCitas);
+definirElemento("asistente-citas", AsistenteCitas);

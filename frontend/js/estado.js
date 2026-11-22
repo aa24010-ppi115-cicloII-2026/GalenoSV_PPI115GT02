@@ -3,7 +3,7 @@ const escuchas = new Set();
 
 function emitir() {
   const detalle = leerSesion();
-  for (const escucha of [...escuchas]) escucha({ detail: detalle });
+  for (const escucha of [...escuchas]) escucha(detalle);
 }
 
 export function leerSesion() {

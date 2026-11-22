@@ -21,7 +21,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
-import java.util.List;
 import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TicketService;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TicketService.Datos;
@@ -56,7 +55,7 @@ public class TicketResource {
             if (datos == null) return RestUtil.error(404, "id", "No existe el registro");
             byte[] pdf = generar(datos);
             return Response.ok(pdf)
-                    .header("Content-Disposition", "attachment; filename=\"ticket-" + uuid + ".pdf\"")
+                    .header("Content-Disposition", "attachment; filename=\"ticket-" + datos.codigo + ".pdf\"")
                     .build();
         } catch (RuntimeException ex) {
             return RestUtil.error(500, "", "No se pudo generar el comprobante");
@@ -85,7 +84,11 @@ public class TicketResource {
         documento.add(encabezado);
         Paragraph meta = new Paragraph();
         meta.add(new Phrase("Ticket ", normal));
+<<<<<<< HEAD
         meta.add(new Phrase("#" + datos.idConsulta, codigo));
+=======
+        meta.add(new Phrase("#" + datos.codigo, codigo));
+>>>>>>> v2modificada
         meta.add(new Phrase("  ·  " + datos.fecha, normal));
         meta.setSpacingAfter(6);
         documento.add(meta);
@@ -149,12 +152,15 @@ public class TicketResource {
         return salida.toByteArray();
     }
 
+<<<<<<< HEAD
     /** Compatibilidad: construye el PDF a partir de lineas de texto. */
     public byte[] generar(List<String> lineas) {
         Datos datos = parsearLineas(lineas);
         return generar(datos);
     }
 
+=======
+>>>>>>> v2modificada
     private static void agregarDato(PdfPTable tabla, String nombre, String contenido, Font etiqueta, Font valor) {
         PdfPCell celda = new PdfPCell();
         celda.setBorder(Rectangle.NO_BORDER);
@@ -176,6 +182,7 @@ public class TicketResource {
             tabla.addCell(celda);
         }
     }
+<<<<<<< HEAD
 
     private static Datos parsearLineas(List<String> lineas) {
         String id = "-", paciente = "-", clinica = "-", fecha = "-", motivo = "-", estado = "-";
@@ -212,4 +219,6 @@ public class TicketResource {
         }
         return new Datos(id, paciente, clinica, fecha, motivo, estado, procedimientos);
     }
+=======
+>>>>>>> v2modificada
 }

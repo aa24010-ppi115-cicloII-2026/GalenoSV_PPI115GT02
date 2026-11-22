@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Vista, escapar, fechaHora, fechaCalendario } from "../base.js";
 import { leerSesion } from "../estado.js";
 import { motivoDe, estadoDeCita } from "../datos.js";
@@ -47,7 +48,33 @@ export class CitaCard extends Vista {
         .estado { grid-column: 1 / -1; justify-self: start; margin-left: 0; }
       }
     `;
+=======
+import { Vista, definirElemento } from "../base.js";
+import { escapar, nombreCompleto } from "../texto.js";
+import { fechaHora, fechaCalendario } from "../fechas.js";
+import { motivoDe, estadoDeCita } from "../datos.js";
+import { pasosParaPresentacion } from "../presentacion.js";
+import "./linea-pasos.js";
+
+class CitaCard extends Vista {
+  static get observedAttributes() {
+    return ["vista"];
+>>>>>>> v2modificada
   }
+
+  get vista() {
+    return this.getAttribute("vista") ?? "paciente";
+  }
+
+  set vista(valor) {
+    if (valor === "empleado" || valor === "paciente") this.setAttribute("vista", valor);
+    else this.removeAttribute("vista");
+  }
+
+  attributeChangedCallback(nombre, anterior, actual) {
+    if (nombre === "vista" && anterior !== actual && this.isConnected) this.pintar();
+  }
+
 
   set cita(valor) {
     this._cita = valor;
@@ -64,22 +91,23 @@ export class CitaCard extends Vista {
     if (!fecha || Number.isNaN(fecha.getTime())) return `<div class="fecha sin">Sin fecha</div>`;
     const mes = fecha.toLocaleDateString("es-SV", { month: "short" }).replace(".", "");
     const dia = fecha.toLocaleDateString("es-SV", { day: "2-digit" });
-    const hora = fecha.toLocaleTimeString("es-SV", { hour: "2-digit", minute: "2-digit" });
+    const hora = fecha.toLocaleTimeString("es-SV", { hour: "numeric", minute: "2-digit" });
     return `<div class="fecha" role="img" aria-label="${escapar(textoCompleto)}">
       <span class="mes">${escapar(mes)}</span><span class="dia">${escapar(dia)}</span><span class="hora">${escapar(hora)}</span>
     </div>`;
   }
 
   connectedCallback() {
-    this.shadowRoot.addEventListener("click", (evento) => {
+    this._alClic ??= (evento) => {
       const boton = evento.target.closest("button[data-accion]");
       if (!boton) return;
       if (boton.dataset.accion === "ticket") {
         this.dispatchEvent(new CustomEvent("ver-ticket", { bubbles: true, composed: true, detail: this._cita }));
-      } else if (boton.dataset.accion === "atender") {
+      } else if (boton.dataset.accion === "atender" && this._cita) {
         this.navegar(`consulta/${this._cita.consulta.idConsulta}`);
       }
-    });
+    };
+    this.shadowRoot.addEventListener("click", this._alClic);
     this.pintar();
   }
 
@@ -94,18 +122,19 @@ export class CitaCard extends Vista {
       ? `${paciente.documento.tipo}: ${paciente.documento.valor}`
       : null;
     const { clave: estado, texto: textoEstado } = estadoDeCita(cita);
-    const sesion = leerSesion();
+    // Con todos los pasos completos ya no hay nada que atender: solo revisar o finalizar.
+    const accion = estado === "completada" ? "Ver atención" : "Atender consulta";
     const fecha = consulta.fechaInicio ? fechaHora(consulta.fechaInicio) : "Sin fecha";
     const acciones = `
       <div class="acciones">
         <button type="button" class="secundario" data-accion="ticket">Ver ticket</button>
-        ${sesion ? `<button type="button" data-accion="atender">Atender consulta</button>` : ""}
+        ${this.vista === "empleado" ? `<button type="button" data-accion="atender">${accion}</button>` : ""}
       </div>
     `;
-    const etiquetaPaciente = `${paciente?.nombres ?? "Paciente"} ${paciente?.apellidos ?? ""}`.trim();
+    const etiquetaPaciente = nombreCompleto(paciente) || "Paciente";
     const nombreClinica = clinica?.nombre ?? "Clínica no disponible";
     // En la búsqueda del propio paciente su nombre sobra: el título es el motivo de la cita.
-    const paraPaciente = this.getAttribute("vista") === "paciente";
+    const paraPaciente = this.vista !== "empleado";
     const titulo = paraPaciente ? motivoDe(consulta) : etiquetaPaciente;
     const subtitulo = paraPaciente ? nombreClinica : `${nombreClinica} · ${motivoDe(consulta)}`;
     this.render(`
@@ -118,7 +147,10 @@ export class CitaCard extends Vista {
           </div>
           <span class="estado ${estado}">${textoEstado}</span>
         </div>
-        <div class="general">
+        ${
+          paraPaciente
+            ? ""
+            : `<div class="general">
           <span><b>Documento:</b> ${escapar(documentoPaciente ?? "No registrado")}</span>
           ${
             cita.paciente?.fechaNacimiento
@@ -129,7 +161,8 @@ export class CitaCard extends Vista {
                 }</span>`
               : ""
           }
-        </div>
+        </div>`
+        }
         <div class="procedimientos">
           ${procedimientos
             .map(
@@ -145,9 +178,13 @@ export class CitaCard extends Vista {
       </article>
     `);
     this.qa("linea-pasos").forEach((linea, indice) => {
+<<<<<<< HEAD
       linea.pasos = procedimientos[indice].pasos;
+=======
+      linea.pasos = pasosParaPresentacion(procedimientos[indice].pasos);
+>>>>>>> v2modificada
     });
   }
 }
 
-customElements.define("cita-card", CitaCard);
+definirElemento("cita-card", CitaCard);

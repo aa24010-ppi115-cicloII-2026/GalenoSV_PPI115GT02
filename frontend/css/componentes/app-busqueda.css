@@ -1,0 +1,9 @@
+.encabezado { display: grid; gap: 0.4rem; margin: 0 0 1.25rem; }
+      .encabezado h2 { font-size: clamp(1.45rem, 1.2rem + 1vw, 1.85rem); line-height: 1.2; letter-spacing: -0.02em; }
+      .encabezado .aviso { max-width: 60ch; }
+      #resultados { margin-top: 2rem; display: grid; gap: 1rem; }
+      .resumen { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.75rem; border-bottom: 0.0625rem solid var(--borde, #d6dee7); }
+      .resumen > div { display: grid; gap: 0.1rem; }
+      .resumen h3 { font-size: 1.15rem; letter-spacing: -0.01em; }
+      .resumen h3:focus { outline: none; }
+      .lista { display: grid; gap: 1rem; }

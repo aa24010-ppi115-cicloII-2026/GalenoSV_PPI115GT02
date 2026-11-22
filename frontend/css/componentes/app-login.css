@@ -1,0 +1,13 @@
+.marco { max-width: 27.5rem; margin: 0 auto; }
+      .tarjeta { padding: 1.6rem 1.6rem 1.35rem; }
+      form { display: grid; gap: 1.05rem; }
+      .titulo { display: grid; gap: 0.3rem; }
+      .titulo h2 { font-size: 1.35rem; letter-spacing: -0.015em; }
+      .ayuda { font-size: 0.82rem; color: var(--texto-suave, #4d6378); min-height: 1.2em; }
+      #entrar { width: 100%; min-height: 2.85rem; }
+      .pie {
+        font-size: 0.88rem; color: var(--texto-suave, #4d6378);
+        padding-top: 1rem; border-top: 0.0625rem solid var(--borde, #d6dee7);
+      }
+      .legal { font-size: 0.75rem; color: var(--texto-suave, #4d6378); line-height: 1.5; }
+      @media (max-width: 32.5rem) { .tarjeta { padding: 1.25rem 1.1rem 1.1rem; } }

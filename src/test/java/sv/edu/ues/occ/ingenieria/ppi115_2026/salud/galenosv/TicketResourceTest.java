@@ -2,44 +2,42 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv;
 
 import org.junit.jupiter.api.Test;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.rest.TicketResource;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TicketService.Datos;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TicketService.PasoTicket;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TicketService.ProcedimientoTicket;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/** El PDF del backend presenta los mismos datos que el comprobante del frontend. */
 public class TicketResourceTest {
 
     private final TicketResource recurso = new TicketResource();
 
-    @Test
-    void testGenerar_producePdfValido() {
-        byte[] pdf = recurso.generar(List.of(
-                "Paciente: Ana Lopez",
-                "Clinica: Clinica Dental",
-                "Fecha de la cita: 25/09/2026 09:00",
-                "PROCEDIMIENTOS Y PASOS",
-                "- Limpieza dental",
-                "   Evaluacion clinica | FINALIZADO | 25/09/2026 09:10 | Maria Lopez"
-        ));
+    private static Datos cita(List<ProcedimientoTicket> procedimientos) {
+        return new Datos("36CD68F2", "Ana Lopez", "Clinica Dental", "25/09/2026 09:00", "Control", "En proceso",
+                procedimientos);
+    }
 
-        assertNotNull(pdf);
-        assertTrue(pdf.length > 500, "El PDF debe tener contenido");
-        String texto = new String(pdf, StandardCharsets.ISO_8859_1);
-        assertTrue(texto.startsWith("%PDF-"));
-        assertTrue(texto.contains("%%EOF"));
+    private static String texto(byte[] pdf) {
+        return new String(pdf, StandardCharsets.ISO_8859_1);
     }
 
     @Test
-    void testGenerar_incluyeElTextoDelComprobante() {
-        byte[] pdf = recurso.generar(List.of("Paciente: Jose Torres", "Estado: Completada"));
+    void generaUnPdfConLosDatosDeLaCitaYElCodigoCorto() {
+        byte[] pdf = recurso.generar(cita(List.of()));
 
-        String texto = new String(pdf, StandardCharsets.ISO_8859_1);
-        assertTrue(texto.contains("Jose Torres"));
-        assertTrue(texto.contains("Completada"));
+        assertTrue(texto(pdf).startsWith("%PDF-"));
+        assertTrue(texto(pdf).trim().endsWith("%%EOF"));
+        for (String dato : List.of("Comprobante de cita", "#36CD68F2", "Ana Lopez", "Clinica Dental", "Control", "En proceso")) {
+            assertTrue(texto(pdf).contains(dato), "Falta en el PDF: " + dato);
+        }
     }
 
     @Test
+<<<<<<< HEAD
     void testGenerar_incluyeSeccionesTipoImpresion() {
         byte[] pdf = recurso.generar(List.of(
                 "Paciente: Ana Lopez",
@@ -64,8 +62,24 @@ public class TicketResourceTest {
     @Test
     void testGenerar_aceptaListaVacia() {
         byte[] pdf = recurso.generar(List.of());
+=======
+    void listaCadaPasoConLoRegistradoYLasOrdenesDeExamen() {
+        PasoTicket evaluacion = new PasoTicket("Evaluacion clinica", "Completado", "25/09/2026 09:10", "Maria Lopez",
+                "CIE-10: K02.1 | Notas: Encia sana");
+        PasoTicket profilaxis = new PasoTicket("Profilaxis", "Por iniciar", "Sin fecha", "Sin asignar", "");
+        byte[] pdf = recurso.generar(cita(List.of(new ProcedimientoTicket("Limpieza dental",
+                List.of(evaluacion, profilaxis), List.of("Examen ordenado: Radiografia periapical")))));
+>>>>>>> v2modificada
 
-        assertNotNull(pdf);
-        assertTrue(new String(pdf, StandardCharsets.ISO_8859_1).startsWith("%PDF-"));
+        // La columna es angosta: el PDF parte el texto largo en líneas, así que se buscan sus partes.
+        for (String dato : List.of("Procedimientos y pasos", "Limpieza dental", "Evaluacion clinica", "Maria Lopez",
+                "K02.1", "Encia sana", "Profilaxis", "Por iniciar", "Examen ordenado: Radiografia")) {
+            assertTrue(texto(pdf).contains(dato), "Falta en el PDF: " + dato);
+        }
+    }
+
+    @Test
+    void avisaCuandoLaConsultaNoTieneProcedimientos() {
+        assertTrue(texto(recurso.generar(cita(List.of()))).contains("Sin procedimientos ni pasos registrados."));
     }
 }
