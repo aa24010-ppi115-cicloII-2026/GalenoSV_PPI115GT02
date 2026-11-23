@@ -87,7 +87,7 @@
                 <artifactId>liberty-maven-plugin</artifactId>
                 <version>3.10.2</version>
                 <configuration>
-                    <installDirectory>/home/duran/wlp</installDirectory>
+                    <installDirectory>/home/mrxto/openliberty/wlp</installDirectory>
                     <serverName>miServidor</serverName>
                 </configuration>
             </plugin>
