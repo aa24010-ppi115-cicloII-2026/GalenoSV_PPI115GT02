@@ -9,7 +9,7 @@
         background: var(--superficie); color: var(--mate); border: 0.0625rem solid var(--borde-fuerte); box-shadow: none;
       }
       .rangos button:hover { background: var(--mate-suave); }
-      .rangos button[aria-pressed="true"] { background: var(--mate); color: #fff; border-color: var(--mate); }
+      .rangos button[aria-pressed="true"] { background: var(--mate); color: var(--sobre-relleno); border-color: var(--mate); }
       #rango-aviso { font-size: 0.85rem; color: var(--texto-suave); margin: 1rem 0 0; }
       #resumen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem; margin: 0.6rem 0 1.1rem; }
       .indicador {
@@ -29,3 +29,5 @@
         #resumen { grid-template-columns: 1fr 1fr; }
       }
       @media (max-width: 32.5rem) { .datos, .fechas { grid-template-columns: minmax(0, 1fr); } }
+      /* La acción que la agenda pone en cada tarjeta mide igual que el botón de ticket de la tarjeta. */
+      cita-card > [slot="acciones"] { min-height: 2.35rem; padding: 0.4rem 0.9rem; font-size: 0.84rem; }

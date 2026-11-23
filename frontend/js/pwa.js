@@ -1,14 +1,11 @@
 const REGISTRO = "./service-worker.js";
 
-async function registrar() {
-  if (!("serviceWorker" in navigator)) return null;
-  try {
-    const registro = await navigator.serviceWorker.register(REGISTRO, { scope: "./" });
-    return registro;
-  } catch (error) {
+function registrar() {
+  if (!("serviceWorker" in navigator)) return Promise.resolve(null);
+  return navigator.serviceWorker.register(REGISTRO, { scope: "./" }).catch((error) => {
     console.error("No se pudo registrar el service worker", error);
     return null;
-  }
+  });
 }
 
 /**

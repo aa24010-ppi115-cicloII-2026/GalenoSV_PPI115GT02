@@ -25,10 +25,10 @@
       .quien { margin-left: auto; font-size: 0.74rem; text-align: right; font-variant-numeric: tabular-nums; }
       .paso.pendiente .nombre { color: var(--texto-suave, #4d6378); font-weight: 500; }
       .paso.completado .fila { background: var(--exito-suave, #e8f4ec); border-color: var(--exito-borde, #c3e2cd); }
-      .paso.completado .num { background: var(--exito, #1e6b3a); color: #fff; box-shadow: none; }
+      .paso.completado .num { background: var(--exito, #1e6b3a); color: var(--sobre-relleno, #fff); box-shadow: none; }
       .paso.completado::before, .paso.completado::after { background: var(--exito-borde, #c3e2cd); }
       .paso.actual .fila { border-color: var(--mate, #2c4a63); background: var(--mate-suave, #e9eff4); box-shadow: inset 0 0 0 0.0625rem var(--mate, #2c4a63); }
-      .paso.actual .num { background: var(--mate, #2c4a63); color: #fff; box-shadow: none; }
+      .paso.actual .num { background: var(--mate, #2c4a63); color: var(--sobre-relleno, #fff); box-shadow: none; }
       .paso.actual .quien { color: var(--mate, #2c4a63); font-weight: 600; }
       details.registro { font-size: 0.8rem; margin: 0.3rem 0 0 0.65rem; }
       details.registro summary {

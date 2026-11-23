@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./componentes": "./js/componentes/reutilizables.js"
+    "./componentes": "./js/boundary/componentes/reutilizables.js"
   },
   "description": "PWA de GalenoSV con Web Components y JavaScript est\u00e1ndar",
   "scripts": {

@@ -11,7 +11,7 @@
       /* Por debajo de este ancho el contenido ya llega a los bordes: el encabezado se alinea con él. */
       @media (min-width: 75rem) { .ancho { padding-inline: 2rem; } }
       header {
-        background: linear-gradient(110deg, #14202b 0%, var(--mate-fuerte, #1f3a50) 55%, #134f4a 100%);
+        background: linear-gradient(110deg, #14202b 0%, #1f3a50 55%, #134f4a 100%);
         color: #f3f6f9;
         border-bottom: 0.0625rem solid rgba(255, 255, 255, 0.06);
       }
@@ -19,7 +19,7 @@
       .marca { display: flex; align-items: center; gap: 0.7rem; margin-right: auto; }
       .logo {
         width: 2.375rem; height: 2.375rem; border-radius: 0.6875rem; display: grid; place-items: center;
-        background: var(--acento, #0f7b6c); color: #fff;
+        background: #0f7b6c; color: #fff;
         box-shadow: inset 0 0 0 0.0625rem rgba(255, 255, 255, 0.14);
       }
       .logo svg { width: 1.375rem; height: 1.375rem; }
@@ -37,6 +37,16 @@
       .usuario .nombre { opacity: 0.9; max-width: 9.375rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .usuario button.enlace { color: #d3e0ea; font-size: 0.8rem; }
       .usuario button.enlace:hover { color: #fff; }
+      .tema {
+        min-height: 2.25rem; width: 2.25rem; padding: 0; border: none; border-radius: 0.5rem;
+        background: transparent; color: #d3e0ea;
+      }
+      .tema:hover { background: rgba(255, 255, 255, 0.1); border-color: transparent; color: #fff; }
+      .tema:focus-visible { box-shadow: 0 0 0 0.125rem #9fe3d6; }
+      .tema[aria-pressed="true"] { background: rgba(255, 255, 255, 0.16); color: #fff; }
+      .tema svg { width: 1.2rem; height: 1.2rem; }
+      /* Activo, la luna se rellena: el estado se ve sin depender solo del fondo. */
+      .tema[aria-pressed="true"] svg path { fill: currentColor; }
       main.contenedor { flex: 1; padding-block: 2rem 3rem; }
       main:focus { outline: none; }
       .saltar {

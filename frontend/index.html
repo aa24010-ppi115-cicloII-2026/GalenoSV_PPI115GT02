@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GalenoSV · Gestión clínica</title>
     <meta name="theme-color" content="#2c4a63" />
+    <script>
+      // Aplica antes de pintar el tema que eligió la persona, para que no destelle el claro
+      // (la lógica completa está en js/control/tema.js).
+      try {
+        if (localStorage.getItem("galenosv.tema") === "oscuro") document.documentElement.dataset.tema = "oscuro";
+      } catch {}
+    </script>
     <meta
       name="description"
       content="Gestión de citas y atenciones odontológicas. Aplicación web progresiva."
@@ -19,33 +26,39 @@
     <link rel="apple-touch-icon" href="recursos/imagenes/icono-192.png" />
     <link rel="stylesheet" href="css/principal.css" />
     <!-- Los módulos se piden en paralelo en lugar de descubrirse uno tras otro al importar. -->
-    <link rel="modulepreload" href="js/base.js" />
     <link rel="modulepreload" href="js/configuracion-estilos.js" />
-    <link rel="modulepreload" href="js/texto.js" />
-    <link rel="modulepreload" href="js/fechas.js" />
-    <link rel="modulepreload" href="js/presentacion.js" />
-    <link rel="modulepreload" href="js/presentacion-consulta.js" />
-    <link rel="modulepreload" href="js/api.js" />
-    <link rel="modulepreload" href="js/estado.js" />
-    <link rel="modulepreload" href="js/datos.js" />
-    <link rel="modulepreload" href="js/recursos.js" />
-    <link rel="modulepreload" href="js/pendientes.js" />
-    <link rel="modulepreload" href="js/cie10.js" />
     <link rel="modulepreload" href="js/pwa.js" />
-    <link rel="modulepreload" href="js/componentes/reutilizables.js" />
-    <link rel="modulepreload" href="js/componentes/ui-toast.js" />
-    <link rel="modulepreload" href="js/componentes/ui-confirmar.js" />
-    <link rel="modulepreload" href="js/componentes/ui-autocompletar.js" />
-    <link rel="modulepreload" href="js/componentes/linea-pasos.js" />
-    <link rel="modulepreload" href="js/componentes/pwa-instalar.js" />
-    <link rel="modulepreload" href="js/componentes/ticket-cita.js" />
-    <link rel="modulepreload" href="js/componentes/cita-card.js" />
-    <link rel="modulepreload" href="js/componentes/asistente-citas.js" />
-    <link rel="modulepreload" href="js/componentes/app-login.js" />
-    <link rel="modulepreload" href="js/componentes/app-busqueda.js" />
-    <link rel="modulepreload" href="js/componentes/app-dashboard.js" />
-    <link rel="modulepreload" href="js/componentes/app-consulta.js" />
-    <link rel="modulepreload" href="js/componentes/app-shell.js" />
+    <link rel="modulepreload" href="js/comun/fechas.js" />
+    <link rel="modulepreload" href="js/comun/texto.js" />
+    <link rel="modulepreload" href="js/entity/cie10.js" />
+    <link rel="modulepreload" href="js/entity/observaciones.js" />
+    <link rel="modulepreload" href="js/entity/recursos.js" />
+    <link rel="modulepreload" href="js/control/api.js" />
+    <link rel="modulepreload" href="js/control/citas.js" />
+    <link rel="modulepreload" href="js/control/documentos.js" />
+    <link rel="modulepreload" href="js/control/pendientes.js" />
+    <link rel="modulepreload" href="js/control/personas.js" />
+    <link rel="modulepreload" href="js/control/repositorio.js" />
+    <link rel="modulepreload" href="js/control/sesion.js" />
+    <link rel="modulepreload" href="js/control/tema.js" />
+    <link rel="modulepreload" href="js/control/tablas.js" />
+    <link rel="modulepreload" href="js/boundary/base.js" />
+    <link rel="modulepreload" href="js/boundary/presentacion-consulta.js" />
+    <link rel="modulepreload" href="js/boundary/presentacion.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/app-busqueda.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/app-consulta.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/app-dashboard.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/app-login.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/app-shell.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/asistente-citas.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/cita-card.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/linea-pasos.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/pwa-instalar.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/reutilizables.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/ticket-cita.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/ui-autocompletar.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/ui-confirmar.js" />
+    <link rel="modulepreload" href="js/boundary/componentes/ui-toast.js" />
   </head>
   <body>
     <app-shell></app-shell>

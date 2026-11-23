@@ -1,4 +1,4 @@
-const CACHE = "galenosv-v69";
+const CACHE = "galenosv-v74";
 const API = "http://localhost:9080";
 const RECURSOS = [
   "./",
@@ -19,34 +19,40 @@ const RECURSOS = [
   "./css/componentes/ui-autocompletar.css",
   "./css/componentes/ui-confirmar.css",
   "./css/componentes/ui-toast.css",
-  "./js/api.js",
-  "./js/base.js",
-  "./js/configuracion-estilos.js",
-  "./js/texto.js",
-  "./js/fechas.js",
-  "./js/presentacion.js",
-  "./js/presentacion-consulta.js",
-  "./js/estado.js",
-  "./js/datos.js",
-  "./js/cie10.js",
-  "./js/pendientes.js",
-  "./js/recursos.js",
   "./js/app.js",
+  "./js/configuracion-estilos.js",
   "./js/pwa.js",
-  "./js/componentes/ui-toast.js",
-  "./js/componentes/pwa-instalar.js",
-  "./js/componentes/ticket-cita.js",
-  "./js/componentes/cita-card.js",
-  "./js/componentes/ui-autocompletar.js",
-  "./js/componentes/ui-confirmar.js",
-  "./js/componentes/reutilizables.js",
-  "./js/componentes/linea-pasos.js",
-  "./js/componentes/app-login.js",
-  "./js/componentes/asistente-citas.js",
-  "./js/componentes/app-busqueda.js",
-  "./js/componentes/app-dashboard.js",
-  "./js/componentes/app-consulta.js",
-  "./js/componentes/app-shell.js",
+  "./js/comun/fechas.js",
+  "./js/comun/texto.js",
+  "./js/entity/cie10.js",
+  "./js/entity/observaciones.js",
+  "./js/entity/recursos.js",
+  "./js/control/api.js",
+  "./js/control/citas.js",
+  "./js/control/documentos.js",
+  "./js/control/pendientes.js",
+  "./js/control/personas.js",
+  "./js/control/repositorio.js",
+  "./js/control/sesion.js",
+  "./js/control/tema.js",
+  "./js/control/tablas.js",
+  "./js/boundary/base.js",
+  "./js/boundary/presentacion-consulta.js",
+  "./js/boundary/presentacion.js",
+  "./js/boundary/componentes/app-busqueda.js",
+  "./js/boundary/componentes/app-consulta.js",
+  "./js/boundary/componentes/app-dashboard.js",
+  "./js/boundary/componentes/app-login.js",
+  "./js/boundary/componentes/app-shell.js",
+  "./js/boundary/componentes/asistente-citas.js",
+  "./js/boundary/componentes/cita-card.js",
+  "./js/boundary/componentes/linea-pasos.js",
+  "./js/boundary/componentes/pwa-instalar.js",
+  "./js/boundary/componentes/reutilizables.js",
+  "./js/boundary/componentes/ticket-cita.js",
+  "./js/boundary/componentes/ui-autocompletar.js",
+  "./js/boundary/componentes/ui-confirmar.js",
+  "./js/boundary/componentes/ui-toast.js",
   "./manifest.json",
   "./recursos/imagenes/icono-192.png",
   "./recursos/imagenes/icono-512.png",
@@ -55,21 +61,19 @@ const RECURSOS = [
 
 self.addEventListener("install", (evento) => {
   evento.waitUntil(
-    (async () => {
-      const cache = await caches.open(CACHE);
-      // Cada recurso se guarda por separado: si uno falla, el resto igual queda disponible.
-      await Promise.all(
-        RECURSOS.map(async (recurso) => {
-          try {
-            const respuesta = await fetch(new Request(recurso, { cache: "reload" }));
-            if (respuesta.ok) await cache.put(recurso, respuesta);
-          } catch (error) {
-            console.warn("No se pudo precachear", recurso, error);
-          }
-        })
-      );
-      await self.skipWaiting();
-    })()
+    caches
+      .open(CACHE)
+      .then((cache) =>
+        // Cada recurso se guarda por separado: si uno falla, el resto igual queda disponible.
+        Promise.all(
+          RECURSOS.map((recurso) =>
+            fetch(new Request(recurso, { cache: "reload" }))
+              .then((respuesta) => (respuesta.ok ? cache.put(recurso, respuesta) : undefined))
+              .catch((error) => console.warn("No se pudo precachear", recurso, error))
+          )
+        )
+      )
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -82,23 +86,24 @@ self.addEventListener("activate", (evento) => {
   );
 });
 
-async function guardarEnCache(peticion, respuesta) {
-  if (!respuesta.ok) return;
-  try {
-    const cache = await caches.open(CACHE);
-    await cache.put(peticion, respuesta.clone());
-  } catch (error) {
-    // Un fallo de almacenamiento local no debe descartar una respuesta válida de la API.
-    console.warn("No se pudo guardar la respuesta en cache", peticion.url, error);
-  }
+function guardarEnCache(peticion, respuesta) {
+  if (!respuesta.ok) return Promise.resolve();
+  return caches
+    .open(CACHE)
+    .then((cache) => cache.put(peticion, respuesta.clone()))
+    .catch((error) => {
+      // Un fallo de almacenamiento local no debe descartar una respuesta válida de la API.
+      console.warn("No se pudo guardar la respuesta en cache", peticion.url, error);
+    });
 }
 
-async function cachePrimero(peticion) {
-  const guardada = await caches.match(peticion);
-  if (guardada) return guardada;
-  const respuesta = await fetch(peticion);
-  await guardarEnCache(peticion, respuesta);
-  return respuesta;
+/** Pide a la red y guarda la respuesta; se cumple con la respuesta original. */
+function pedirYGuardar(peticion) {
+  return fetch(peticion).then((respuesta) => guardarEnCache(peticion, respuesta).then(() => respuesta));
+}
+
+function cachePrimero(peticion) {
+  return caches.match(peticion).then((guardada) => guardada ?? pedirYGuardar(peticion));
 }
 
 /**
@@ -107,28 +112,26 @@ async function cachePrimero(peticion) {
  * La misma estrategia atiende la navegacion: usa la copia de respaldo sin marcarla como
  * API caida; solo las respuestas de la API se marcan con X-Sin-Conexion.
  */
-async function redPrimero(peticion, { alternativa = null, marcarSinConexion = false } = {}) {
-  try {
-    const respuesta = await fetch(peticion);
-    await guardarEnCache(peticion, respuesta);
-    return respuesta;
-  } catch {
-    const guardada =
-      (await caches.match(peticion)) ?? (alternativa ? await caches.match(alternativa) : null);
-    const cabeceras = new Headers(guardada?.headers ?? { "Content-Type": "application/json" });
-    if (marcarSinConexion) cabeceras.set("X-Sin-Conexion", "true");
-    if (guardada) {
-      return new Response(await guardada.blob(), {
-        status: guardada.status,
-        headers: cabeceras,
-      });
-    }
-    // Sin copia guardada no se inventa una lista vacía: la vista muestra que no pudo cargar.
-    const mensaje = marcarSinConexion
-      ? "El servidor de GalenoSV no responde y no hay datos guardados en este dispositivo."
-      : "Sin conexión y sin copia local";
-    return new Response(JSON.stringify({ mensaje }), { status: 503, headers: cabeceras });
-  }
+function redPrimero(peticion, { alternativa = null, marcarSinConexion = false } = {}) {
+  return pedirYGuardar(peticion).catch(() =>
+    caches
+      .match(peticion)
+      .then((guardada) => guardada ?? (alternativa ? caches.match(alternativa) : null))
+      .then((guardada) => {
+        const cabeceras = new Headers(guardada?.headers ?? { "Content-Type": "application/json" });
+        if (marcarSinConexion) cabeceras.set("X-Sin-Conexion", "true");
+        if (guardada) {
+          return guardada.blob().then(
+            (cuerpo) => new Response(cuerpo, { status: guardada.status, headers: cabeceras })
+          );
+        }
+        // Sin copia guardada no se inventa una lista vacía: la vista muestra que no pudo cargar.
+        const mensaje = marcarSinConexion
+          ? "El servidor de GalenoSV no responde y no hay datos guardados en este dispositivo."
+          : "Sin conexión y sin copia local";
+        return new Response(JSON.stringify({ mensaje }), { status: 503, headers: cabeceras });
+      })
+  );
 }
 
 self.addEventListener("fetch", (evento) => {

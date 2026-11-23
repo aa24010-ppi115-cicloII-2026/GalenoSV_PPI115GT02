@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import vm from "node:vm";
 import { expect } from "chai";
 
@@ -45,24 +45,26 @@ describe("manifest PWA", () => {
   it("registra el service worker y precarga los módulos de la SPA", () => {
     expect(index).to.contain('type="module" src="js/app.js"');
     expect(index).to.contain("<app-shell>");
-    expect(serviceWorker).to.contain('"./js/componentes/app-shell.js"');
-    expect(serviceWorker).to.contain('"./js/componentes/asistente-citas.js"');
-    expect(serviceWorker).to.contain('"./js/componentes/ui-autocompletar.js"');
-    expect(serviceWorker).to.contain('"./js/componentes/ui-confirmar.js"');
-    expect(serviceWorker).to.contain('"./js/componentes/linea-pasos.js"');
-    expect(serviceWorker).to.contain('"./js/componentes/reutilizables.js"');
-    expect(serviceWorker).to.contain('"./js/presentacion.js"');
-    expect(serviceWorker).to.contain('"./js/datos.js"');
-    expect(serviceWorker).to.contain('"./js/texto.js"');
-    expect(serviceWorker).to.contain('"./js/fechas.js"');
-    expect(serviceWorker).to.contain('"./js/pendientes.js"');
-    expect(serviceWorker).to.contain('"./js/recursos.js"');
+    // Cada módulo de js/, en cualquier carpeta, debe quedar guardado para abrir la app sin conexión.
+    const modulos = readdirSync(new URL("../js/", import.meta.url), { recursive: true })
+      .filter((ruta) => ruta.endsWith(".js"))
+      .map((ruta) => `"./js/${ruta.split("\\").join("/")}"`);
+    expect(modulos).to.have.length.above(20);
+    for (const modulo of modulos) expect(serviceWorker, modulo).to.contain(modulo);
     expect(serviceWorker).to.contain('addEventListener("fetch"');
     expect(serviceWorker).to.contain('marcarSinConexion: true');
     expect(serviceWorker).to.contain('cabeceras.set("X-Sin-Conexion", "true")');
     expect(serviceWorker).to.contain("status: 503");
     expect(serviceWorker).to.contain('self.skipWaiting()');
     expect(serviceWorker).to.contain('clients.claim()');
+  });
+
+  it("index.html precarga en paralelo módulos que existen, sin rutas rotas", () => {
+    const precargas = [...index.matchAll(/rel="modulepreload" href="([^"]+)"/g)].map(([, ruta]) => ruta);
+    expect(precargas).to.have.length.above(20);
+    for (const ruta of precargas) {
+      expect(existsSync(new URL(`../${ruta}`, import.meta.url)), ruta).to.be.true;
+    }
   });
 
   it("usa hojas externas por componente y las precarga para la primera visita sin conexión", () => {

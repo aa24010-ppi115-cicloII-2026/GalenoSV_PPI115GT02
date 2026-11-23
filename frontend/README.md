@@ -14,28 +14,38 @@ frontend/
 ├── index.html            punto de entrada (solo contiene Web Components)
 ├── manifest.json         manifiesto de la PWA
 ├── service-worker.js     service worker (precache y modo sin conexión)
-├── css/principal.css     estilos globales de la aplicación
-├── js/
-│   ├── app.js            registro de los Web Components
-│   ├── api.js            cliente de la API REST (fetch)
-│   ├── base.js           clase base de componentes y utilidades de vista
-│   ├── cie10.js          catálogo local de códigos CIE-10 y buscador
-│   ├── datos.js          composición de los datos de la API (consultas, pasos, examenes…)
-│   ├── estado.js         sesión del empleado (sessionStorage)
-│   ├── pdf.js            generador de PDF en JavaScript estándar
-│   ├── pendientes.js     cola de cambios para trabajar sin conexión
-│   ├── pwa.js            registro del service worker
-│   └── componentes/      Web Components de la aplicación
-│       ├── app-shell.js       enrutado y estructura general
-│       ├── app-busqueda.js    HU1 · búsqueda de citas
-│       ├── app-login.js       HU2 · acceso de empleados
-│       ├── app-dashboard.js   HU3 · agenda del día
-│       ├── app-consulta.js   HU4 · registro de atención
-│       ├── cita-card.js       card de cita
-│       ├── ticket-cita.js     ticket imprimible y descarga de PDF
-│       ├── ui-toast.js        notificaciones
-│       └── pwa-instalar.js    botón de instalación de la PWA
-└── test/                 pruebas unitarias (Mocha + Chai + Sinon + jsdom)
+├── css/                  estilos globales y una hoja por componente
+├── js/                   organizado por capas, igual que el backend (BCE)
+│   ├── app.js                 entrada: registra los Web Components
+│   ├── configuracion-estilos.js  dónde están las hojas de cada componente
+│   ├── pwa.js                 registro del service worker
+│   ├── boundary/              lo que ve y usa la persona
+│   │   ├── base.js                 clase Vista, plantillas y foco de los diálogos
+│   │   ├── presentacion.js         textos de pantalla (estado de un paso, motivo…)
+│   │   ├── presentacion-consulta.js  cómo se pinta el registro de atención (HU4)
+│   │   └── componentes/            Web Components
+│   │       ├── app-shell.js        enrutado y estructura general
+│   │       ├── app-busqueda.js     HU1 · búsqueda de citas (con asistente-citas.js)
+│   │       ├── app-login.js        HU2 · acceso de empleados
+│   │       ├── app-dashboard.js    HU3 · agenda por clínica y rol
+│   │       ├── app-consulta.js     HU4 · registro de atención
+│   │       ├── cita-card.js · ticket-cita.js · linea-pasos.js
+│   │       ├── ui-autocompletar.js · ui-confirmar.js · ui-toast.js · pwa-instalar.js
+│   │       └── reutilizables.js    punto de entrada de los controles reutilizables
+│   ├── control/               lógica y acceso a datos
+│   │   ├── api.js                  cliente de la API REST (fetch)
+│   │   ├── repositorio.js          descarga y caché de las tablas de la API
+│   │   ├── documentos.js · personas.js · citas.js   consultas sobre esas tablas
+│   │   ├── tablas.js               búsqueda por identificador
+│   │   ├── pendientes.js           cola de cambios para trabajar sin conexión
+│   │   ├── sesion.js               sesión del empleado (sessionStorage)
+│   │   └── tema.js                 tema claro u oscuro que elige la persona
+│   ├── entity/                forma de los datos
+│   │   ├── recursos.js             recursos de la API y el id de cada uno
+│   │   ├── observaciones.js        formato JSON de las notas de cada paso
+│   │   └── cie10.js                catálogo local de códigos CIE-10
+│   └── comun/                 utilidades sin dependencias: texto.js · fechas.js
+└── test/                 pruebas unitarias con la misma estructura que js/
 ```
 
 ## 2. Requisitos
@@ -83,8 +93,10 @@ cd frontend
 npm test
 ```
 
-Cada comportamiento observable de la aplicación tiene su prueba: API, composición de datos,
-CIE-10, sesión, cola sin conexión, generador de PDF y cada Web Component.
+Cada comportamiento observable de la aplicación tiene su prueba. Hay un archivo de pruebas por
+módulo, en la misma carpeta que en `js/` (por ejemplo `js/control/citas.js` se prueba en
+`test/control/citas.test.js`), con Mocha + Chai + Sinon y jsdom para los Web Components.
+Para correr un solo archivo: `npx mocha test/boundary/componentes/app-consulta.test.js`.
 
 ## 5. Rutas de la aplicación
 
@@ -122,9 +134,15 @@ requiere el enunciado). Datos de ejemplo cargados en la base:
   necesita y el backend no expone se resuelve en el cliente:
   - **Identidad**: el acceso del empleado se valida con el tipo y numero de documento
     contra los registros existentes (no hay autoregistro).
-  - **CIE-10**: catalogo local en `js/cie10.js` con busqueda por codigo o descripcion.
+  - **CIE-10**: catalogo local en `js/entity/cie10.js` con busqueda por codigo o descripcion.
   - **Notas por paso**: se guardan en las observaciones del procedimiento, indexadas por paso.
   - **PDF**: el comprobante lo genera el backend con OpenPDF; si no hay conexion se genera
     en el dispositivo con `js/pdf.js` para no perder la descarga.
   - **Sin conexion**: las lecturas se sirven desde la cache del service worker y las
     escrituras se encolan en el dispositivo para enviarse al recuperar la red.
+- **Web Components**: cada componente clona una plantilla preparada una sola vez y comparte
+  sus hojas de estilo con las demás copias (`adoptedStyleSheets`); la aplicación las descarga
+  antes de registrar los componentes para que se pinten con estilo desde el inicio. Los datos
+  entran por propiedades (`.cita`, `.opciones`), la configuración por atributos que se pueden
+  cambiar en cualquier momento, y cada pantalla agrega sus acciones a `cita-card` por un `<slot>`.
+- **Tema oscuro**: lo elige la persona con el botón del encabezado y se recuerda en el dispositivo.

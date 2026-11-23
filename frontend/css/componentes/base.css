@@ -13,7 +13,7 @@
 h1, h2, h3, p { margin: 0; }
 h1, h2, h3 { text-wrap: balance; letter-spacing: -0.01em; }
 button, input, select, textarea { font: inherit; }
-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; min-height: 2.6rem; border: 0.0625rem solid var(--mate, #2c4a63); background: var(--mate, #2c4a63); color: #fff; border-radius: var(--radio, 0.625rem); padding: 0.55rem 1.05rem; font-weight: 600; cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; }
+button { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; min-height: 2.6rem; border: 0.0625rem solid var(--mate, #2c4a63); background: var(--mate, #2c4a63); color: var(--sobre-relleno, #fff); border-radius: var(--radio, 0.625rem); padding: 0.55rem 1.05rem; font-weight: 600; cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; }
 button:hover { background: var(--mate-fuerte, #1f3a50); border-color: var(--mate-fuerte, #1f3a50); }
 button:active { transform: translateY(0.0625rem); }
 button:focus-visible { outline: none; box-shadow: var(--anillo); }

@@ -42,7 +42,7 @@
       button { font: inherit; cursor: pointer; border-radius: 0.5rem; }
       #instalar {
         min-height: 2.25rem; padding: 0.35rem 0.9rem; border: none;
-        background: var(--mate, #2c4a63); color: #fff; font-size: 0.82rem; font-weight: 600;
+        background: var(--mate, #2c4a63); color: var(--sobre-relleno, #fff); font-size: 0.82rem; font-weight: 600;
       }
       #instalar:hover { background: var(--mate-fuerte, #1f3a50); }
       #cerrar {

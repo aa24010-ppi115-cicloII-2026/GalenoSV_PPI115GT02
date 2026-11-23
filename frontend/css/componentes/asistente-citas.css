@@ -30,7 +30,7 @@ form { display: grid; gap: 1.1rem; padding: 1.35rem 1.5rem 1.25rem; }
       ol.pasos li[aria-current="step"] { color: var(--texto, #14202b); font-weight: 700; }
       ol.pasos li[aria-current="step"]::after { background: var(--mate, #2c4a63); }
       ol.pasos li[aria-current="step"]::before {
-        background: var(--mate, #2c4a63); color: #fff;
+        background: var(--mate, #2c4a63); color: var(--sobre-relleno, #fff);
         box-shadow: 0 0 0 0.25rem var(--mate-suave, #e9eff4);
       }
       ol.pasos li .texto { display: grid; gap: 0.1rem; min-width: 0; }
@@ -41,7 +41,7 @@ form { display: grid; gap: 1.1rem; padding: 1.35rem 1.5rem 1.25rem; }
       }
       .marca {
         display: none; position: absolute; left: 0.4rem; top: 0.42rem; width: 0.85rem; height: 0.85rem;
-        background: #fff; -webkit-mask: var(--icono-check) center / contain no-repeat; mask: var(--icono-check) center / contain no-repeat;
+        background: var(--sobre-relleno, #fff); -webkit-mask: var(--icono-check) center / contain no-repeat; mask: var(--icono-check) center / contain no-repeat;
       }
       section[data-paso] { display: grid; gap: 0.75rem; animation: entrar 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
       section[data-paso] h3 { font-size: 1.12rem; line-height: 1.3; }
