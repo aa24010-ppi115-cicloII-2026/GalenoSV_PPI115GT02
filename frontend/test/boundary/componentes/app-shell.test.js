@@ -126,6 +126,34 @@ describe("app-shell", () => {
     }
   });
 
+  it("app-shell, al volver la red, comprueba el servidor y envía la cola aunque lo leído sin red viniera del dispositivo", async () => {
+    const shell = montar("app-shell");
+    await esperar(() => shell.shadowRoot.querySelector("#estado-conexion"));
+    sinRed();
+    try {
+      dom.window.dispatchEvent(new dom.window.Event("offline"));
+      // Sin red, el service worker responde con la copia guardada y la marca con X-Sin-Conexion.
+      fetch.callsFake(async () => new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json", "X-Total-Count": "0", "X-Sin-Conexion": "true" },
+      }));
+      await listar("roles");
+      encolar({ metodo: "DELETE", ruta: "ordenes-examen/400", cuerpo: null });
+
+      sinon.restore();
+      stubApi(datosBase());
+      conRed();
+      dom.window.dispatchEvent(new dom.window.Event("online"));
+      await esperar(() => listarPendientes().length === 0);
+      expect(fetch.getCalls().some((llamada) => llamada.args[1]?.method === "DELETE")).to.be.true;
+      await esperar(() => shell.shadowRoot.querySelector("#estado-conexion").hidden);
+    } finally {
+      conRed();
+      localStorage.clear();
+      delete globalThis.localStorage;
+    }
+  });
+
   it("app-shell enruta las vistas y protege las rutas de empleados", async () => {
     dom.window.location.hash = "#/buscar";
     const shell = montar("app-shell");

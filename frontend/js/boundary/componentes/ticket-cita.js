@@ -152,17 +152,28 @@ class TicketCita extends Vista {
     `);
   }
 
+  /**
+   * Imprime el comprobante desde un marco oculto (el patrón de MDN para imprimir un documento sin
+   * abrirlo): no depende de ventanas emergentes y funciona sin conexión. El marco se retira al
+   * terminar la impresión. El contenido llega escapado por `html`, así que srcdoc no inyecta HTML.
+   */
   imprimir() {
     if (!this.#cita) return;
-    const ventana = window.open("", "_blank");
-    if (!ventana) {
-      this.notificar("Permita las ventanas emergentes para imprimir el ticket.", "error");
-      return;
-    }
-    const documento = new DOMParser().parseFromString(documentoImprimible(this.#cita), "text/html");
-    ventana.document.replaceChildren(...documento.childNodes);
-    ventana.focus();
-    ventana.print();
+    const marco = document.createElement("iframe");
+    marco.setAttribute("aria-hidden", "true");
+    marco.tabIndex = -1;
+    marco.style.cssText = "position: fixed; inset-inline-end: 0; inset-block-end: 0; width: 0; height: 0; border: 0;";
+    marco.addEventListener(
+      "load",
+      () => {
+        const ventana = marco.contentWindow;
+        ventana.addEventListener("afterprint", () => marco.remove(), { once: true });
+        ventana.print();
+      },
+      { once: true }
+    );
+    marco.srcdoc = documentoImprimible(this.#cita);
+    document.body.append(marco);
   }
 }
 

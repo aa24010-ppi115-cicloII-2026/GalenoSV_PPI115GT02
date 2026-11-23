@@ -1,6 +1,6 @@
 import sinon from "sinon";
 import { expect } from "chai";
-import { datosBase } from "../../ayudas.js";
+import { datosBase, esperar } from "../../ayudas.js";
 import { consultaCompleta, resumenCita } from "../../../js/control/citas.js";
 import { usarDom, montar, dom, documentoImprimible } from "../entorno-dom.js";
 
@@ -92,20 +92,30 @@ describe("ticket-cita", () => {
         expect(acciones.map((boton) => boton.dataset.accion)).to.deep.equal(["cerrar", "imprimir"]);
       });
 
-      it("ticket-cita imprime el comprobante en una ventana nueva y avisa si el navegador la bloquea", () => {
-        const ventana = { document: { replaceChildren: sinon.spy() }, focus: sinon.spy(), print: sinon.spy() };
-        const abrir = sinon.stub(dom.window, "open").returns(ventana);
-        const ticket = montar("ticket-cita", { cita: citaDePrueba() });
-        const avisos = [];
-        ticket.addEventListener("notificar", (evento) => avisos.push(evento.detail.mensaje));
+      it("ticket-cita imprime el comprobante desde un marco oculto, sin ventanas emergentes, y lo retira al terminar", async () => {
+        const abrir = sinon.spy(dom.window, "open");
+        const cita = citaDePrueba();
+        const ticket = montar("ticket-cita", { cita });
         ticket.shadowRoot.querySelector("[data-accion='imprimir']").click();
-        const nodos = ventana.document.replaceChildren.firstCall.args;
-        expect(nodos.some((nodo) => nodo.textContent?.includes("GalenoSV · Comprobante de cita"))).to.be.true;
-        expect(ventana.print.calledOnce).to.be.true;
 
-        abrir.returns(null);
-        ticket.shadowRoot.querySelector("[data-accion='imprimir']").click();
-        expect(avisos).to.deep.equal(["Permita las ventanas emergentes para imprimir el ticket."]);
+        const marco = document.querySelector("iframe");
+        const imprimir = sinon.spy();
+        marco.contentWindow.print = imprimir;
+        // Lo que se imprime es un documento HTML completo, no nodos sueltos.
+        expect(marco.srcdoc).to.equal(documentoImprimible(cita));
+        const comprobante = new dom.window.DOMParser().parseFromString(marco.srcdoc, "text/html");
+        expect(comprobante.doctype?.name).to.equal("html");
+        expect(comprobante.title).to.contain("Ticket de cita");
+        expect(comprobante.body.textContent).to.contain("GalenoSV · Comprobante de cita");
+        // El marco no se ve ni lo alcanzan el teclado o un lector de pantalla.
+        expect(marco.getAttribute("aria-hidden")).to.equal("true");
+        expect(marco.tabIndex).to.equal(-1);
+
+        await esperar(() => imprimir.called);
+        expect(imprimir.calledOnce).to.be.true;
+        expect(abrir.called).to.be.false;
+        marco.contentWindow.dispatchEvent(new dom.window.Event("afterprint"));
+        expect(document.querySelector("iframe")).to.be.null;
       });
 
       it("ticket-cita muestra los estados de los pasos con texto legible", () => {

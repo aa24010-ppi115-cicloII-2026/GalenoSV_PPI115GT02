@@ -136,8 +136,8 @@ requiere el enunciado). Datos de ejemplo cargados en la base:
     contra los registros existentes (no hay autoregistro).
   - **CIE-10**: catalogo local en `js/entity/cie10.js` con busqueda por codigo o descripcion.
   - **Notas por paso**: se guardan en las observaciones del procedimiento, indexadas por paso.
-  - **PDF**: el comprobante lo genera el backend con OpenPDF; si no hay conexion se genera
-    en el dispositivo con `js/pdf.js` para no perder la descarga.
+  - **Comprobante**: el ticket se imprime desde el navegador con un marco oculto, también sin
+    conexión; el backend ofrece además el PDF con OpenPDF en `/tickets/consultas/{id}`.
   - **Sin conexion**: las lecturas se sirven desde la cache del service worker y las
     escrituras se encolan en el dispositivo para enviarse al recuperar la red.
 - **Web Components**: cada componente clona una plantilla preparada una sola vez y comparte

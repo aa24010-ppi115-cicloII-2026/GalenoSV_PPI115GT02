@@ -92,9 +92,15 @@ class AppShell extends Vista {
         this.sincronizarPendientes();
       }
     };
-    for (const tipo of ["online", "offline", "pendientes-cambio", "servicio-cambio"]) {
+    for (const tipo of ["offline", "pendientes-cambio", "servicio-cambio"]) {
       this.escuchar(window, tipo, alCambiarConexion);
     }
+    // navigator.onLine no garantiza que el servidor responda (MDN), y lo leído sin red quedó marcado
+    // como «servidor caído»: al volver la red se le pregunta antes de enviar la cola.
+    this.escuchar(window, "online", () => {
+      this.actualizarConexion();
+      comprobarServicio().then(alCambiarConexion);
+    });
     this.actualizarConexion();
     this.#quitarEscuchaSesion = alCambiarSesion(() => this.actualizarSesion());
     this.actualizarSesion();
