@@ -110,6 +110,20 @@ leen datos. Necesitan el backend levantado y se corren aparte:
 npm run test:integracion
 ```
 
+### 4.1 Pruebas del backend
+
+```bash
+mvn -o test                          # todas
+mvn -o test -Dtest=InicioBeanTest    # una clase
+```
+
+Patrón de las pruebas de unidad: JUnit 5 con Mockito. Hay una clase de prueba por clase, en el
+mismo paquete que la clase que prueba (`control` para los DAO, `boundary` y `boundary/jsf` para
+los beans y modelos, `boundary/rest` para los recursos). Las dependencias se reemplazan con
+mocks (`EntityManager` y `TypedQuery` en los DAO, los DAO y `FacesContext` en los modelos), y cada
+prueba sigue tres pasos: preparar lo que devuelven los mocks, ejecutar el método y comprobar el
+resultado o la interacción con `verify`.
+
 ## 5. Rutas de la aplicación
 
 | Ruta              | Pantalla                                                  |

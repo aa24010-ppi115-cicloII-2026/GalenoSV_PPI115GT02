@@ -1,7 +1,6 @@
-package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv;
+package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.rest;
 
 import org.junit.jupiter.api.Test;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.rest.TicketResource;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TicketService.Datos;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TicketService.PasoTicket;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TicketService.ProcedimientoTicket;
