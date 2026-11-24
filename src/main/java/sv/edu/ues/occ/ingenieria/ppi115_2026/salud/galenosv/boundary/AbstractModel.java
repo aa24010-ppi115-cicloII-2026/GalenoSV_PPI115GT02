@@ -144,7 +144,7 @@ public abstract class AbstractModel<T> implements Serializable {
                         new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito", "Registro guardado"));
             } catch (Exception e) {
                 getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", e.getMessage()));
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", MensajeError.de(e)));
             }
         }
     }
@@ -162,7 +162,7 @@ public abstract class AbstractModel<T> implements Serializable {
                         new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito", "Registro eliminado"));
             } catch (Exception e) {
                 getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al eliminar", e.getMessage()));
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al eliminar", MensajeError.de(e)));
             }
         }
     }
@@ -187,7 +187,7 @@ public abstract class AbstractModel<T> implements Serializable {
                         new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito", "Registro modificado"));
             } catch (Exception e) {
                 getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", e.getMessage()));
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", MensajeError.de(e)));
             }
         }
     }

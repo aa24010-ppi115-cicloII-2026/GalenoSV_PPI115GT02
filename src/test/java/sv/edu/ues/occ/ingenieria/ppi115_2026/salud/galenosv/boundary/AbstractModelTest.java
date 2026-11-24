@@ -466,6 +466,36 @@ public class AbstractModelTest {
         );
     }
 
+    @Test
+    public void testBtnGuardarHandlerDuplicadoMuestraLaCausaSinElError() {
+        RegistroPrueba registro = new RegistroPrueba("1", "Prueba");
+        instance.setRegistro(registro);
+        doThrow(new RuntimeException("Error al crear", new java.sql.SQLException(
+                "ERROR: duplicate key value violates unique constraint \"uk_nombre\"", "23505")))
+                .when(dao).crear(registro);
+
+        instance.btnGuardarHandler(null);
+
+        verify(facesContext).addMessage(isNull(), argThat(mensaje
+                -> mensaje.getDetail().equals("Ya existe un registro con esos datos.")));
+    }
+
+    @Test
+    public void testBtnGuardarHandlerErrorUnicidadMuestraLaValidacion() {
+        AbstractModelImpl modeloError = new AbstractModelImpl() {
+            @Override
+            protected void validarUnicidad(RegistroPrueba registro, boolean esModificacion) {
+                throw new IllegalArgumentException("Registro duplicado");
+            }
+        };
+        modeloError.setRegistro(new RegistroPrueba("1", "Prueba"));
+
+        modeloError.btnGuardarHandler(null);
+
+        verify(facesContext).addMessage(isNull(), argThat(mensaje
+                -> mensaje.getDetail().equals("Registro duplicado")));
+    }
+
     /**
      * Test of btnEliminarHandler method, of class AbstractModel.
      */

@@ -36,6 +36,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProce
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.PersonaRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Procedimiento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPaso;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.MensajeError;
 
 @Named("consultaModel")
 @ViewScoped
@@ -266,7 +267,7 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
                                 getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO,
                         "Consulta guardada", "Ahora puede agregar los procedimientos de la consulta"));
             } catch (Exception e) {
-                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", e.getMessage()));
+                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", MensajeError.de(e)));
             }
         }
     }
@@ -279,7 +280,7 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
                 dao.modificar(this.registro);
                 limpiar("Consulta modificada exitosamente");
             } catch (Exception e) {
-                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", e.getMessage()));
+                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", MensajeError.de(e)));
             }
         }
     }
@@ -341,7 +342,7 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Procedimiento modificado"));
             cancelarEdicionProc();
         } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", MensajeError.de(e)));
         }
     }
 
@@ -387,7 +388,7 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
                             + "' fue asignado a " + responsables.get(0).getIdPersona().getNombres()));
             prepararNuevoConsultaProcedimiento();
         } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al agregar", e.getMessage()));
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al agregar", MensajeError.de(e)));
         }
     }
 
@@ -401,7 +402,7 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Procedimiento eliminado"));
             cancelarEdicionProc();
         } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al eliminar", e.getMessage()));
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al eliminar", MensajeError.de(e)));
         }
     }
 

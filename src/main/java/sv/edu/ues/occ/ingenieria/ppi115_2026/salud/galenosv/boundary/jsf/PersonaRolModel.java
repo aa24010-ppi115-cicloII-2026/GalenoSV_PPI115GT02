@@ -24,6 +24,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Clinica;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Persona;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.PersonaRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Rol;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.MensajeError;
 
 @Named("personaRolModel")
 @ViewScoped
@@ -211,7 +212,7 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
                 limpiar("Registro guardado");
             } catch (Exception e) {
                 getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", e.getMessage()));
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", MensajeError.de(e)));
             }
         }
     }
@@ -226,7 +227,7 @@ public class PersonaRolModel extends AbstractModel<PersonaRol> implements Serial
                 limpiar("Registro modificado");
             } catch (Exception e) {
                 getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", e.getMessage()));
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", MensajeError.de(e)));
             }
         }
     }

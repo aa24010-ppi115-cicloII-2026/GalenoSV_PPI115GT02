@@ -20,6 +20,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.Procedimient
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Consulta;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimiento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Procedimiento;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.MensajeError;
 
 @Named("consultaProcedimientoModel")
 @ViewScoped
@@ -120,7 +121,7 @@ public class ConsultaProcedimientoModel extends AbstractModel<ConsultaProcedimie
             }
         } catch (Exception e) {
             getFacesContext().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, modificar ? "Error al modificar" : "Error al guardar", e.getMessage()));
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, modificar ? "Error al modificar" : "Error al guardar", MensajeError.de(e)));
         }
     }
 

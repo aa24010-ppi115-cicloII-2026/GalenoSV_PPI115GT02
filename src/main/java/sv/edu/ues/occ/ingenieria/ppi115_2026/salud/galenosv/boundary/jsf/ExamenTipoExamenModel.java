@@ -25,6 +25,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TipoExamenDA
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Examen;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ExamenTipoExamen;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoExamen;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.MensajeError;
 
 @Named("examenTipoExamenModel")
 @Dependent
@@ -196,7 +197,7 @@ public class ExamenTipoExamenModel extends AbstractModel<ExamenTipoExamen> imple
                         new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito", "Registro guardado"));
             } catch (Exception e) {
                 getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", e.getMessage()));
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", MensajeError.de(e)));
             }
         }
     }
@@ -213,7 +214,7 @@ public class ExamenTipoExamenModel extends AbstractModel<ExamenTipoExamen> imple
                         new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito", "Registro modificado"));
             } catch (Exception e) {
                 getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", e.getMessage()));
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", MensajeError.de(e)));
             }
         }
     }

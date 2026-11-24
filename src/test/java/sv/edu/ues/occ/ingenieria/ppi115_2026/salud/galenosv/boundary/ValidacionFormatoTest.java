@@ -113,12 +113,25 @@ public class ValidacionFormatoTest {
         IllegalArgumentException excepcion = assertThrows(IllegalArgumentException.class,
                 () -> ValidacionFormato.validar("ABC", "^[0-9]+$", "   "));
 
-        assertTrue(excepcion.getMessage().contains("^[0-9]+$"));
+        // El aviso explica la causa con palabras; la expresion regular no se muestra al usuario.
+        assertFalse(excepcion.getMessage().contains("^[0-9]+$"));
+        assertTrue(excepcion.getMessage().contains("formato del tipo seleccionado"));
+    }
+
+    @Test
+    public void testValidarSinIndicacionesNoMuestraExpresion() {
+        IllegalArgumentException excepcion = assertThrows(IllegalArgumentException.class,
+                () -> ValidacionFormato.validar("ABC", "^[0-9]{8}-[0-9]$"));
+
+        assertFalse(excepcion.getMessage().contains("[0-9]"));
     }
 
     @Test
     public void testValidarExpresionInvalida() {
-        assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException excepcion = assertThrows(IllegalArgumentException.class,
                 () -> ValidacionFormato.validar("x", "["));
+
+        assertFalse(excepcion.getMessage().toLowerCase().contains("expresion"));
+        assertTrue(excepcion.getMessage().contains("mal configurado"));
     }
 }

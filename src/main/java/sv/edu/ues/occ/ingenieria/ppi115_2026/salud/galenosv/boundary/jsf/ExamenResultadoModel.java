@@ -21,6 +21,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.OrdenExamenD
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimientoPaso;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ExamenResultado;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.OrdenExamen;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.MensajeError;
 
 @Named("examenResultadoModel")
 @ViewScoped
@@ -108,7 +109,7 @@ public class ExamenResultadoModel extends AbstractModel<ExamenResultado> impleme
                 limpiar("Resultado de examen guardado exitosamente");
             } catch (Exception e) {
                 getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", e.getMessage()));
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", MensajeError.de(e)));
             }
         }
     }
@@ -122,7 +123,7 @@ public class ExamenResultadoModel extends AbstractModel<ExamenResultado> impleme
                 limpiar("Resultado de examen modificado exitosamente");
             } catch (Exception e) {
                 getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", e.getMessage()));
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", MensajeError.de(e)));
             }
         }
     }

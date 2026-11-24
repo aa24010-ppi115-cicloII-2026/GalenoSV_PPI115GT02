@@ -120,7 +120,7 @@ public class ClinicaTrabajoBean implements Serializable {
             return "/paginas/Consulta?faces-redirect=true";
         } catch (Exception ex) {
             FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "No se pudo cambiar de clínica", ex.getMessage()));
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "No se pudo cambiar de clínica", MensajeError.de(ex)));
             return null;
         }
     }

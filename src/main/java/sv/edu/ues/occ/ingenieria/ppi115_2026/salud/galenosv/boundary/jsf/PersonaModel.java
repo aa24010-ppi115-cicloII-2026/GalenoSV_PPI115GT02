@@ -29,6 +29,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.PersonaRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Rol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Clinica;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoMedioContacto;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.MensajeError;
 
 @Named("personaModel")
 @ViewScoped
@@ -169,7 +170,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
                 dao.crear(this.registro);
                 limpiar("Persona guardada exitosamente");
             } catch (Exception e) {
-                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", MensajeError.de(e)));
             }
         }
     }
@@ -182,7 +183,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
                 dao.modificar(this.registro);
                 limpiar("Persona modificada exitosamente");
             } catch (Exception e) {
-                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", MensajeError.de(e)));
             }
         }
     }
@@ -288,7 +289,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Rol modificado"));
             cancelarEdicionRol();
         } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", e.getMessage()));
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", MensajeError.de(e)));
         }
     }
 
@@ -327,7 +328,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Rol asignado a la persona"));
             prepararNuevoRol();
         } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", MensajeError.de(e)));
         }
     }
 
@@ -341,7 +342,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Rol removido"));
             cancelarEdicionRol();
         } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", MensajeError.de(e)));
         }
     }
 
@@ -427,7 +428,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Medio de contacto modificado"));
             cancelarEdicionMedio();
         } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", MensajeError.de(e)));
         }
     }
 
@@ -468,7 +469,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Medio de contacto agregado"));
             prepararNuevoMedioContacto();
         } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", MensajeError.de(e)));
         }
     }
 
@@ -482,7 +483,7 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Medio de contacto eliminado"));
             cancelarEdicionMedio();
         } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", MensajeError.de(e)));
         }
     }
 

@@ -20,6 +20,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.Procedimient
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Examen;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPaso;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPasoExamen;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.MensajeError;
 
 @Named("procedimientoPasoExamenModel")
 @ViewScoped
@@ -121,7 +122,7 @@ public class ProcedimientoPasoExamenModel extends AbstractModel<ProcedimientoPas
             }
         } catch (Exception e) {
             getFacesContext().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, modificar ? "Error al modificar" : "Error al guardar", e.getMessage()));
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, modificar ? "Error al modificar" : "Error al guardar", MensajeError.de(e)));
         }
     }
 

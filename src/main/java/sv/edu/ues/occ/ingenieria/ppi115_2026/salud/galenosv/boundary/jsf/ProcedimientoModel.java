@@ -34,6 +34,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Procedimiento
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPasoExamen;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPasoSecuencia;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Rol;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.MensajeError;
 
 @Named("procedimientoModel")
 @ViewScoped
@@ -184,7 +185,7 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
                                 getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO,
                         "Procedimiento guardado", "Ahora puede configurar los pasos del procedimiento"));
             } catch (Exception e) {
-                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", e.getMessage()));
+                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", MensajeError.de(e)));
             }
         }
     }
@@ -197,7 +198,7 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
                 dao.modificar(this.registro);
                 limpiar("Procedimiento modificado exitosamente");
             } catch (Exception e) {
-                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", e.getMessage()));
+                getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", MensajeError.de(e)));
             }
         }
     }
@@ -497,7 +498,7 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
             prepararNuevoPaso();
         } catch (Exception ex) {
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                    "No se pudo guardar el paso", ex.getMessage()));
+                    "No se pudo guardar el paso", MensajeError.de(ex)));
         }
     }
 
@@ -615,7 +616,7 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
             refrescarListasHijas();
         } catch (Exception ex) {
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                    "No se pudo eliminar el paso", ex.getMessage()));
+                    "No se pudo eliminar el paso", MensajeError.de(ex)));
         }
     }
 

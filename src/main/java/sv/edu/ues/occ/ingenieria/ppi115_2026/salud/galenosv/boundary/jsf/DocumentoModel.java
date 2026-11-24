@@ -23,6 +23,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TipoDocument
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Documento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Persona;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoDocumento;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.MensajeError;
 
 @Named("documentoModel")
 @ViewScoped
@@ -169,7 +170,7 @@ public class DocumentoModel extends AbstractModel<Documento> implements Serializ
             }
         } catch (Exception e) {
             getFacesContext().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, modificar ? "Error al modificar" : "Error al guardar", e.getMessage()));
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, modificar ? "Error al modificar" : "Error al guardar", MensajeError.de(e)));
         }
     }
 

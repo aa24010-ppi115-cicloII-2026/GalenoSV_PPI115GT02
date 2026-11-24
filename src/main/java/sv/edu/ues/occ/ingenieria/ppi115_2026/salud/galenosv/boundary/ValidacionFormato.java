@@ -24,16 +24,16 @@ public final class ValidacionFormato {
         }
         try {
             if (!Pattern.compile(expresion).matcher(limpio).matches()) {
-                String base = "El valor '" + limpio + "' no cumple el formato esperado";
+                // El aviso explica la causa con palabras: la expresion regular no se muestra.
+                String base = "El valor '" + limpio + "' no cumple el formato del tipo seleccionado";
                 if (indicaciones != null && !indicaciones.isBlank()) {
                     base += ": " + indicaciones.trim();
-                } else {
-                    base += " (" + expresion + ")";
                 }
                 throw new IllegalArgumentException(base);
             }
         } catch (PatternSyntaxException ex) {
-            throw new IllegalArgumentException("La expresion regular del tipo seleccionado no es valida", ex);
+            throw new IllegalArgumentException(
+                    "El tipo seleccionado tiene mal configurado su formato; corrijalo en su catalogo", ex);
         }
     }
 }
