@@ -11,6 +11,12 @@ export function registroVisible({ estado, registro }) {
   return estado === "pendiente" ? null : registro ?? null;
 }
 
+/**
+ * Texto del estado de un paso; el paso actual que aún no se inicia dice «Por iniciar».
+ * @param {string} estado "completado", "actual" o "pendiente"
+ * @param {boolean} [iniciado]
+ * @returns {string}
+ */
 export function etiquetaPaso(estado, iniciado = true) {
   if (estado === "actual" && !iniciado) return "Por iniciar";
   return ETIQUETAS_PASO[estado] ?? String(estado ?? "");
@@ -23,6 +29,11 @@ export function notaDelPaso({ notas = "", diagnostico = "", plan = "" } = {}) {
     .join(" | ");
 }
 
+/**
+ * Motivo de la consulta en una línea de hasta 120 caracteres.
+ * @param {object} consulta
+ * @returns {string}
+ */
 export function motivoDe(consulta) {
   const texto = String(consulta?.motivo || consulta?.observaciones || "").trim();
   if (!texto) return "Consulta registrada";

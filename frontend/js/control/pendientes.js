@@ -1,5 +1,9 @@
 const CLAVE = "galenosv.pendientes";
 
+/**
+ * El navegador dice que hay red. No garantiza que el servidor responda (ver comprobarServicio).
+ * @returns {boolean}
+ */
 export function estaConectado() {
   if (typeof navigator === "undefined") return true;
   return navigator.onLine !== false;
@@ -26,6 +30,12 @@ function escribir(pendientes) {
   return true;
 }
 
+/**
+ * Guarda un cambio en la cola del dispositivo para enviarlo cuando vuelva la conexión.
+ * @param {{metodo: string, ruta: string, cuerpo: object|null}} operacion
+ * @returns {number} cantidad de cambios en la cola
+ * @throws {Error} si el navegador no permite guardar
+ */
 export function encolar(operacion) {
   const pendientes = leer();
   pendientes.push({ ...operacion, id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` });
@@ -33,10 +43,19 @@ export function encolar(operacion) {
   return pendientes.length;
 }
 
+/**
+ * Cambios guardados en la cola, en el orden en que se hicieron.
+ * @returns {object[]}
+ */
 export function listarPendientes() {
   return leer();
 }
 
+/**
+ * Quita de la cola un cambio ya enviado.
+ * @param {string} id id del cambio en la cola
+ * @returns {boolean} false si no se pudo guardar la cola actualizada
+ */
 export function quitarPendiente(id) {
   const actuales = leer();
   const pendientes = actuales.filter((pendiente) => pendiente.id !== id);
@@ -47,8 +66,8 @@ export function quitarPendiente(id) {
 let sincronizacion = null;
 
 /**
- * Reintenta las operaciones guardadas mientras la aplicacion estuvo sin conexion.
- * Cada operacion se ejecuta una vez; si falla se conserva para el siguiente intento.
+ * Reintenta las operaciones guardadas mientras la aplicación estuvo sin conexión.
+ * Cada operación se ejecuta una vez; si falla se conserva para el siguiente intento.
  */
 export function sincronizar(ejecutar) {
   if (!estaConectado()) return Promise.resolve({ enviadas: 0, pendientes: leer().length });

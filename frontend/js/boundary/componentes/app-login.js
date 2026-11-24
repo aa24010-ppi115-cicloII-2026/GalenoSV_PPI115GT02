@@ -25,7 +25,7 @@ function rolesYClinicas(asignaciones) {
 }
 
 /** HU2 · Login de empleados con tipo y número de documento. */
-class AppLogin extends Vista {
+export default class AppLogin extends Vista {
   static plantilla = `
     <div class="marco">
       <section class="tarjeta">

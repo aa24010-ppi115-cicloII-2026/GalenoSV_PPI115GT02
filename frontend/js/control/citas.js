@@ -5,10 +5,15 @@
 
 import { normalizarTexto } from "../comun/texto.js";
 import { leerObservaciones } from "../entity/observaciones.js";
-import { buscarPorId, mismoId } from "./tablas.js";
+import { buscarPorId, filasDonde, mismoId } from "./tablas.js";
 import { documentoDePersona } from "./documentos.js";
 import { edadDe, rolesDePersona } from "./personas.js";
 
+/**
+ * Estado general de una cita según su fecha de fin y sus pasos.
+ * @param {object} cita resumen de la cita (ver resumenCita)
+ * @returns {{clave: string, texto: string}} clave para estilos y texto para mostrar
+ */
 export function estadoDeCita(cita) {
   if (cita.consulta?.fechaFin) return { clave: "completada", texto: "Completada" };
   const pasos = cita.procedimientos.flatMap(({ pasos: lista }) => lista);
@@ -37,12 +42,17 @@ function dentroDeRango(fecha, desde, hasta) {
   return true;
 }
 
+/**
+ * Pasos de un procedimiento en el orden que marcan sus secuencias «después de».
+ * @param {object} datos tablas de la API
+ * @param {string} idProcedimiento
+ * @returns {object[]}
+ */
 export function pasosDeProcedimiento(datos, idProcedimiento) {
-  const pasos = datos.procedimientosPaso.filter((paso) => mismoId(paso.idProcedimiento, idProcedimiento));
+  const pasos = filasDonde(datos.procedimientosPaso, "idProcedimiento", idProcedimiento);
   const ids = pasos.map((paso) => paso.idProcedimientoPaso);
-  const secuencias = datos.procedimientosPasoSecuencia.filter(
+  const secuencias = filasDonde(datos.procedimientosPasoSecuencia, "idProcedimientoPaso", ids).filter(
     (secuencia) =>
-      ids.some((id) => mismoId(id, secuencia.idProcedimientoPaso)) &&
       ids.some((id) => mismoId(id, secuencia.idProcedimientoPasoReferencia)) &&
       normalizarTexto(secuencia.tipoSecuencia) === "despues_de"
   );
@@ -70,11 +80,21 @@ export function pasosDeProcedimiento(datos, idProcedimiento) {
   return ordenados;
 }
 
+/**
+ * Pasos de un procedimiento de la consulta, cada uno con su registro, quién lo hizo, sus notas
+ * y su estado (completado, actual o pendiente).
+ * @param {object} datos tablas de la API
+ * @param {object} consultaProcedimiento
+ * @param {{finalizada?: boolean}} [opciones] con la consulta finalizada ningún paso queda actual
+ * @returns {object[]}
+ */
 export function pasosConRegistros(datos, consultaProcedimiento, { finalizada = false } = {}) {
   const pasos = pasosDeProcedimiento(datos, consultaProcedimiento.idProcedimiento);
-  const registros = datos.consultasProcedimientoPaso
-    .filter((registro) => mismoId(registro.idConsultaProcedimiento, consultaProcedimiento.idConsultaProcedimiento))
-    .sort((a, b) => new Date(a.fechaInicio ?? 0) - new Date(b.fechaInicio ?? 0));
+  const registros = filasDonde(
+    datos.consultasProcedimientoPaso,
+    "idConsultaProcedimiento",
+    consultaProcedimiento.idConsultaProcedimiento
+  ).sort((a, b) => new Date(a.fechaInicio ?? 0) - new Date(b.fechaInicio ?? 0));
   const observaciones = leerObservaciones(consultaProcedimiento.observaciones);
   let actualAsignado = false;
   return pasos.map((paso, indice) => {
@@ -116,24 +136,31 @@ export function textoOrden(orden) {
 
 /** Órdenes de examen emitidas en los pasos de un procedimiento. */
 function ordenesDeProcedimiento(datos, consultaProcedimiento) {
-  const registros = datos.consultasProcedimientoPaso
-    .filter((registro) => mismoId(registro.idConsultaProcedimiento, consultaProcedimiento.idConsultaProcedimiento))
-    .map((registro) => registro.idConsultaProcedimientoPaso);
-  return datos.ordenesExamen
-    .filter((orden) => registros.some((id) => mismoId(id, orden.idConsultaProcedimientoPaso)))
+  const registros = filasDonde(
+    datos.consultasProcedimientoPaso,
+    "idConsultaProcedimiento",
+    consultaProcedimiento.idConsultaProcedimiento
+  ).map((registro) => registro.idConsultaProcedimientoPaso);
+  return filasDonde(datos.ordenesExamen, "idConsultaProcedimientoPaso", registros)
     .map((orden) => ({
       fecha: orden.fechaCreacion ?? null,
       texto: textoOrden(orden),
     }));
 }
 
+/**
+ * Todo lo que se muestra de una cita: paciente con documento y edad, clínica y procedimientos
+ * con sus pasos, notas y órdenes de examen.
+ * @param {object} datos tablas de la API
+ * @param {object} consulta
+ * @returns {object}
+ */
 export function resumenCita(datos, consulta) {
   const personaRol = buscarPorId(datos, "personasRol", consulta.idPersonaRol);
   const paciente = personaRol ? buscarPorId(datos, "personas", personaRol.idPersona) : null;
   const documento = paciente ? documentoDePersona(datos, paciente.idPersona) : null;
   const clinica = personaRol ? buscarPorId(datos, "clinicas", personaRol.idClinica) : null;
-  const procedimientos = datos.consultasProcedimiento
-    .filter((consultaProcedimiento) => mismoId(consultaProcedimiento.idConsulta, consulta.idConsulta))
+  const procedimientos = filasDonde(datos.consultasProcedimiento, "idConsulta", consulta.idConsulta)
     .map((consultaProcedimiento) => ({
       consultaProcedimiento,
       procedimiento: buscarPorId(datos, "procedimientos", consultaProcedimiento.idProcedimiento),
@@ -149,6 +176,13 @@ export function resumenCita(datos, consulta) {
   };
 }
 
+/**
+ * Citas de un paciente, de la más reciente a la más antigua.
+ * @param {object} datos tablas de la API
+ * @param {{idPersona: string, idClinica?: string|null, desde?: string|null, hasta?: string|null}} filtro
+ *   fechas en formato YYYY-MM-DD, ambas incluidas
+ * @returns {object[]} resúmenes de cita
+ */
 export function citasDePaciente(datos, { idPersona, idClinica = null, desde = null, hasta = null }) {
   const asignaciones = rolesDePersona(datos, idPersona).filter(
     ({ personaRol, rol }) =>
@@ -157,12 +191,19 @@ export function citasDePaciente(datos, { idPersona, idClinica = null, desde = nu
       (!idClinica || String(personaRol.idClinica) === String(idClinica))
   );
   const ids = asignaciones.map(({ personaRol }) => personaRol.idPersonaRol);
-  return datos.consultas
-    .filter((consulta) => ids.some((id) => mismoId(id, consulta.idPersonaRol)) && dentroDeRango(consulta.fechaInicio, desde, hasta))
+  return filasDonde(datos.consultas, "idPersonaRol", ids)
+    .filter((consulta) => dentroDeRango(consulta.fechaInicio, desde, hasta))
     .sort((a, b) => new Date(b.fechaInicio ?? 0) - new Date(a.fechaInicio ?? 0))
     .map((consulta) => resumenCita(datos, consulta));
 }
 
+/**
+ * Agenda de un empleado: citas de su clínica cuyo paso en curso le toca a su rol (o, ya finalizadas,
+ * en las que participó ese rol), en orden de hora.
+ * @param {object} datos tablas de la API
+ * @param {{idClinica: string, idRol?: string, desde?: string|null, hasta?: string|null, idPaciente?: string|null}} filtro
+ * @returns {object[]} resúmenes de cita
+ */
 export function citasDeEmpleado(datos, { idClinica, idRol, desde = null, hasta = null, idPaciente = null }) {
   return datos.consultas
     .filter((consulta) => {
@@ -187,27 +228,37 @@ export function citasDeEmpleado(datos, { idClinica, idRol, desde = null, hasta =
     .sort((a, b) => new Date(a.consulta.fechaInicio ?? 0) - new Date(b.consulta.fechaInicio ?? 0));
 }
 
+/**
+ * Resumen de una consulta por su id.
+ * @param {object} datos tablas de la API
+ * @param {string} idConsulta
+ * @returns {object|null} null si no existe
+ */
 export function consultaCompleta(datos, idConsulta) {
   const consulta = buscarPorId(datos, "consultas", idConsulta);
   if (!consulta) return null;
   return resumenCita(datos, consulta);
 }
 
+/**
+ * Exámenes activos que se pueden ordenar en un procedimiento (o en uno de sus pasos), con sus tipos.
+ * @param {object} datos tablas de la API
+ * @param {string} idProcedimiento
+ * @param {string|null} [idPaso] limita a los exámenes de ese paso
+ * @returns {{examen: object, tipos: string[]}[]}
+ */
 export function examenesAsignables(datos, idProcedimiento, idPaso = null) {
   const pasos = pasosDeProcedimiento(datos, idProcedimiento);
   const ids = pasos.map((paso) => paso.idProcedimientoPaso);
-  const relaciones = datos.procedimientosPasoExamen.filter(
-    (relacion) =>
-      ids.some((id) => mismoId(id, relacion.idProcedimientoPaso)) &&
-      (!idPaso || mismoId(relacion.idProcedimientoPaso, idPaso)) &&
-      relacion.activo !== false
+  const buscados = idPaso ? ids.filter((id) => mismoId(id, idPaso)) : ids;
+  const relaciones = filasDonde(datos.procedimientosPasoExamen, "idProcedimientoPaso", buscados).filter(
+    (relacion) => relacion.activo !== false
   );
   const unicos = [];
   for (const relacion of relaciones) {
     const examen = buscarPorId(datos, "examenes", relacion.idExamen);
     if (!examen || examen.activo === false) continue;
-    const tipos = datos.examenesTipoExamen
-      .filter((vinculo) => mismoId(vinculo.idExamen, examen.idExamen))
+    const tipos = filasDonde(datos.examenesTipoExamen, "idExamen", examen.idExamen)
       .map((vinculo) => buscarPorId(datos, "tiposExamen", vinculo.idTipoExamen)?.nombre)
       .filter(Boolean);
     const existente = unicos.findIndex((item) => String(item.examen.idExamen) === String(examen.idExamen));

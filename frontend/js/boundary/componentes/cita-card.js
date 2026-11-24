@@ -1,6 +1,6 @@
 import { Vista, definirElemento } from "../base.js";
 import { html, nombreCompleto } from "../../comun/texto.js";
-import { fechaHora, fechaCalendario } from "../../comun/fechas.js";
+import { fechaHora, fechaCalendario, partesCalendario } from "../../comun/fechas.js";
 import { motivoDe } from "../presentacion.js";
 import { estadoDeCita } from "../../control/citas.js";
 import { pasosParaPresentacion } from "../presentacion.js";
@@ -12,7 +12,7 @@ import "./linea-pasos.js";
  *   Evento "ver-ticket" con la cita en detail.
  *   <button slot="acciones">…</button>  la pantalla que la usa agrega sus propias acciones.
  */
-class CitaCard extends Vista {
+export default class CitaCard extends Vista {
   static observedAttributes = ["vista"];
 
   #cita;
@@ -49,11 +49,9 @@ class CitaCard extends Vista {
 
   /** Fecha de la cita como bloque de calendario: mes, día y hora. */
   bloqueFecha(valor, textoCompleto) {
-    const fecha = valor ? new Date(valor) : null;
-    if (!fecha || Number.isNaN(fecha.getTime())) return html`<div class="fecha sin">Sin fecha</div>`;
-    const mes = fecha.toLocaleDateString("es-SV", { month: "short" }).replace(".", "");
-    const dia = fecha.toLocaleDateString("es-SV", { day: "2-digit" });
-    const hora = fecha.toLocaleTimeString("es-SV", { hour: "numeric", minute: "2-digit" });
+    const partes = partesCalendario(valor);
+    if (!partes) return html`<div class="fecha sin">Sin fecha</div>`;
+    const { mes, dia, hora } = partes;
     return html`<div class="fecha" role="img" aria-label="${textoCompleto}">
       <span class="mes">${mes}</span><span class="dia">${dia}</span><span class="hora">${hora}</span>
     </div>`;

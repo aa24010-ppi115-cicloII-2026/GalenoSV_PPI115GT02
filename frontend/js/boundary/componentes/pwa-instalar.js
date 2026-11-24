@@ -6,7 +6,7 @@ import { Vista, definirElemento } from "../base.js";
  * Solo aparece cuando el navegador ofrece instalarla.
  *   <pwa-instalar nombre="GalenoSV" descripcion="Acceso directo y uso sin conexión"></pwa-instalar>
  */
-export class PwaInstalar extends Vista {
+export default class PwaInstalar extends Vista {
   static plantilla = `
     <button id="abrir" part="boton-abrir" type="button" aria-label="Instalar la aplicación" title="Instalar la aplicación"
       aria-expanded="false" aria-controls="tarjeta" hidden>

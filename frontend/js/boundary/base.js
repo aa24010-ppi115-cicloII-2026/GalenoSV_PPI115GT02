@@ -66,6 +66,10 @@ function selectorEquivalente(elemento) {
   return elemento.localName + datos.map(({ name, value }) => `[${name}=${valor(value)}]`).join("");
 }
 
+/**
+ * Clase padre de los Web Components: Shadow DOM abierto, hojas de estilo compartidas,
+ * plantilla clonada, escuchas que se liberan al desconectarse y avisos con `notificar`.
+ */
 export class Vista extends HTMLElement {
   static hojasDeEstilo;
   static hojasDeEstiloBase = [];
@@ -166,6 +170,10 @@ function focoPrevio() {
   return previo;
 }
 
+/**
+ * Dónde están las hojas de estilo: la hoja base común y la carpeta con una hoja por componente.
+ * @param {{base?: string, directorio?: string}} [rutas] rutas relativas a este módulo
+ */
 export function configurarEstilos({ base, directorio } = {}) {
   Vista.hojasDeEstiloBase = base ? [new URL(base, import.meta.url).href] : [];
   Vista.directorioEstilos = directorio ? new URL(directorio, import.meta.url).href : null;
@@ -187,6 +195,12 @@ export function definirElemento(nombre, constructor) {
   return customElements.get(nombre);
 }
 
+/**
+ * Convierte un componente en diálogo modal: Escape lo cierra y Tab no sale de sus botones.
+ * @param {Vista} elemento diálogo ya conectado
+ * @param {() => void} alCerrar se llama al pulsar Escape
+ * @returns {() => void} quita las escuchas y devuelve el foco a donde estaba antes de abrir
+ */
 export function modalConFoco(elemento, alCerrar) {
   const previo = focoPrevio();
   const tecla = (evento) => {

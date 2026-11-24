@@ -1,4 +1,4 @@
-const CACHE = "galenosv-v75";
+const CACHE = "galenosv-v77";
 const API = "http://localhost:9080";
 const RECURSOS = [
   "./",
@@ -27,7 +27,11 @@ const RECURSOS = [
   "./js/entity/cie10.js",
   "./js/entity/observaciones.js",
   "./js/entity/recursos.js",
+  "./js/entity/default-error.js",
+  "./js/entity/default-response.js",
   "./js/control/api.js",
+  "./js/control/default-service.js",
+  "./js/control/servicios.js",
   "./js/control/citas.js",
   "./js/control/documentos.js",
   "./js/control/pendientes.js",
@@ -107,8 +111,8 @@ function cachePrimero(peticion) {
 }
 
 /**
- * Las lecturas de la API se guardan en cache para poder consultar los datos sin conexion.
- * Los cambios (POST, PUT, DELETE) los encola la aplicacion y se reenvian al recuperar la red.
+ * Las lecturas de la API se guardan en caché para poder consultar los datos sin conexión.
+ * Los cambios (POST, PUT, DELETE) los encola la aplicación y se reenvían al recuperar la red.
  * La misma estrategia atiende la navegacion: usa la copia de respaldo sin marcarla como
  * API caida; solo las respuestas de la API se marcan con X-Sin-Conexion.
  */

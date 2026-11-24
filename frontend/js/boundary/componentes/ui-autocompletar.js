@@ -15,7 +15,7 @@ import { normalizarTexto } from "../../comun/texto.js";
  * a `form.reset()` y a `<fieldset disabled>`. Donde el navegador no tiene esa API sigue
  * funcionando igual, solo sin participar en el formulario.
  */
-export class UiAutocompletar extends Vista {
+export default class UiAutocompletar extends Vista {
   static formAssociated = true;
   static observedAttributes = ["required", "etiqueta", "descrito-por", "value"];
   static delegarFoco = true;

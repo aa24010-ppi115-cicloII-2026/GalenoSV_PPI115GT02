@@ -2,7 +2,8 @@ import { Vista, definirElemento } from "../base.js";
 
 const TIPOS = ["info", "ok", "error"];
 
-export class UiToast extends Vista {
+/** Avisos breves: muestra los eventos `notificar` que emiten los componentes. */
+export default class UiToast extends Vista {
   static plantilla = `<div id="lista" role="status" aria-live="polite"></div>`;
 
   connectedCallback() {

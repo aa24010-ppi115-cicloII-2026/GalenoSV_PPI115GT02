@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import sinon from "sinon";
 import { datosBase } from "../../ayudas.js";
 import { resumenCita } from "../../../js/control/citas.js";
 import { usarDom, montar, SESION_ENFERMERO } from "../entorno-dom.js";
@@ -15,6 +16,25 @@ describe("cita-card", () => {
         tarjeta.addEventListener("ver-ticket", (evento) => tickets.push(evento.detail));
         tarjeta.shadowRoot.querySelector('[data-accion="ticket"]').click();
         expect(tickets[0].consulta.idConsulta).to.equal(5000);
+      });
+
+      it("cita-card muestra mes, día y hora como el formato local, sin crear un formateador por tarjeta", () => {
+        const cita = resumenCita(datosBase(), datosBase().consultas.find((item) => String(item.idConsulta) === "5000"));
+        const fecha = new Date(cita.consulta.fechaInicio);
+        const esperado = [
+          fecha.toLocaleDateString("es-SV", { month: "short" }).replace(".", ""),
+          fecha.toLocaleDateString("es-SV", { day: "2-digit" }),
+          fecha.toLocaleTimeString("es-SV", { hour: "numeric", minute: "2-digit" }),
+        ];
+        const porFecha = ["toLocaleString", "toLocaleDateString", "toLocaleTimeString"].map((metodo) => sinon.spy(Date.prototype, metodo));
+        try {
+          const tarjeta = montar("cita-card", { cita, vista: "empleado" });
+          const partes = [".mes", ".dia", ".hora"].map((selector) => tarjeta.shadowRoot.querySelector(`.fecha ${selector}`).textContent);
+          expect(partes).to.deep.equal(esperado);
+          expect(porFecha.some((espia) => espia.called)).to.be.false;
+        } finally {
+          porFecha.forEach((espia) => espia.restore());
+        }
       });
 
       it("cita-card muestra junto al ticket las acciones que le pasa la pantalla, sin saber cuáles son", () => {

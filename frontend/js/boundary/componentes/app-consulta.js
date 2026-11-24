@@ -5,14 +5,18 @@ import { leerSesion } from "../../control/sesion.js";
 import { cargarTodo, recargarTablas } from "../../control/repositorio.js";
 import { consultaCompleta, textoOrden } from "../../control/citas.js";
 import { serializarObservaciones } from "../../entity/observaciones.js";
-import { crear, actualizar, eliminar } from "../../control/api.js";
+import { servicios } from "../../control/servicios.js";
 import { confirmar } from "./ui-confirmar.js";
 import { mostrarTicket } from "./ticket-cita.js";
-import { PresentacionConsulta, mensajeSegunConexion } from "../presentacion-consulta.js";
+import PresentacionConsulta, { mensajeSegunConexion } from "../presentacion-consulta.js";
 import "./linea-pasos.js";
 import "./ui-autocompletar.js";
 
-class AppConsulta extends PresentacionConsulta {
+/**
+ * HU4 · Registro de atención: inicia, completa y retrocede pasos, guarda notas y diagnóstico,
+ * asigna exámenes y finaliza la consulta. Lo que se ve lo pinta PresentacionConsulta.
+ */
+export default class AppConsulta extends PresentacionConsulta {
   #id = null;
   /** Número de la carga en curso: una respuesta vieja no pisa a una más reciente. */
   #carga = 0;
@@ -77,7 +81,7 @@ class AppConsulta extends PresentacionConsulta {
         };
       }
       resolve(
-        actualizar("consultas-procedimiento", cp.idConsultaProcedimiento, {
+        servicios.consultasProcedimiento.modificar(cp.idConsultaProcedimiento, {
           idProcedimiento: cp.idProcedimiento,
           fechaInicio: cp.fechaInicio,
           fechaFin: cp.fechaFin,
@@ -129,7 +133,7 @@ class AppConsulta extends PresentacionConsulta {
       return Promise.resolve();
     }
     // El id se genera aquí para poder completar el paso aunque no haya conexión.
-    return crear("consultas-procedimiento-paso", {
+    return servicios.consultasProcedimientoPaso.crear({
       idConsultaProcedimientoPaso: crypto.randomUUID(),
       fechaInicio: ahoraISO(),
       estado: "EN_PROCESO",
@@ -174,7 +178,7 @@ class AppConsulta extends PresentacionConsulta {
     const registro = actual.registro;
     return this.persistirNotas(item, notas, actual.paso.idProcedimientoPaso)
       .then(() =>
-        actualizar("consultas-procedimiento-paso", registro.idConsultaProcedimientoPaso, {
+        servicios.consultasProcedimientoPaso.modificar(registro.idConsultaProcedimientoPaso, {
           fechaInicio: registro.fechaInicio,
           fechaFin: ahoraISO(),
           estado: "FINALIZADO",
@@ -223,7 +227,7 @@ class AppConsulta extends PresentacionConsulta {
       aceptar: "Retroceder",
     }).then((aceptado) => {
       if (!aceptado) return;
-      return actualizar("consultas-procedimiento-paso", previo.registro.idConsultaProcedimientoPaso, {
+      return servicios.consultasProcedimientoPaso.modificar(previo.registro.idConsultaProcedimientoPaso, {
         fechaInicio: previo.registro.fechaInicio,
         estado: "PENDIENTE",
         idConsultaProcedimiento: item.consultaProcedimiento.idConsultaProcedimiento,
@@ -258,7 +262,7 @@ class AppConsulta extends PresentacionConsulta {
       peligro: sinCompletar > 0,
     }).then((aceptado) => {
       if (!aceptado) return;
-      return actualizar("consultas", consulta.idConsulta, {
+      return servicios.consultas.modificar(consulta.idConsulta, {
         fechaInicio: consulta.fechaInicio,
         fechaFin: ahoraISO(),
         observaciones: consulta.observaciones ?? "",
@@ -295,7 +299,7 @@ class AppConsulta extends PresentacionConsulta {
       (anterior, idExamen) =>
         anterior.then(() => {
           const examen = this.examenesDe(idCp).find((item) => String(item.examen.idExamen) === idExamen)?.examen;
-          return crear("ordenes-examen", {
+          return servicios.ordenesExamen.crear({
             idOrdenExamen: crypto.randomUUID(),
             fechaCreacion: ahoraISO(),
             indicaciones: `Examen: ${examen?.nombre ?? idExamen}${indicaciones ? ` — ${indicaciones}` : ""}`,
@@ -338,7 +342,7 @@ class AppConsulta extends PresentacionConsulta {
       if (!aceptado) return;
       // Se eliminan una tras otra, igual que se crearon.
       return ordenes
-        .reduce((anterior, orden) => anterior.then(() => eliminar("ordenes-examen", orden.idOrdenExamen)), Promise.resolve())
+        .reduce((anterior, orden) => anterior.then(() => servicios.ordenesExamen.eliminar(orden.idOrdenExamen)), Promise.resolve())
         .then(() => {
           this.notificar(
             mensajeSegunConexion(

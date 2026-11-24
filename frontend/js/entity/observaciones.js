@@ -20,6 +20,11 @@ export function leerObservaciones(valor) {
   return { notas: valor ?? "", diagnostico: "", plan: "", pasos: {} };
 }
 
+/**
+ * Convierte las observaciones al JSON que se guarda en la API.
+ * @param {{notas?: string, diagnostico?: string, plan?: string, pasos?: object}} observaciones
+ * @returns {string}
+ */
 export function serializarObservaciones({ notas = "", diagnostico = "", plan = "", pasos = {} }) {
   return JSON.stringify({ notas, diagnostico, plan, pasos });
 }

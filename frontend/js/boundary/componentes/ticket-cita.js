@@ -6,6 +6,12 @@ import { estadoDeCita } from "../../control/citas.js";
 
 const ESTILO_TICKET = new URL("../../../css/ticket-documento.css", import.meta.url).href;
 
+/**
+ * Abre el ticket de una cita dentro del contenedor, reemplazando el que hubiera.
+ * @param {Element|ShadowRoot} contenedor
+ * @param {object} cita resumen de la cita (ver resumenCita)
+ * @returns {HTMLElement} el <ticket-cita> agregado
+ */
 export function mostrarTicket(contenedor, cita) {
   contenedor.querySelector("ticket-cita")?.remove();
   const ticket = document.createElement("ticket-cita");
@@ -83,6 +89,11 @@ function datosTicket(cita) {
   </section>`;
 }
 
+/**
+ * Documento HTML completo del comprobante, con su hoja de estilos de impresión.
+ * @param {object} cita resumen de la cita (ver resumenCita)
+ * @returns {string}
+ */
 export function documentoImprimible(cita) {
   return String(html`<!DOCTYPE html>
 <html lang="es">
@@ -101,7 +112,8 @@ export function documentoImprimible(cita) {
 </html>`);
 }
 
-class TicketCita extends Vista {
+/** Comprobante de la cita en un diálogo, con la opción de imprimirlo. */
+export default class TicketCita extends Vista {
   #cita;
   #liberarModal = null;
 

@@ -45,7 +45,8 @@ function contarPorEstado(citas) {
   return conteos;
 }
 
-class AppDashboard extends Vista {
+/** HU3 · Agenda del empleado: citas de su clínica y rol por rango de fechas y paciente. */
+export default class AppDashboard extends Vista {
   static plantilla = `
     <section class="cabecera">
       <h2>Agenda de consultas</h2>

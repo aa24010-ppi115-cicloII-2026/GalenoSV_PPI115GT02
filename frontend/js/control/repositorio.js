@@ -3,7 +3,7 @@
  * en memoria y les aplica los cambios hechos sin conexión.
  */
 
-import { listarTodo } from "./api.js";
+import { servicios } from "./servicios.js";
 import { listarPendientes } from "./pendientes.js";
 import { FUENTES, CAMPO_ID, CLAVE_DE_RUTA } from "../entity/recursos.js";
 
@@ -42,7 +42,7 @@ let revisionCache = 0;
 
 /** Pide una tabla completa y la devuelve como par [clave, filas]. */
 function tabla(clave) {
-  return listarTodo(FUENTES[clave]).then((filas) => [clave, filas]);
+  return servicios[clave].findAll().then((filas) => [clave, filas]);
 }
 
 /**
@@ -108,6 +108,7 @@ export function recargarTablas(claves) {
   });
 }
 
+/** Descarta las tablas guardadas en memoria; la próxima lectura vuelve a pedirlas a la API. */
 export function limpiarCache() {
   revisionCache += 1;
   cache = null;

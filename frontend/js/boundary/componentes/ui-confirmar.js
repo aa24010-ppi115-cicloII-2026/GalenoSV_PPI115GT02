@@ -7,7 +7,7 @@ import { Vista, definirElemento, modalConFoco } from "../base.js";
  * Con `peligro: true` el botón de aceptar se muestra como acción destructiva.
  * Enfoca «Cancelar», cierra con Escape y devuelve el foco al elemento que lo abrió.
  */
-export class UiConfirmar extends Vista {
+export default class UiConfirmar extends Vista {
   static plantilla = `
     <div class="fondo">
       <div class="caja" part="dialogo" role="alertdialog" aria-modal="true" aria-labelledby="titulo" aria-describedby="mensaje">

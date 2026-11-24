@@ -13,7 +13,7 @@ const PASOS = ["Tipo de documento", "Número de documento", "Clínica", "Rango d
  * No consulta la API: recibe los datos ya cargados en `datos` y emite
  * `buscar-citas` con la persona, la clínica y el rango elegidos.
  */
-class AsistenteCitas extends Vista {
+export default class AsistenteCitas extends Vista {
   static plantilla = String(html`
     <form class="tarjeta" novalidate aria-label="Asistente de búsqueda de citas">
       <ol class="pasos">${PASOS.map(

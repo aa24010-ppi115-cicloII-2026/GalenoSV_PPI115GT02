@@ -33,7 +33,9 @@ frontend/
 │   │       ├── ui-autocompletar.js · ui-confirmar.js · ui-toast.js · pwa-instalar.js
 │   │       └── reutilizables.js    punto de entrada de los controles reutilizables
 │   ├── control/               lógica y acceso a datos
-│   │   ├── api.js                  cliente de la API REST (fetch)
+│   │   ├── api.js                  transporte HTTP: cabeceras, errores y cola sin conexión
+│   │   ├── default-service.js      clase padre de acceso a un recurso REST (findRange, findAll…)
+│   │   ├── servicios.js            un DefaultService por recurso de la API
 │   │   ├── repositorio.js          descarga y caché de las tablas de la API
 │   │   ├── documentos.js · personas.js · citas.js   consultas sobre esas tablas
 │   │   ├── tablas.js               búsqueda por identificador
@@ -41,11 +43,14 @@ frontend/
 │   │   ├── sesion.js               sesión del empleado (sessionStorage)
 │   │   └── tema.js                 tema claro u oscuro que elige la persona
 │   ├── entity/                forma de los datos
-│   │   ├── recursos.js             recursos de la API y el id de cada uno
+│   │   ├── recursos.js             recursos de la API: ruta REST y campo id de cada uno
+│   │   ├── default-response.js     respuesta paginada: datos y total
+│   │   ├── default-error.js        error con que se rechazan las promesas de los servicios
 │   │   ├── observaciones.js        formato JSON de las notas de cada paso
 │   │   └── cie10.js                catálogo local de códigos CIE-10
 │   └── comun/                 utilidades sin dependencias: texto.js · fechas.js
 └── test/                 pruebas unitarias con la misma estructura que js/
+    └── integracion/           pruebas de integración contra la API real (*.it.js)
 ```
 
 ## 2. Requisitos
@@ -98,6 +103,13 @@ módulo, en la misma carpeta que en `js/` (por ejemplo `js/control/citas.js` se 
 `test/control/citas.test.js`), con Mocha + Chai + Sinon y jsdom para los Web Components.
 Para correr un solo archivo: `npx mocha test/boundary/componentes/app-consulta.test.js`.
 
+Las pruebas de integración (`test/integracion/*.it.js`) usan la API real sin mocks y solo
+leen datos. Necesitan el backend levantado y se corren aparte:
+
+```bash
+npm run test:integracion
+```
+
 ## 5. Rutas de la aplicación
 
 | Ruta              | Pantalla                                                  |
@@ -111,11 +123,11 @@ Para correr un solo archivo: `npx mocha test/boundary/componentes/app-consulta.t
 
 Endpoints nuevos que usa el frontend:
 
-| Metodo | Ruta | Descripcion |
+| Método | Ruta | Descripción |
 | ------ | ---- | ----------- |
 | GET | `/tickets/consultas/{id}` | Comprobante de la cita en PDF generado por el backend con OpenPDF |
 
-El resto de la API (20 recursos CRUD con paginacion `first/max`) no se modifico.
+El resto de la API (20 recursos CRUD con paginación `first/max`) no se modificó.
 
 ## 7. Datos de demostración
 
@@ -132,14 +144,19 @@ requiere el enunciado). Datos de ejemplo cargados en la base:
 
 - La **base de datos no se toca**: no se crean tablas ni columnas. Todo lo que el frontend
   necesita y el backend no expone se resuelve en el cliente:
-  - **Identidad**: el acceso del empleado se valida con el tipo y numero de documento
+  - **Identidad**: el acceso del empleado se valida con el tipo y número de documento
     contra los registros existentes (no hay autoregistro).
-  - **CIE-10**: catalogo local en `js/entity/cie10.js` con busqueda por codigo o descripcion.
+  - **CIE-10**: catálogo local en `js/entity/cie10.js` con búsqueda por código o descripción.
   - **Notas por paso**: se guardan en las observaciones del procedimiento, indexadas por paso.
   - **Comprobante**: el ticket se imprime desde el navegador con un marco oculto, también sin
     conexión; el backend ofrece además el PDF con OpenPDF en `/tickets/consultas/{id}`.
-  - **Sin conexion**: las lecturas se sirven desde la cache del service worker y las
+  - **Sin conexión**: las lecturas se sirven desde la caché del service worker y las
     escrituras se encolan en el dispositivo para enviarse al recuperar la red.
+- **Acceso a datos**: cada recurso de la API es un `DefaultService` (`js/control/servicios.js`)
+  con los mismos métodos que `DefaultDAO` en el backend: `findRange(first, max)`, `findAll()`,
+  `crear`, `modificar` y `eliminar`. Las lecturas se resuelven con un `DefaultResponse`
+  (`datos` y `total`) y todas las promesas se rechazan con un `DefaultError` (`message`, el
+  `status` HTTP y el `error` original).
 - **Web Components**: cada componente clona una plantilla preparada una sola vez y comparte
   sus hojas de estilo con las demás copias (`adoptedStyleSheets`); la aplicación las descarga
   antes de registrar los componentes para que se pinten con estilo desde el inicio. Los datos

@@ -1,3 +1,4 @@
+/** Catálogo local de diagnósticos CIE-10 odontológicos (capítulo K00–K14) para el buscador. */
 export const CODIGOS_CIE10 = [
   { codigo: "K00.0", descripcion: "Anodoncia" },
   { codigo: "K00.6", descripcion: "Alteraciones de la erupción dentaria" },

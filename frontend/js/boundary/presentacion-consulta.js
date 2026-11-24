@@ -18,6 +18,12 @@ function guardadoSinConexion() {
   return !estaConectado() || servicioNoResponde();
 }
 
+/**
+ * Elige el aviso según si el cambio se envió o quedó guardado en el dispositivo.
+ * @param {string} enLinea texto cuando hay servidor
+ * @param {string} sinConexion texto cuando el cambio quedó en la cola
+ * @returns {string}
+ */
 export function mensajeSegunConexion(enLinea, sinConexion) {
   return guardadoSinConexion() ? sinConexion : enLinea;
 }
@@ -32,7 +38,7 @@ function lineaInicio(registro, persona) {
  * Estado compartido con la subclase: `_cita` y `_datos` (los asigna AppConsulta al cargar),
  * y por procedimiento los exámenes asignables y los elegidos en el buscador.
  */
-export class PresentacionConsulta extends Vista {
+export default class PresentacionConsulta extends Vista {
   _cita = null;
   _datos = null;
   /** idConsultaProcedimiento → exámenes que se pueden asignar en el paso actual. */

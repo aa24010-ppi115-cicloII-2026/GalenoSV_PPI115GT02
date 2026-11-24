@@ -7,7 +7,7 @@ const ESTADOS = ["completado", "actual", "pendiente"];
  * Línea de tiempo presentacional, independiente del modelo de datos de la aplicación.
  *   linea.pasos = [{ nombre, estado, etiqueta, resumen, detalles: [{ etiqueta, valor }] }]
  */
-export class LineaPasos extends Vista {
+export default class LineaPasos extends Vista {
   #pasos = [];
 
   set pasos(lista) {

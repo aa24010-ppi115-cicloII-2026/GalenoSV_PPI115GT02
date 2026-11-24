@@ -6,6 +6,7 @@
  * tema oscuro para ese atributo. index.html lo aplica antes de pintar para que no destelle.
  */
 export const CLAVE_TEMA = "galenosv.tema";
+/** Tema con que empieza la aplicación. */
 export const TEMA_POR_DEFECTO = "claro";
 
 /** Respaldo por si el navegador bloquea el almacenamiento: el tema se cambia igual. */
@@ -23,10 +24,19 @@ export function temaActual() {
   return enMemoria;
 }
 
+/**
+ * Aplica el tema en la página sin guardarlo.
+ * @param {"claro"|"oscuro"} tema
+ */
 export function aplicarTema(tema) {
   document.documentElement.dataset.tema = tema;
 }
 
+/**
+ * Guarda y aplica el tema; un valor desconocido vuelve al claro.
+ * @param {string} tema
+ * @returns {"claro"|"oscuro"} el tema aplicado
+ */
 export function elegirTema(tema) {
   enMemoria = valido(tema) ?? TEMA_POR_DEFECTO;
   try {
@@ -38,6 +48,10 @@ export function elegirTema(tema) {
   return enMemoria;
 }
 
+/**
+ * Pasa de claro a oscuro o al revés.
+ * @returns {"claro"|"oscuro"} el tema aplicado
+ */
 export function alternarTema() {
   return elegirTema(temaActual() === "oscuro" ? "claro" : "oscuro");
 }

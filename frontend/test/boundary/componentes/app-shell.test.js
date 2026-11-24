@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { datosBase, stubApi, esperar } from "../../ayudas.js";
 import { guardarSesion } from "../../../js/control/sesion.js";
 import { listarPendientes, encolar } from "../../../js/control/pendientes.js";
-import { listar } from "../../../js/control/api.js";
+import DefaultService from "../../../js/control/default-service.js";
 import { usarDom, montar, sinRed, conRed, dom, SESION_ENFERMERO } from "../entorno-dom.js";
 
 describe("app-shell", () => {
@@ -85,7 +85,7 @@ describe("app-shell", () => {
     const shell = montar("app-shell");
     await esperar(() => shell.shadowRoot.querySelector("#estado-conexion"));
     fetch.rejects(new TypeError("Failed to fetch"));
-    await listar("roles").catch(() => {});
+    await new DefaultService("roles").findRange().catch(() => {});
     const aviso = shell.shadowRoot.querySelector("#estado-conexion");
     expect(aviso.hidden).to.be.false;
     expect(aviso.textContent).to.contain("El servidor de GalenoSV no responde");
@@ -137,7 +137,7 @@ describe("app-shell", () => {
         status: 200,
         headers: { "Content-Type": "application/json", "X-Total-Count": "0", "X-Sin-Conexion": "true" },
       }));
-      await listar("roles");
+      await new DefaultService("roles").findRange();
       encolar({ metodo: "DELETE", ruta: "ordenes-examen/400", cuerpo: null });
 
       sinon.restore();

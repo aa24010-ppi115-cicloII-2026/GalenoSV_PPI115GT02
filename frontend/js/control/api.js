@@ -1,11 +1,20 @@
-import { encolar, estaConectado } from "./pendientes.js";
+/**
+ * Transporte HTTP hacia la API REST: cabeceras, errores, aviso de servidor caído y cola de
+ * cambios sin conexión. Los recursos se usan a través de DefaultService (ver servicios.js).
+ */
 
+import { encolar, estaConectado } from "./pendientes.js";
+import DefaultError from "../entity/default-error.js";
+
+/** Raíz de la API REST del backend. */
 export const API = "http://localhost:9080/GalenoSV-1.0-SNAPSHOT/api";
+
+const METODOS_DE_CAMBIO = ["POST", "PUT", "DELETE"];
 
 /**
  * Error con el mensaje que envió la API. `status` lo distingue de una falla de red.
  * @param {Response} respuesta respuesta con estado distinto de 2xx
- * @returns {Promise<Error>} se cumple siempre con el error armado
+ * @returns {Promise<DefaultError>} se cumple siempre con el error armado
  */
 function errorDe(respuesta) {
   const base = `Error ${respuesta.status}`;
@@ -14,16 +23,15 @@ function errorDe(respuesta) {
     .json()
     .then((cuerpo) => cuerpo.mensaje || cuerpo.message || base)
     .catch(() => `${base} ${respuesta.statusText}`.trim())
-    .then((mensaje) => {
-      const error = new Error(parametro ? `${mensaje} (${parametro})` : mensaje);
-      error.status = respuesta.status;
-      return error;
-    });
+    .then((mensaje) => new DefaultError(parametro ? `${mensaje} (${parametro})` : mensaje, { status: respuesta.status }));
 }
 
 let servicioCaido = false;
 
-/** Hay red, pero la API no respondió: la app trabaja con lo guardado en el dispositivo. */
+/**
+ * Hay red, pero la API no respondió: la app trabaja con lo guardado en el dispositivo.
+ * @returns {boolean}
+ */
 export function servicioNoResponde() {
   return servicioCaido;
 }
@@ -38,19 +46,19 @@ function marcarServicio(caido) {
  * Petición HTTP a la API con las cabeceras JSON.
  * @param {string} ruta recurso relativo a la API, con su query string
  * @param {RequestInit} [opciones] método, cuerpo y cabeceras extra
- * @returns {Promise<Response>} se cumple con una respuesta 2xx; se rechaza si no hubo
- *   respuesta (servidor caído) o con el error de la API (con `status`)
+ * @returns {Promise<Response>} se cumple con una respuesta 2xx; se rechaza con un DefaultError
+ *   sin `status` si no hubo respuesta (servidor caído) o con el estado que devolvió la API
  */
-function pedir(ruta, opciones = {}) {
+export function pedir(ruta, opciones = {}) {
   const { headers: cabecerasPersonalizadas = {}, ...peticion } = opciones;
   const cabeceras = { Accept: "application/json", ...cabecerasPersonalizadas };
   if (peticion.body !== undefined && !Object.keys(cabeceras).some((clave) => clave.toLowerCase() === "content-type")) {
     cabeceras["Content-Type"] = "application/json";
   }
   return new Promise((resolve) => resolve(fetch(`${API}/${ruta}`, { ...peticion, headers: cabeceras })))
-    .catch(() => {
+    .catch((error) => {
       marcarServicio(true);
-      throw new Error("No se pudo contactar al servidor de GalenoSV. Intente de nuevo en unos minutos.");
+      throw new DefaultError("No se pudo contactar al servidor de GalenoSV. Intente de nuevo en unos minutos.", { error });
     })
     .then((respuesta) => {
       // El service worker marca así lo que respondió desde el dispositivo porque la API no contestó.
@@ -62,45 +70,9 @@ function pedir(ruta, opciones = {}) {
     });
 }
 
-/**
- * Busca un conjunto de registros del recurso usando paginación.
- * @param {string} ruta recurso de la API, por ejemplo "clinicas"
- * @param {{first?: number, max?: number}} [rango] primer registro y cantidad máxima a obtener
- * @returns {Promise<{datos: object[], total: number}>} los registros de la página y el total
- *   de la cabecera X-Total-Count; se rechaza si falta el total o el cuerpo no es una lista
- */
-export function listar(ruta, { first = 0, max = 20 } = {}) {
-  return pedir(`${ruta}?first=${first}&max=${max}`).then((respuesta) => {
-    const cantidadTotal = respuesta.headers.get("X-Total-Count");
-    const total = Number(cantidadTotal);
-    if (!/^\d+$/.test(cantidadTotal ?? "") || !Number.isSafeInteger(total)) {
-      throw new Error(`La respuesta de ${ruta} no incluye un X-Total-Count válido.`);
-    }
-    return respuesta.json().then((datos) => {
-      if (!Array.isArray(datos)) throw new Error(`La respuesta de ${ruta} no contiene una lista.`);
-      return { datos, total };
-    });
-  });
-}
-
-/**
- * Todos los registros del recurso, pidiendo página tras página hasta llegar al total.
- * @param {string} ruta recurso de la API
- * @returns {Promise<object[]>} se rechaza si una página llega vacía antes del total
- */
-export function listarTodo(ruta) {
-  const tamano = 100;
-  const datos = [];
-  const pedirDesde = (first) =>
-    listar(ruta, { first, max: tamano }).then((pagina) => {
-      datos.push(...pagina.datos);
-      const leidos = first + pagina.datos.length;
-      if (pagina.datos.length === 0 && leidos < pagina.total) {
-        throw new Error(`La respuesta de ${ruta} quedó incompleta antes de llegar a ${pagina.total} registros.`);
-      }
-      return leidos < pagina.total ? pedirDesde(leidos) : datos;
-    });
-  return pedirDesde(0);
+/** Opciones de fetch para un cambio: DELETE va sin cuerpo. */
+function opcionesDeCambio(metodo, cuerpo) {
+  return metodo === "DELETE" ? { method: metodo } : { method: metodo, body: JSON.stringify(cuerpo ?? {}) };
 }
 
 /**
@@ -109,27 +81,28 @@ export function listarTodo(ruta) {
  */
 export function comprobarServicio() {
   if (!estaConectado()) return Promise.resolve(false);
-  return listar("roles", { max: 1 })
+  return pedir("roles?first=0&max=1")
     .then(() => !servicioNoResponde())
     .catch(() => false);
 }
 
 /**
  * Envía un cambio a la API; sin conexión, o si el servidor no responde, lo guarda en la cola.
+ * @param {"POST"|"PUT"|"DELETE"} metodo
+ * @param {string} ruta recurso, con el id cuando el método lo requiere
+ * @param {object|null} [cuerpo]
  * @returns {Promise<string|null>} la cabecera Location de un POST, o null; se rechaza solo
  *   si la API contestó con un error (el cambio no se encola)
  */
-function mutar(metodo, ruta, cuerpo = null) {
+export function mutar(metodo, ruta, cuerpo = null) {
   return new Promise((resolve) => {
     if (!estaConectado()) {
       encolar({ metodo, ruta, cuerpo });
       resolve(null);
       return;
     }
-    const opciones = { method: metodo };
-    if (metodo !== "DELETE") opciones.body = JSON.stringify(cuerpo ?? {});
     resolve(
-      pedir(ruta, opciones)
+      pedir(ruta, opcionesDeCambio(metodo, cuerpo))
         .then((respuesta) => (metodo === "POST" ? respuesta.headers.get("Location") : null))
         .catch((error) => {
           if (error.status) throw error;
@@ -140,28 +113,16 @@ function mutar(metodo, ruta, cuerpo = null) {
   });
 }
 
-export function crear(ruta, datos) {
-  return mutar("POST", ruta, datos);
-}
-
-export function actualizar(ruta, id, datos) {
-  return mutar("PUT", `${ruta}/${id}`, datos);
-}
-
-export function eliminar(ruta, id) {
-  return mutar("DELETE", `${ruta}/${id}`);
-}
-
 /**
- * Reenvia una operacion guardada en la cola sin conexion.
- * La ruta ya trae el identificador completo cuando el metodo lo requiere.
+ * Reenvía un cambio guardado en la cola sin conexión. La ruta ya trae el identificador
+ * cuando el método lo requiere.
+ * @param {{metodo: string, ruta: string, cuerpo: object|null}} pendiente
+ * @returns {Promise<void>} se rechaza con un DefaultError si la API no lo acepta
  */
 export function ejecutarPendiente(pendiente) {
   return new Promise((resolve) => {
     const { metodo, ruta, cuerpo } = pendiente;
-    if (!["POST", "PUT", "DELETE"].includes(metodo)) throw new Error(`Método pendiente no admitido: ${metodo}`);
-    const opciones = { method: metodo };
-    if (metodo !== "DELETE") opciones.body = JSON.stringify(cuerpo ?? {});
-    resolve(pedir(ruta, opciones).then(() => undefined));
+    if (!METODOS_DE_CAMBIO.includes(metodo)) throw new DefaultError(`Método pendiente no admitido: ${metodo}`);
+    resolve(pedir(ruta, opcionesDeCambio(metodo, cuerpo)).then(() => undefined));
   });
 }

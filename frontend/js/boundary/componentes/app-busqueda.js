@@ -11,7 +11,7 @@ import "./asistente-citas.js";
 const SIN_RESULTADOS = `<div class="vacio">Complete los pasos del asistente para ver sus citas.</div>`;
 
 /** HU1 · Búsqueda de citas: carga los datos, aloja el asistente y muestra las citas como cards. */
-class AppBusqueda extends Vista {
+export default class AppBusqueda extends Vista {
   static plantilla = `
     <section class="encabezado">
       <h2>Buscar mis citas</h2>

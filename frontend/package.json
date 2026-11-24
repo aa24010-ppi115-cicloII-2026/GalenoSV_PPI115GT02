@@ -10,6 +10,7 @@
   "scripts": {
     "start": "browser-sync start --server --files \"index.html, css/**/*.css, js/**/*.js\" --port 3000 --no-notify --no-open",
     "test": "mocha \"test/**/*.test.js\"",
+    "test:integracion": "mocha \"test/**/*.it.js\"",
     "coverage": "c8 --reporter=text --reporter=html mocha \"test/**/*.test.js\""
   },
   "devDependencies": {

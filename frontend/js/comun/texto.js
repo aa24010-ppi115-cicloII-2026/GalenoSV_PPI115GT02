@@ -54,6 +54,11 @@ export function normalizarTexto(valor) {
   return sinAcentos(valor).toLowerCase().trim();
 }
 
+/**
+ * Nombres y apellidos de una persona en una sola línea.
+ * @param {{nombres?: string, apellidos?: string}|null} persona
+ * @returns {string}
+ */
 export function nombreCompleto(persona) {
   return `${persona?.nombres ?? ""} ${persona?.apellidos ?? ""}`.trim();
 }

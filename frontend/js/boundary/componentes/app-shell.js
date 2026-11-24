@@ -20,7 +20,11 @@ function rutaActual() {
   return { nombre: RUTAS[nombre] ? nombre : "buscar", parametro: parametro ?? null };
 }
 
-class AppShell extends Vista {
+/**
+ * Estructura general: encabezado, enrutado por `#/...`, protección de las rutas de empleados
+ * y aviso de conexión con el envío de los cambios pendientes.
+ */
+export default class AppShell extends Vista {
   static plantilla = `
     <button type="button" class="saltar">Ir al contenido principal</button>
     <header>
