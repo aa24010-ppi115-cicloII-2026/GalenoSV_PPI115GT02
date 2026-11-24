@@ -56,6 +56,24 @@ public class ConsultaDAO extends DefaultDAO<Consulta> {
     }
 
 
+    /**
+     * Consultas mas recientes por fecha de inicio, con su paciente.
+     * LIMIT sin ORDER BY devuelve filas impredecibles, por eso se ordena aqui; y como en
+     * PostgreSQL DESC pone primero los NULL, las consultas sin fecha van al final.
+     *
+     * @param max cuantas devolver
+     * @return de la mas reciente a la mas antigua; vacia si max no es positivo
+     */
+    public List<Consulta> findRecientes(int max) {
+        if (max <= 0) {
+            return java.util.Collections.emptyList();
+        }
+        return getEntityManager().createQuery(
+                "SELECT c FROM Consulta c LEFT JOIN FETCH c.idPersonaRol pr LEFT JOIN FETCH pr.idPersona "
+                        + "ORDER BY c.fechaInicio DESC NULLS LAST", Consulta.class)
+                .setMaxResults(max).getResultList();
+    }
+
     public Long countByPersonaRol(java.util.UUID id) {
         if (id == null) {
             return 0L;

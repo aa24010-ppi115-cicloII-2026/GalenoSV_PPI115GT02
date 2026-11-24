@@ -8,6 +8,7 @@
     <title><ui:insert name="titulo">#{msg['sistema.titulo']}</ui:insert></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <h:outputStylesheet library="css" name="galenosv-v3.css"/>
+    <h:outputScript library="js" name="tema.js"/>
 </h:head>
 <h:body styleClass="app-body">
     <div class="video-shell">
@@ -16,9 +17,15 @@
                 <p:commandButton type="button" icon="pi pi-bars" ariaLabel="Abrir menú"
                                  onclick="PF('menuLateral').show()"/>
             </h:form>
-            <h:graphicImage library="images" name="galenosv-logo.png" alt="GalenoSV" styleClass="video-logo" width="88" style="max-width:88px;height:auto;"/>
+            <ui:include src="/WEB-INF/plantillas/marca.xhtml"/>
             <h1 class="video-title"><ui:insert name="encabezado">#{msg['sistema.titulo']}</ui:insert></h1>
             <div class="video-header-right">
+                <button type="button" class="tema" data-alternar-tema="true" aria-pressed="false"
+                        aria-label="Tema oscuro" title="Tema oscuro">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7Z"/>
+                    </svg>
+                </button>
                 <h:form id="frmIdioma" styleClass="video-language">
                     <p:outputLabel for="cmbIdioma" value="Idioma"/>
                     <p:selectOneMenu id="cmbIdioma" value="#{idiomaBean.idioma}">
@@ -36,7 +43,7 @@
 
         <p:sidebar widgetVar="menuLateral" position="left" styleClass="video-sidebar" baseZIndex="1000">
             <h:form id="frmMenu">
-                <div class="sidebar-brand"><h:graphicImage library="images" name="galenosv-logo.png" alt="GalenoSV" width="120" style="max-width:120px;height:auto;"/></div>
+                <div class="sidebar-brand"><ui:include src="/WEB-INF/plantillas/marca.xhtml"/></div>
                 <p:button value="#{msg['menu.inicio']}" outcome="/paginas/Inicio" icon="pi pi-home" styleClass="sidebar-home"/>
                 <p:panelMenu id="menuPrincipal" styleClass="app-menu">
                     <p:submenu label="#{msg['menu.catalogos']}" icon="pi pi-book">

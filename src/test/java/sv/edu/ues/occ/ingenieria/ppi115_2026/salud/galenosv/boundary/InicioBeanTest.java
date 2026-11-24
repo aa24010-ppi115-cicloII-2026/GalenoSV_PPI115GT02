@@ -1,20 +1,12 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/UnitTests/JUnit5TestClass.java to edit this template
- */
 package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary;
 
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.junit.jupiter.api.Assertions.*;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -25,8 +17,8 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.PersonaDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Consulta;
 
 /**
- *
- * @author david
+ * Pantalla de inicio: totales y ultimas consultas. Los DAO son mocks; cada prueba prepara
+ * lo que devuelven, ejecuta cargar() como lo hace el contenedor y revisa lo que ve la vista.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -44,151 +36,100 @@ public class InicioBeanTest {
     @InjectMocks
     private InicioBean instance;
 
-    public InicioBeanTest() {
-    }
-
-    @BeforeAll
-    public static void setUpClass() {
-    }
-
-    @AfterAll
-    public static void tearDownClass() {
-    }
-
-    @BeforeEach
-    public void setUp() {
-    }
-
-    @AfterEach
-    public void tearDown() {
-    }
-
-    /**
-     * Test of getTotalPacientes method, of class InicioBean.
-     */
     @Test
-    public void testGetTotalPacientes() {
+    public void testCargarTotales() {
         when(personaDAO.count()).thenReturn(7L);
-
-        assertEquals(7L, instance.getTotalPacientes());
-    }
-
-    @Test
-    public void testGetTotalPacientesNulo() {
-        when(personaDAO.count()).thenReturn(null);
-
-        assertEquals(0L, instance.getTotalPacientes());
-    }
-
-    @Test
-    public void testGetTotalPacientesExcepcion() {
-        when(personaDAO.count()).thenThrow(new RuntimeException("Error de prueba"));
-
-        assertEquals(0L, instance.getTotalPacientes());
-    }
-
-    /**
-     * Test of getTotalConsultas method, of class InicioBean.
-     */
-    @Test
-    public void testGetTotalConsultas() {
         when(consultaDAO.count()).thenReturn(3L);
-
-        assertEquals(3L, instance.getTotalConsultas());
-    }
-
-    @Test
-    public void testGetTotalConsultasNulo() {
-        when(consultaDAO.count()).thenReturn(null);
-
-        assertEquals(0L, instance.getTotalConsultas());
-    }
-
-    @Test
-    public void testGetTotalConsultasExcepcion() {
-        when(consultaDAO.count()).thenThrow(new RuntimeException("Error de prueba"));
-
-        assertEquals(0L, instance.getTotalConsultas());
-    }
-
-    /**
-     * Test of getTotalOrdenes method, of class InicioBean.
-     */
-    @Test
-    public void testGetTotalOrdenes() {
         when(ordenExamenDAO.count()).thenReturn(5L);
-
-        assertEquals(5L, instance.getTotalOrdenes());
-    }
-
-    @Test
-    public void testGetTotalOrdenesNulo() {
-        when(ordenExamenDAO.count()).thenReturn(null);
-
-        assertEquals(0L, instance.getTotalOrdenes());
-    }
-
-    @Test
-    public void testGetTotalOrdenesExcepcion() {
-        when(ordenExamenDAO.count()).thenThrow(new RuntimeException("Error de prueba"));
-
-        assertEquals(0L, instance.getTotalOrdenes());
-    }
-
-    /**
-     * Test of getTotalResultados method, of class InicioBean.
-     */
-    @Test
-    public void testGetTotalResultados() {
         when(examenResultadoDAO.count()).thenReturn(2L);
 
+        instance.cargar();
+
+        assertEquals(7L, instance.getTotalPacientes());
+        assertEquals(3L, instance.getTotalConsultas());
+        assertEquals(5L, instance.getTotalOrdenes());
         assertEquals(2L, instance.getTotalResultados());
     }
 
     @Test
-    public void testGetTotalResultadosNulo() {
+    public void testTotalNuloEsCero() {
+        when(personaDAO.count()).thenReturn(null);
+        when(consultaDAO.count()).thenReturn(null);
+        when(ordenExamenDAO.count()).thenReturn(null);
         when(examenResultadoDAO.count()).thenReturn(null);
 
+        instance.cargar();
+
+        assertEquals(0L, instance.getTotalPacientes());
+        assertEquals(0L, instance.getTotalConsultas());
+        assertEquals(0L, instance.getTotalOrdenes());
         assertEquals(0L, instance.getTotalResultados());
     }
 
     @Test
-    public void testGetTotalResultadosExcepcion() {
-        when(examenResultadoDAO.count()).thenThrow(new RuntimeException("Error de prueba"));
+    public void testUnTotalQueFallaNoImpideLosDemas() {
+        when(personaDAO.count()).thenThrow(new RuntimeException("Error de prueba"));
+        when(consultaDAO.count()).thenReturn(3L);
+        when(ordenExamenDAO.count()).thenThrow(new RuntimeException("Error de prueba"));
+        when(examenResultadoDAO.count()).thenReturn(2L);
 
-        assertEquals(0L, instance.getTotalResultados());
+        instance.cargar();
+
+        assertEquals(0L, instance.getTotalPacientes());
+        assertEquals(3L, instance.getTotalConsultas());
+        assertEquals(0L, instance.getTotalOrdenes());
+        assertEquals(2L, instance.getTotalResultados());
     }
 
-    /**
-     * Test of getUltimasConsultas method, of class InicioBean.
-     */
     @Test
-    public void testGetUltimasConsultas() {
+    public void testUltimasConsultasSonLasMasRecientes() {
         List<Consulta> consultas = List.of(new Consulta(), new Consulta());
-        when(consultaDAO.findRange(0, 5)).thenReturn(consultas);
+        when(consultaDAO.findRecientes(InicioBean.CONSULTAS_RECIENTES)).thenReturn(consultas);
 
-        List<Consulta> resultado = instance.getUltimasConsultas();
+        instance.cargar();
 
-        assertEquals(consultas, resultado);
+        assertEquals(consultas, instance.getUltimasConsultas());
+        verify(consultaDAO, never()).findRange(anyInt(), anyInt());
     }
 
     @Test
-    public void testGetUltimasConsultasNulo() {
-        when(consultaDAO.findRange(0, 5)).thenReturn(null);
+    public void testUltimasConsultasNuloEsListaVacia() {
+        when(consultaDAO.findRecientes(InicioBean.CONSULTAS_RECIENTES)).thenReturn(null);
 
-        List<Consulta> resultado = instance.getUltimasConsultas();
+        instance.cargar();
 
-        assertNotNull(resultado);
-        assertTrue(resultado.isEmpty());
+        assertTrue(instance.getUltimasConsultas().isEmpty());
     }
 
     @Test
-    public void testGetUltimasConsultasExcepcion() {
-        when(consultaDAO.findRange(0, 5)).thenThrow(new RuntimeException("Error de prueba"));
+    public void testUltimasConsultasConErrorEsListaVacia() {
+        when(consultaDAO.findRecientes(InicioBean.CONSULTAS_RECIENTES)).thenThrow(new RuntimeException("Error de prueba"));
 
-        List<Consulta> resultado = instance.getUltimasConsultas();
+        instance.cargar();
 
-        assertNotNull(resultado);
-        assertTrue(resultado.isEmpty());
+        assertTrue(instance.getUltimasConsultas().isEmpty());
+    }
+
+    @Test
+    public void testLaVistaLeeVariasVecesPeroLaBaseSeConsultaUnaVez() {
+        when(consultaDAO.findRecientes(InicioBean.CONSULTAS_RECIENTES)).thenReturn(List.of(new Consulta()));
+        when(personaDAO.count()).thenReturn(7L);
+
+        instance.cargar();
+        // La tabla de JSF evalua su value varias veces durante un mismo render.
+        for (int i = 0; i < 3; i++) {
+            instance.getUltimasConsultas();
+            instance.getTotalPacientes();
+        }
+
+        verify(consultaDAO, times(1)).findRecientes(InicioBean.CONSULTAS_RECIENTES);
+        verify(personaDAO, times(1)).count();
+    }
+
+    @Test
+    public void testSinCargarNoHayDatos() {
+        assertEquals(0L, instance.getTotalPacientes());
+        assertTrue(instance.getUltimasConsultas().isEmpty());
+        verifyNoInteractions(personaDAO, consultaDAO, ordenExamenDAO, examenResultadoDAO);
     }
 }

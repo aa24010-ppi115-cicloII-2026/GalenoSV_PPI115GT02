@@ -151,6 +151,29 @@ public class ConsultaDAOTest {
         verifyNoInteractions(em);
     }
 
+    @Test
+    public void testFindRecientesOrdenaPorFechaDeInicioDescendente() {
+        List<Consulta> lista = List.of(mock(Consulta.class));
+        when(em.createQuery(anyString(), eq(Consulta.class))).thenReturn(query);
+        when(query.setMaxResults(anyInt())).thenReturn(query);
+        when(query.getResultList()).thenReturn(lista);
+
+        List<Consulta> result = dao.findRecientes(5);
+
+        // LIMIT sin ORDER BY devuelve un subconjunto impredecible (documentacion de PostgreSQL).
+        verify(em).createQuery(contains("ORDER BY c.fechaInicio DESC NULLS LAST"), eq(Consulta.class));
+        verify(em).createQuery(contains("JOIN FETCH pr.idPersona"), eq(Consulta.class));
+        verify(query).setMaxResults(5);
+        assertEquals(lista, result);
+    }
+
+    @Test
+    public void testFindRecientesCantidadInvalida() {
+        assertTrue(dao.findRecientes(0).isEmpty());
+        assertTrue(dao.findRecientes(-1).isEmpty());
+        verifyNoInteractions(em);
+    }
+
     /**
      * Test of countByClinicaYFechas method, of class ConsultaDAO.
      */
