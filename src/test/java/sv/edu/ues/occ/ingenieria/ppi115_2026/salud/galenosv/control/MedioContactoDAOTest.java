@@ -161,4 +161,25 @@ public class MedioContactoDAOTest {
         assertSame(em, dao.getEntityManager());
     }
 
+
+    @Test
+    public void testFindByPersonasSinPersonasNoConsulta() {
+        assertTrue(dao.findByPersonas(List.of()).isEmpty());
+        assertTrue(dao.findByPersonas(null).isEmpty());
+        verify(em, never()).createQuery(anyString(), eq(MedioContacto.class));
+    }
+
+    @Test
+    public void testFindByPersonasTraeLosDeTodasEnUnaConsultaConSuTipo() {
+        List<UUID> ids = List.of(UUID.randomUUID(), UUID.randomUUID());
+        List<MedioContacto> esperado = List.of(new MedioContacto(UUID.randomUUID()));
+        when(em.createQuery(anyString(), eq(MedioContacto.class))).thenReturn(query);
+        when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(query.getResultList()).thenReturn(esperado);
+
+        assertEquals(esperado, dao.findByPersonas(ids));
+        verify(em).createQuery(contains("m.idPersona.idPersona IN :ids"), eq(MedioContacto.class));
+        verify(em).createQuery(contains("LEFT JOIN FETCH m.idTipoMedioContacto"), eq(MedioContacto.class));
+        verify(query).setParameter("ids", ids);
+    }
 }

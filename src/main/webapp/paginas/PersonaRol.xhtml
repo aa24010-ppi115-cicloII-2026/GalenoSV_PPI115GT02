@@ -17,7 +17,7 @@
             </f:facet>
         </p:toolbar>
         <h:form id="frmPersonaRol">
-            <p:messages id="mensajes" showDetail="true" closable="true"/>
+            <p:messages id="mensajes" showDetail="true" skipDetailIfEqualsSummary="true" closable="true"/>
 
             <!-- ===== TABLA PRINCIPAL (estado NADA) ===== -->
             <h:panelGroup id="pnlTabla" layout="block" rendered="#{personaRolModel.estado eq 'NADA'}">

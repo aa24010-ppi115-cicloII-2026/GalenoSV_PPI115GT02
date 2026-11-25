@@ -46,36 +46,6 @@ public class DocumentoDAOTest {
     }
 
     /**
-     * Test of buscarPorValor method, of class DocumentoDAO.
-     */
-    @Test
-    public void testBuscarPorValor() {
-        List<Documento> lista = List.of(mock(Documento.class));
-        when(em.createQuery(anyString(), eq(Documento.class))).thenReturn(query);
-        when(query.setParameter(anyString(), any())).thenReturn(query);
-        when(query.getResultList()).thenReturn(lista);
-
-        List<Documento> result = dao.buscarPorValor("12345678");
-
-        verify(query).setParameter("valor", "12345678");
-        assertEquals(lista, result);
-    }
-
-    @Test
-    public void testBuscarPorValorInvalido() {
-        assertThrows(IllegalArgumentException.class, () -> dao.buscarPorValor(null));
-        assertThrows(IllegalArgumentException.class, () -> dao.buscarPorValor("   "));
-        verifyNoInteractions(em);
-    }
-
-    @Test
-    public void testBuscarPorValorError() {
-        when(em.createQuery(anyString(), eq(Documento.class))).thenThrow(new IllegalStateException("Sin conexion"));
-
-        assertThrows(IllegalStateException.class, () -> dao.buscarPorValor("123"));
-    }
-
-    /**
      * Test of findByPersona method, of class DocumentoDAO.
      */
     @Test
@@ -188,4 +158,25 @@ public class DocumentoDAOTest {
         assertSame(em, dao.getEntityManager());
     }
 
+
+    @Test
+    public void testFindByPersonasSinPersonasNoConsulta() {
+        assertTrue(dao.findByPersonas(List.of()).isEmpty());
+        assertTrue(dao.findByPersonas(null).isEmpty());
+        verify(em, never()).createQuery(anyString(), eq(Documento.class));
+    }
+
+    @Test
+    public void testFindByPersonasTraeLosDeTodasEnUnaConsultaConSuTipo() {
+        List<UUID> ids = List.of(UUID.randomUUID(), UUID.randomUUID());
+        List<Documento> esperado = List.of(new Documento(UUID.randomUUID()));
+        when(em.createQuery(anyString(), eq(Documento.class))).thenReturn(query);
+        when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(query.getResultList()).thenReturn(esperado);
+
+        assertEquals(esperado, dao.findByPersonas(ids));
+        verify(em).createQuery(contains("d.idPersona.idPersona IN :ids"), eq(Documento.class));
+        verify(em).createQuery(contains("LEFT JOIN FETCH d.idTipoDocumento"), eq(Documento.class));
+        verify(query).setParameter("ids", ids);
+    }
 }

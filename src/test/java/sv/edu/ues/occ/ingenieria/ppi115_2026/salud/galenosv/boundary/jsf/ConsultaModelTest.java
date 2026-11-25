@@ -5,6 +5,7 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.jsf;
 
 import jakarta.faces.context.FacesContext;
+import jakarta.faces.application.FacesMessage;
 import jakarta.faces.event.ActionEvent;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -22,10 +23,15 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 import org.primefaces.event.SelectEvent;
+import org.mockito.ArgumentCaptor;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ClinicaTrabajoBean;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ESTADO_CRUD;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.MensajeError;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ConsultaDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ConsultaProcedimientoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ConsultaProcedimientoPasoDAO;
@@ -217,18 +223,27 @@ public class ConsultaModelTest {
         instance.aplicarFiltros();
 
         assertNull(instance.getModelo());
-        verify(facesContext).addMessage(any(), any());
+        assertEquals("La fecha final debe ser igual o posterior a la inicial", avisoDelFiltro().getDetail());
     }
 
     @Test
-    public void testAplicarFiltrosFechaNula() {
+    public void testAplicarFiltrosFechaNulaDiceQueFaltaLaFecha() {
         instance.setFechaDesde(null);
+        instance.setFechaHasta(LocalDate.now(ZONA_LOCAL));
         instance.setModelo(null);
 
         instance.aplicarFiltros();
 
         assertNull(instance.getModelo());
-        verify(facesContext).addMessage(any(), any());
+        FacesMessage aviso = avisoDelFiltro();
+        assertEquals(FacesMessage.SEVERITY_WARN, aviso.getSeverity());
+        assertEquals("Seleccione la fecha inicial y la final para filtrar", aviso.getDetail());
+    }
+
+    private FacesMessage avisoDelFiltro() {
+        ArgumentCaptor<FacesMessage> aviso = ArgumentCaptor.forClass(FacesMessage.class);
+        verify(facesContext).addMessage(isNull(), aviso.capture());
+        return aviso.getValue();
     }
 
     /**
@@ -651,32 +666,6 @@ public class ConsultaModelTest {
     }
 
     /**
-     * Test of eliminarConsultaProcedimiento method, of class ConsultaModel.
-     */
-    @Test
-    public void testEliminarConsultaProcedimiento() {
-        Consulta cons = new Consulta(UUID.randomUUID());
-        ConsultaProcedimiento cp = new ConsultaProcedimiento(UUID.randomUUID());
-        List<ConsultaProcedimiento> lista = new ArrayList<>();
-        lista.add(cp);
-        cons.setConsultaProcedimientoList(lista);
-        instance.setRegistro(cons);
-
-        instance.eliminarConsultaProcedimiento(cp);
-
-        verify(consultaProcedimientoDAO).eliminar(cp);
-        assertFalse(cons.getConsultaProcedimientoList().contains(cp));
-        assertTrue(cons.getConsultaProcedimientoList().isEmpty());
-    }
-
-    @Test
-    public void testEliminarConsultaProcedimientoNulo() {
-        instance.eliminarConsultaProcedimiento(null);
-
-        verify(consultaProcedimientoDAO, never()).eliminar(any());
-    }
-
-    /**
      * Test of getConsultaProcedimientosDeConsulta method, of class ConsultaModel.
      */
     @Test
@@ -716,89 +705,121 @@ public class ConsultaModelTest {
         assertEquals("", instance.formatearFecha(null));
     }
 
-    /**
-     * Test of getPacientes method, of class ConsultaModel.
-     */
+    // Dialogo "Buscar paciente": la base filtra (una consulta por busqueda, no una por fila
+    // ni por cada lectura de la vista) y trae como maximo MAX_PACIENTES_BUSQUEDA.
+
     @Test
-    public void testGetPacientes() {
+    public void testAlAbrirElDialogoListaLosPacientesDeLaClinicaConUnaConsulta() {
         UUID idClinica = UUID.randomUUID();
-        List<PersonaRol> esperado = new ArrayList<>();
-        esperado.add(crearPersonaRol("Ana", "Perez", "Paciente"));
+        PersonaRol ana = crearPersonaRol("Ana", "Perez", "Paciente");
         when(clinicaTrabajoBean.getIdClinicaActual()).thenReturn(idClinica);
-        when(personaRolDAO.findPersonasAtendiblesByClinica(idClinica)).thenReturn(esperado);
+        when(personaRolDAO.buscarAtendibles(idClinica, null, null, null, null, ConsultaModel.MAX_PACIENTES_BUSQUEDA))
+                .thenReturn(List.of(ana));
 
-        List<PersonaRol> resultado = instance.getPacientes();
-
-        assertSame(esperado, resultado);
-    }
-
-    /**
-     * Test of getPacientesFiltrados method, of class ConsultaModel.
-     */
-    @Test
-    public void testGetPacientesFiltrados() {
-        UUID idClinica = UUID.randomUUID();
-        List<PersonaRol> disponibles = new ArrayList<>();
-        disponibles.add(crearPersonaRol("Ana", "Perez", "Paciente"));
-        when(clinicaTrabajoBean.getIdClinicaActual()).thenReturn(idClinica);
-        when(personaRolDAO.findPersonasAtendiblesByClinica(idClinica)).thenReturn(disponibles);
-
+        // La vista lee la tabla y el aviso varias veces en un mismo render.
+        instance.getPacientesFiltrados();
+        instance.getAvisoLimitePacientes();
         List<PersonaRol> resultado = instance.getPacientesFiltrados();
 
-        assertSame(disponibles, resultado);
+        assertEquals(List.of(ana), resultado);
+        verify(personaRolDAO, times(1)).buscarAtendibles(any(), any(), any(), any(), any(), anyInt());
     }
 
     @Test
-    public void testGetPacientesFiltradosPorNombre() {
+    public void testBuscarPacientesFiltraEnLaBaseUnaSolaVez() {
         UUID idClinica = UUID.randomUUID();
-        List<PersonaRol> disponibles = new ArrayList<>();
-        disponibles.add(crearPersonaRol("Ana", "Perez", "Paciente"));
-        disponibles.add(crearPersonaRol("Carlos", "Lopez", "Paciente"));
+        PersonaRol ana = crearPersonaRol("Ana", "Perez", "Paciente");
         when(clinicaTrabajoBean.getIdClinicaActual()).thenReturn(idClinica);
-        when(personaRolDAO.findPersonasAtendiblesByClinica(idClinica)).thenReturn(disponibles);
+        when(personaRolDAO.buscarAtendibles(idClinica, "ana", null, null, "7777", ConsultaModel.MAX_PACIENTES_BUSQUEDA))
+                .thenReturn(List.of(ana));
+        instance.setFiltroPaciente("ana");
+        instance.setFiltroMedio("7777");
+
+        instance.buscarPacientes();
+        // La vista lee la tabla varias veces en un mismo render.
+        instance.getPacientesFiltrados();
+        List<PersonaRol> resultado = instance.getPacientesFiltrados();
+
+        assertEquals(List.of(ana), resultado);
+        verify(personaRolDAO, times(1)).buscarAtendibles(any(), any(), any(), any(), any(), anyInt());
+    }
+
+    @Test
+    public void testDocumentosYContactosSeCarganJuntosParaTodosLosResultados() {
+        PersonaRol ana = crearPersonaRol("Ana", "Perez", "Paciente");
+        PersonaRol carlos = crearPersonaRol("Carlos", "Lopez", "Paciente");
+        List<UUID> ids = List.of(ana.getIdPersona().getIdPersona(), carlos.getIdPersona().getIdPersona());
+        TipoDocumento dui = new TipoDocumento(UUID.randomUUID());
+        dui.setNombre("DUI");
+        Documento documento = new Documento(UUID.randomUUID());
+        documento.setIdPersona(ana.getIdPersona());
+        documento.setIdTipoDocumento(dui);
+        documento.setValor("12345678-9");
+        TipoMedioContacto telefono = new TipoMedioContacto(UUID.randomUUID());
+        telefono.setNombre("Telefono");
+        MedioContacto medio = new MedioContacto(UUID.randomUUID());
+        medio.setIdPersona(carlos.getIdPersona());
+        medio.setIdTipoMedioContacto(telefono);
+        medio.setValor("7777-1234");
+        when(personaRolDAO.buscarAtendibles(any(), any(), any(), any(), any(), anyInt())).thenReturn(List.of(ana, carlos));
+        when(documentoDAO.findByPersonas(ids)).thenReturn(List.of(documento));
+        when(medioContactoDAO.findByPersonas(ids)).thenReturn(List.of(medio));
+        instance.setFiltroRol("paciente");
+
+        instance.buscarPacientes();
+
+        assertEquals("DUI: 12345678-9", instance.documentosPaciente(ana));
+        assertEquals("", instance.documentosPaciente(carlos));
+        assertEquals("Telefono: 7777-1234", instance.mediosPaciente(carlos));
+        assertEquals("", instance.mediosPaciente(ana));
+        assertEquals("", instance.documentosPaciente(null));
+        assertEquals("", instance.mediosPaciente(null));
+        verify(documentoDAO, times(1)).findByPersonas(any());
+        verify(medioContactoDAO, times(1)).findByPersonas(any());
+        verify(documentoDAO, never()).findByPersona(any(), anyInt(), anyInt());
+        verify(medioContactoDAO, never()).findByPersona(any(), anyInt(), anyInt());
+    }
+
+    @Test
+    public void testBuscarPacientesSinResultadosDejaLaTablaVaciaSinAviso() {
+        when(personaRolDAO.buscarAtendibles(any(), any(), any(), any(), any(), anyInt())).thenReturn(List.of());
+        instance.setFiltroPaciente("zzz");
+
+        instance.buscarPacientes();
+
+        assertTrue(instance.getPacientesFiltrados().isEmpty());
+        assertEquals("", instance.getAvisoLimitePacientes());
+    }
+
+    @Test
+    public void testAvisaCuandoPuedeHaberMasPacientesDeLosQueSeMuestran() {
+        List<PersonaRol> muchos = new ArrayList<>();
+        for (int i = 0; i < ConsultaModel.MAX_PACIENTES_BUSQUEDA; i++) {
+            muchos.add(crearPersonaRol("Paciente" + i, "Apellido", "Paciente"));
+        }
+        when(personaRolDAO.buscarAtendibles(any(), any(), any(), any(), any(), anyInt())).thenReturn(muchos);
+        instance.setFiltroPaciente("paciente");
+
+        instance.buscarPacientes();
+
+        assertTrue(instance.getAvisoLimitePacientes().contains(String.valueOf(ConsultaModel.MAX_PACIENTES_BUSQUEDA)));
+    }
+
+    @Test
+    public void testBuscarPacientesFallaYExplicaLaCausaSinTextoTecnico() {
+        when(personaRolDAO.buscarAtendibles(any(), any(), any(), any(), any(), anyInt()))
+                .thenThrow(new IllegalStateException("Connection refused: localhost:5432"));
         instance.setFiltroPaciente("ana");
 
-        List<PersonaRol> resultado = instance.getPacientesFiltrados();
+        instance.buscarPacientes();
 
-        assertEquals(1, resultado.size());
-        assertEquals("Ana", resultado.get(0).getIdPersona().getNombres());
-    }
-
-    @Test
-    public void testGetPacientesFiltradosPorRolSinCoincidencias() {
-        UUID idClinica = UUID.randomUUID();
-        List<PersonaRol> disponibles = new ArrayList<>();
-        disponibles.add(crearPersonaRol("Ana", "Perez", "Paciente"));
-        when(clinicaTrabajoBean.getIdClinicaActual()).thenReturn(idClinica);
-        when(personaRolDAO.findPersonasAtendiblesByClinica(idClinica)).thenReturn(disponibles);
-        instance.setFiltroRol("medico");
-
-        List<PersonaRol> resultado = instance.getPacientesFiltrados();
-
-        assertNotNull(resultado);
-        assertTrue(resultado.isEmpty());
-    }
-
-    @Test
-    public void testGetPacientesFiltradosPorDocumento() {
-        UUID idClinica = UUID.randomUUID();
-        PersonaRol pr = crearPersonaRol("Ana", "Perez", "Paciente");
-        List<PersonaRol> disponibles = new ArrayList<>();
-        disponibles.add(pr);
-        TipoDocumento tipo = new TipoDocumento(UUID.randomUUID());
-        tipo.setNombre("DUI");
-        Documento doc = new Documento(UUID.randomUUID());
-        doc.setValor("12345678-9");
-        doc.setIdTipoDocumento(tipo);
-        when(clinicaTrabajoBean.getIdClinicaActual()).thenReturn(idClinica);
-        when(personaRolDAO.findPersonasAtendiblesByClinica(idClinica)).thenReturn(disponibles);
-        when(documentoDAO.findByPersona(pr.getIdPersona().getIdPersona(), 0, 100))
-                .thenReturn(Collections.singletonList(doc));
-        instance.setFiltroDocumento("1234");
-
-        List<PersonaRol> resultado = instance.getPacientesFiltrados();
-
-        assertEquals(1, resultado.size());
+        // La tabla queda vacia y leerla no vuelve a intentar la consulta fallida.
+        assertTrue(instance.getPacientesFiltrados().isEmpty());
+        verify(personaRolDAO, times(1)).buscarAtendibles(any(), any(), any(), any(), any(), anyInt());
+        ArgumentCaptor<FacesMessage> aviso = ArgumentCaptor.forClass(FacesMessage.class);
+        verify(facesContext).addMessage(isNull(), aviso.capture());
+        assertEquals(FacesMessage.SEVERITY_ERROR, aviso.getValue().getSeverity());
+        assertEquals(MensajeError.GENERAL, aviso.getValue().getDetail());
     }
 
     /**
@@ -817,6 +838,21 @@ public class ConsultaModelTest {
         assertNull(instance.getFiltroDocumento());
         assertNull(instance.getFiltroRol());
         assertNull(instance.getFiltroMedio());
+    }
+
+    @Test
+    public void testLimpiarFiltrosPacienteVuelveAListarATodos() {
+        PersonaRol ana = crearPersonaRol("Ana", "Perez", "Paciente");
+        PersonaRol carlos = crearPersonaRol("Carlos", "Lopez", "Paciente");
+        when(personaRolDAO.buscarAtendibles(any(), eq("ana"), any(), any(), any(), anyInt())).thenReturn(List.of(ana));
+        when(personaRolDAO.buscarAtendibles(any(), isNull(), isNull(), isNull(), isNull(), anyInt()))
+                .thenReturn(List.of(ana, carlos));
+        instance.setFiltroPaciente("ana");
+        instance.buscarPacientes();
+
+        instance.limpiarFiltrosPaciente();
+
+        assertEquals(List.of(ana, carlos), instance.getPacientesFiltrados());
     }
 
     /**
@@ -867,50 +903,6 @@ public class ConsultaModelTest {
     @Test
     public void testGetNombrePacienteSeleccionadoVacio() {
         assertEquals("", instance.getNombrePacienteSeleccionado());
-    }
-
-    /**
-     * Test of documentosPaciente method, of class ConsultaModel.
-     */
-    @Test
-    public void testDocumentosPaciente() {
-        PersonaRol personaRol = crearPersonaRol("Ana", "Perez", "Paciente");
-        TipoDocumento tipo = new TipoDocumento(UUID.randomUUID());
-        tipo.setNombre("DUI");
-        Documento doc = new Documento(UUID.randomUUID());
-        doc.setValor("12345678-9");
-        doc.setIdTipoDocumento(tipo);
-        when(documentoDAO.findByPersona(personaRol.getIdPersona().getIdPersona(), 0, 100))
-                .thenReturn(Collections.singletonList(doc));
-
-        assertEquals("DUI: 12345678-9", instance.documentosPaciente(personaRol));
-    }
-
-    @Test
-    public void testDocumentosPacienteNulo() {
-        assertEquals("", instance.documentosPaciente(null));
-    }
-
-    /**
-     * Test of mediosPaciente method, of class ConsultaModel.
-     */
-    @Test
-    public void testMediosPaciente() {
-        PersonaRol personaRol = crearPersonaRol("Ana", "Perez", "Paciente");
-        TipoMedioContacto tipo = new TipoMedioContacto(UUID.randomUUID());
-        tipo.setNombre("Telefono");
-        MedioContacto medio = new MedioContacto(UUID.randomUUID());
-        medio.setValor("7777-1234");
-        medio.setIdTipoMedioContacto(tipo);
-        when(medioContactoDAO.findByPersona(personaRol.getIdPersona().getIdPersona(), 0, 100))
-                .thenReturn(Collections.singletonList(medio));
-
-        assertEquals("Telefono: 7777-1234", instance.mediosPaciente(personaRol));
-    }
-
-    @Test
-    public void testMediosPacienteNulo() {
-        assertEquals("", instance.mediosPaciente(null));
     }
 
     /**

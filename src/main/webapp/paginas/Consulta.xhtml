@@ -7,7 +7,7 @@
     <ui:define name="encabezado">Consultas</ui:define>
     <ui:define name="contenido">
         <h:form id="frmConsulta">
-            <p:messages id="mensajes" showDetail="true" closable="true"/>
+            <p:messages id="mensajes" showDetail="true" skipDetailIfEqualsSummary="true" closable="true"/>
             <h:panelGroup id="contenidoConsulta" layout="block">
                 <h:panelGroup rendered="#{consultaModel.estado eq 'NADA'}">
                     <div class="video-filterbar">
@@ -17,10 +17,10 @@
                                           styleClass="#{clinicaTrabajoBean.seleccionada ? 'context-ok' : 'context-missing'}"/>
                             <p:outputLabel for="fechaDesde" value="Fecha desde:"/>
                             <p:datePicker id="fechaDesde" value="#{consultaModel.fechaDesde}" pattern="dd/MM/yyyy"
-                                          monthNavigator="true" yearNavigator="true" yearRange="2000:2026" showButtonBar="true"/>
+                                          monthNavigator="true" yearNavigator="true" yearRange="2000:#{fechaBean.anioActual}" showButtonBar="true"/>
                             <p:outputLabel for="fechaHasta" value="Fecha hasta:"/>
                             <p:datePicker id="fechaHasta" value="#{consultaModel.fechaHasta}" pattern="dd/MM/yyyy"
-                                          monthNavigator="true" yearNavigator="true" yearRange="2000:2026" showButtonBar="true"/>
+                                          monthNavigator="true" yearNavigator="true" yearRange="2000:#{fechaBean.anioActual}" showButtonBar="true"/>
                             <p:commandButton value="Filtrar" icon="pi pi-filter"
                                              actionListener="#{consultaModel.aplicarFiltros}"
                                              process="fechaDesde fechaHasta"
@@ -102,12 +102,12 @@
                                                  actionListener="#{consultaModel.btnGuardarHandler}"
                                                  rendered="#{consultaModel.estado eq 'CREAR'}"
                                                  process="@this consultaId consultaPaciente consultaReferencia consultaIndicaciones"
-                                                 update="contenidoConsulta mensajes :avisos"/>
+                                                 update="contenidoConsulta mensajes"/>
                                 <p:commandButton value="Guardar Consulta" icon="pi pi-save"
                                                  actionListener="#{consultaModel.btnModificarHandler}"
                                                  rendered="#{consultaModel.estado eq 'MODIFICAR'}"
                                                  process="@this consultaId consultaPaciente consultaReferencia consultaIndicaciones"
-                                                 update="contenidoConsulta mensajes :avisos"/>
+                                                 update="contenidoConsulta mensajes"/>
                             </div>
                         </p:tab>
 
@@ -164,12 +164,12 @@
                                                      actionListener="#{consultaModel.agregarConsultaProcedimiento}"
                                                      rendered="#{not consultaModel.editandoProc}"
                                                      process="panelProcedimientos"
-                                                     update="panelProcedimientos mensajes :avisos"/>
+                                                     update="panelProcedimientos mensajes"/>
                                     <p:commandButton value="Guardar" icon="pi pi-save"
                                                      actionListener="#{consultaModel.modificarConsultaProcedimiento}"
                                                      rendered="#{consultaModel.editandoProc}"
                                                      process="panelProcedimientos"
-                                                     update="panelProcedimientos mensajes :avisos"/>
+                                                     update="panelProcedimientos mensajes"/>
                                     <p:commandButton value="Cancelar" icon="pi pi-times"
                                                      actionListener="#{consultaModel.cancelarEdicionProc}"
                                                      process="@this" resetValues="true" update="panelProcedimientos"
@@ -183,7 +183,7 @@
             </h:panelGroup>
 
             <p:dialog header="Buscar paciente" widgetVar="dlgPacientes" modal="true"
-                      width="860" responsive="true">
+                      width="860" responsive="true" dynamic="true">
                 <h:panelGrid columns="4" cellpadding="4" style="width:100%">
                     <p:outputLabel for="filtroPaciente" value="Nombre"/>
                     <p:inputText id="filtroPaciente" value="#{consultaModel.filtroPaciente}" size="22" placeholder="Nombre y apellido"/>
@@ -197,11 +197,14 @@
                 </h:panelGrid>
                 <div class="video-actions" style="margin-top:8px">
                     <p:commandButton value="Buscar" icon="pi pi-search" styleClass="paso-compact"
-                                     process="filtroPaciente filtroDocumento filtroRol filtroMedio" update="tablaPacientes"/>
+                                     actionListener="#{consultaModel.buscarPacientes}"
+                                     process="@this filtroPaciente filtroDocumento filtroRol filtroMedio"
+                                     update="tablaPacientes avisoLimitePacientes :avisos"/>
                     <p:commandButton value="Limpiar" icon="pi pi-times" styleClass="ui-button-secondary paso-compact"
                                      actionListener="#{consultaModel.limpiarFiltrosPaciente}"
-                                     process="@this" update="filtroPaciente filtroDocumento filtroRol filtroMedio tablaPacientes"/>
+                                     process="@this" update="filtroPaciente filtroDocumento filtroRol filtroMedio tablaPacientes avisoLimitePacientes"/>
                 </div>
+                <h:outputText id="avisoLimitePacientes" value="#{consultaModel.avisoLimitePacientes}" styleClass="aviso-limite"/>
                 <p:dataTable id="tablaPacientes" value="#{consultaModel.pacientesFiltrados}" var="paciente"
                              emptyMessage="No se encontraron pacientes" paginator="true" rows="8"
                              selectionMode="single" selection="#{consultaModel.pacienteSeleccionado}"

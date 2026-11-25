@@ -7,7 +7,7 @@
     <ui:define name="encabezado">Personas</ui:define>
     <ui:define name="contenido">
         <h:form id="frmPersona">
-            <p:messages id="mensajes" showDetail="true" closable="true"/>
+            <p:messages id="mensajes" showDetail="true" skipDetailIfEqualsSummary="true" closable="true"/>
             <h:panelGroup id="contenidoPersona" layout="block">
                 <h:panelGroup rendered="#{personaModel.estado eq 'NADA'}">
                     <div class="video-actions">
@@ -48,7 +48,7 @@
                                 <p:outputLabel for="personaNacimiento" value="Fecha de nacimiento"/>
                                 <p:datePicker id="personaNacimiento" value="#{personaModel.fechaNacimiento}"
                                               pattern="dd/MM/yyyy" required="true" showIcon="true"
-                                              monthNavigator="true" yearNavigator="true" yearRange="1900:2026"
+                                              monthNavigator="true" yearNavigator="true" yearRange="1900:#{fechaBean.anioActual}"
                                               showButtonBar="true"/>
                                 <p:outputLabel for="personaCreacion" value="Fecha creación"/>
                                 <p:inputText id="personaCreacion" value="#{fechaBean.fechaHora(personaModel.registro.fechaCreacion)}"
@@ -59,12 +59,12 @@
                                                  actionListener="#{personaModel.btnGuardarHandler}"
                                                  rendered="#{personaModel.estado eq 'CREAR'}"
                                                  process="@this personaId personaNombres personaApellidos personaNacimiento"
-                                                 update="contenidoPersona mensajes :avisos"/>
+                                                 update="contenidoPersona mensajes"/>
                                 <p:commandButton value="Guardar Persona" icon="pi pi-save"
                                                  actionListener="#{personaModel.btnModificarHandler}"
                                                  rendered="#{personaModel.estado eq 'MODIFICAR'}"
                                                  process="@this personaId personaNombres personaApellidos personaNacimiento"
-                                                 update="contenidoPersona mensajes :avisos"/>
+                                                 update="contenidoPersona mensajes"/>
                                 <p:commandButton value="Eliminar" icon="pi pi-trash"
                                                  actionListener="#{personaModel.btnEliminarHandler}"
                                                  rendered="#{personaModel.estado eq 'MODIFICAR'}"
@@ -124,16 +124,16 @@
                                                          actionListener="#{personaModel.documentoModel.btnGuardarHandler}"
                                                          rendered="#{personaModel.documentoModel.estado eq 'CREAR'}"
                                                          process="panelDocumentos"
-                                                         update="panelDocumentos mensajes :avisos"/>
+                                                         update="panelDocumentos mensajes"/>
                                         <p:commandButton value="Guardar" icon="pi pi-save"
                                                          actionListener="#{personaModel.documentoModel.btnModificarHandler}"
                                                          rendered="#{personaModel.documentoModel.estado eq 'MODIFICAR'}"
                                                          process="panelDocumentos"
-                                                         update="panelDocumentos mensajes :avisos"/>
+                                                         update="panelDocumentos mensajes"/>
                                         <p:commandButton value="Eliminar" icon="pi pi-trash"
                                                          actionListener="#{personaModel.documentoModel.btnEliminarHandler}"
                                                          rendered="#{personaModel.documentoModel.estado eq 'MODIFICAR'}"
-                                                         process="@this" update="panelDocumentos mensajes :avisos"
+                                                         process="@this" update="panelDocumentos mensajes"
                                                          styleClass="ui-button-danger"/>
                                     </div>
                                 </h:panelGroup>
@@ -175,11 +175,11 @@
                                     <p:commandButton value="Guardar" icon="pi pi-save"
                                                      actionListener="#{personaModel.agregarMedioContacto}"
                                                      rendered="#{not personaModel.editandoMedio}"
-                                                     process="panelMedios" update="panelMedios mensajes :avisos"/>
+                                                     process="panelMedios" update="panelMedios mensajes"/>
                                     <p:commandButton value="Guardar" icon="pi pi-save"
                                                      actionListener="#{personaModel.modificarMedioContacto}"
                                                      rendered="#{personaModel.editandoMedio}"
-                                                     process="panelMedios" update="panelMedios mensajes :avisos"/>
+                                                     process="panelMedios" update="panelMedios mensajes"/>
                                     <p:commandButton value="Cancelar" icon="pi pi-times"
                                                      actionListener="#{personaModel.cancelarEdicionMedio}"
                                                      process="@this" resetValues="true" update="panelMedios"
@@ -231,11 +231,11 @@
                                     <p:commandButton value="Guardar" icon="pi pi-save"
                                                      actionListener="#{personaModel.agregarRol}"
                                                      rendered="#{not personaModel.editandoRol}"
-                                                     process="panelRoles" update="panelRoles mensajes :avisos"/>
+                                                     process="panelRoles" update="panelRoles mensajes"/>
                                     <p:commandButton value="Guardar" icon="pi pi-save"
                                                      actionListener="#{personaModel.modificarRol}"
                                                      rendered="#{personaModel.editandoRol}"
-                                                     process="panelRoles" update="panelRoles mensajes :avisos"/>
+                                                     process="panelRoles" update="panelRoles mensajes"/>
                                     <p:commandButton value="Cancelar" icon="pi pi-times"
                                                      actionListener="#{personaModel.cancelarEdicionRol}"
                                                      process="@this" resetValues="true" update="panelRoles"

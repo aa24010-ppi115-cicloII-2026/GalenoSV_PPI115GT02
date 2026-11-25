@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import org.primefaces.event.SelectEvent;
@@ -19,6 +20,8 @@ import org.primefaces.model.FilterMeta;
 import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortMeta;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ESTADO_CRUD;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ClinicaTrabajoBean;
@@ -33,6 +36,9 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.Procedimient
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Consulta;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimiento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ConsultaProcedimientoPaso;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Documento;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.MedioContacto;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Persona;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.PersonaRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Procedimiento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.ProcedimientoPaso;
@@ -85,6 +91,14 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     // Selección del maestro
     private String idPersonaRolSeleccionado;
     private PersonaRol pacienteSeleccionado;
+    /** Cuantos pacientes muestra como maximo una busqueda del dialogo. */
+    static final int MAX_PACIENTES_BUSQUEDA = 50;
+
+    /** null mientras no se haya buscado: el dialogo carga la lista la primera vez que se muestra. */
+    private List<PersonaRol> pacientesEncontrados;
+    private Map<UUID, String> documentosPorPersona = new HashMap<>();
+    private Map<UUID, String> mediosPorPersona = new HashMap<>();
+
     private String filtroPaciente;
     private String filtroDocumento;
     private String filtroRol;
@@ -165,7 +179,12 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     }
 
     public void aplicarFiltros() {
-        if (fechaDesde == null || fechaHasta == null || fechaHasta.isBefore(fechaDesde)) {
+        if (fechaDesde == null || fechaHasta == null) {
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN,
+                    "Faltan fechas", "Seleccione la fecha inicial y la final para filtrar"));
+            return;
+        }
+        if (fechaHasta.isBefore(fechaDesde)) {
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN,
                     "Rango inválido", "La fecha final debe ser igual o posterior a la inicial"));
             return;
@@ -392,20 +411,6 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
         }
     }
 
-    public void eliminarConsultaProcedimiento(ConsultaProcedimiento cp) {
-        if (cp == null) return;
-        try {
-            consultaProcedimientoDAO.eliminar(cp);
-            if (this.registro.getConsultaProcedimientoList() != null) {
-                this.registro.getConsultaProcedimientoList().remove(cp);
-            }
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Procedimiento eliminado"));
-            cancelarEdicionProc();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al eliminar", MensajeError.de(e)));
-        }
-    }
-
     public List<ConsultaProcedimiento> getConsultaProcedimientosDeConsulta() {
         if (this.registro != null && this.registro.getConsultaProcedimientoList() != null) {
             return this.registro.getConsultaProcedimientoList();
@@ -463,57 +468,73 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
 
     // ─── LISTAS PARA COMBOS ──────────────────────────────────────────────────────
 
-    public List<PersonaRol> getPacientes() {
-        return personaRolDAO.findPersonasAtendiblesByClinica(clinicaTrabajoBean.getIdClinicaActual());
-    }
-
-    public List<PersonaRol> getPacientesFiltrados() {
-        List<PersonaRol> disponibles = getPacientes();
-        String buscarNombre = filtroPaciente == null ? "" : filtroPaciente.trim().toLowerCase();
-        String buscarDoc = filtroDocumento == null ? "" : filtroDocumento.trim().toLowerCase();
-        String buscarRol = filtroRol == null ? "" : filtroRol.trim().toLowerCase();
-        String buscarMedio = filtroMedio == null ? "" : filtroMedio.trim().toLowerCase();
-        if (buscarNombre.isEmpty() && buscarDoc.isEmpty() && buscarRol.isEmpty() && buscarMedio.isEmpty()) {
-            return disponibles;
+    /**
+     * Busca en el dialogo "Buscar paciente" con lo escrito en sus filtros; sin filtros lista a los
+     * pacientes de la clinica. La base filtra en una sola consulta con un maximo de resultados, y
+     * los documentos y contactos de los resultados se cargan juntos, no uno por fila.
+     */
+    public void buscarPacientes() {
+        limpiarResultadosPaciente();
+        try {
+            List<PersonaRol> encontrados = personaRolDAO.buscarAtendibles(clinicaTrabajoBean.getIdClinicaActual(),
+                    filtroPaciente, filtroDocumento, filtroRol, filtroMedio, MAX_PACIENTES_BUSQUEDA);
+            List<UUID> idsPersona = encontrados.stream()
+                    .filter(pr -> pr.getIdPersona() != null && pr.getIdPersona().getIdPersona() != null)
+                    .map(pr -> pr.getIdPersona().getIdPersona()).distinct().toList();
+            documentosPorPersona = textosPorPersona(documentoDAO.findByPersonas(idsPersona),
+                    Documento::getIdPersona, d -> textoConTipo(
+                            d.getIdTipoDocumento() == null ? null : d.getIdTipoDocumento().getNombre(), d.getValor()));
+            mediosPorPersona = textosPorPersona(medioContactoDAO.findByPersonas(idsPersona),
+                    MedioContacto::getIdPersona, m -> textoConTipo(
+                            m.getIdTipoMedioContacto() == null ? null : m.getIdTipoMedioContacto().getNombre(), m.getValor()));
+            pacientesEncontrados = encontrados;
+        } catch (RuntimeException e) {
+            limpiarResultadosPaciente();
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                    "Error al buscar pacientes", MensajeError.de(e)));
         }
-        return disponibles.stream().filter(pr -> {
-            if (pr.getIdPersona() == null) {
-                return false;
-            }
-            String nombre = ((pr.getIdPersona().getNombres() == null ? "" : pr.getIdPersona().getNombres()) + " "
-                    + (pr.getIdPersona().getApellidos() == null ? "" : pr.getIdPersona().getApellidos())).toLowerCase();
-            if (!buscarNombre.isEmpty() && !nombre.contains(buscarNombre)) {
-                return false;
-            }
-            if (!buscarRol.isEmpty()) {
-                String rol = pr.getIdRol() == null || pr.getIdRol().getNombre() == null ? "" : pr.getIdRol().getNombre().toLowerCase();
-                if (!rol.contains(buscarRol)) {
-                    return false;
-                }
-            }
-            if (!buscarDoc.isEmpty()) {
-                boolean match = documentosFrescos(pr).stream()
-                        .anyMatch(d -> d.getValor() != null && d.getValor().toLowerCase().contains(buscarDoc));
-                if (!match) {
-                    return false;
-                }
-            }
-            if (!buscarMedio.isEmpty()) {
-                boolean match = mediosFrescos(pr).stream()
-                        .anyMatch(m -> m.getValor() != null && m.getValor().toLowerCase().contains(buscarMedio));
-                if (!match) {
-                    return false;
-                }
-            }
-            return true;
-        }).toList();
     }
 
+    /** Resultado de la ultima busqueda; la vista lo lee varias veces sin volver a consultar. */
+    public List<PersonaRol> getPacientesFiltrados() {
+        if (pacientesEncontrados == null) {
+            buscarPacientes();
+        }
+        return pacientesEncontrados;
+    }
+
+    /** Aviso cuando la busqueda llego al maximo y puede haber mas pacientes; vacio si no. */
+    public String getAvisoLimitePacientes() {
+        return getPacientesFiltrados().size() < MAX_PACIENTES_BUSQUEDA ? ""
+                : "Se muestran los primeros " + MAX_PACIENTES_BUSQUEDA + " pacientes; escriba mas datos para acotar.";
+    }
+
+    /** Borra los filtros; la tabla vuelve a listar a los pacientes de la clinica al mostrarse. */
     public void limpiarFiltrosPaciente() {
         filtroPaciente = null;
         filtroDocumento = null;
         filtroRol = null;
         filtroMedio = null;
+        limpiarResultadosPaciente();
+        pacientesEncontrados = null;
+    }
+
+    private void limpiarResultadosPaciente() {
+        pacientesEncontrados = List.of();
+        documentosPorPersona = new HashMap<>();
+        mediosPorPersona = new HashMap<>();
+    }
+
+    private static <T> Map<UUID, String> textosPorPersona(List<T> registros,
+            Function<T, Persona> persona, Function<T, String> texto) {
+        return new HashMap<>(registros.stream()
+                .filter(registro -> persona.apply(registro) != null && persona.apply(registro).getIdPersona() != null)
+                .collect(Collectors.groupingBy(registro -> persona.apply(registro).getIdPersona(),
+                        Collectors.mapping(texto, Collectors.joining(", ")))));
+    }
+
+    private static String textoConTipo(String tipo, String valor) {
+        return (tipo == null ? "" : tipo + ": ") + valor;
     }
 
     public void seleccionarPaciente(PersonaRol personaRol) {
@@ -534,37 +555,18 @@ public class ConsultaModel extends AbstractModel<Consulta> implements Serializab
     }
 
     public String documentosPaciente(PersonaRol personaRol) {
-        return documentosFrescos(personaRol).stream()
-                .map(d -> (d.getIdTipoDocumento() == null ? "" : d.getIdTipoDocumento().getNombre() + ": ") + d.getValor())
-                .collect(java.util.stream.Collectors.joining(", "));
+        return textoDePersona(documentosPorPersona, personaRol);
     }
 
     public String mediosPaciente(PersonaRol personaRol) {
-        return mediosFrescos(personaRol).stream()
-                .map(m -> (m.getIdTipoMedioContacto() == null ? "" : m.getIdTipoMedioContacto().getNombre() + ": ") + m.getValor())
-                .collect(java.util.stream.Collectors.joining(", "));
+        return textoDePersona(mediosPorPersona, personaRol);
     }
 
-    private List<sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Documento> documentosFrescos(PersonaRol personaRol) {
-        try {
-            if (personaRol == null || personaRol.getIdPersona() == null || personaRol.getIdPersona().getIdPersona() == null) {
-                return List.of();
-            }
-            return documentoDAO.findByPersona(personaRol.getIdPersona().getIdPersona(), 0, 100);
-        } catch (Exception e) {
-            return List.of();
+    private static String textoDePersona(Map<UUID, String> textos, PersonaRol personaRol) {
+        if (personaRol == null || personaRol.getIdPersona() == null) {
+            return "";
         }
-    }
-
-    private List<sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.MedioContacto> mediosFrescos(PersonaRol personaRol) {
-        try {
-            if (personaRol == null || personaRol.getIdPersona() == null || personaRol.getIdPersona().getIdPersona() == null) {
-                return List.of();
-            }
-            return medioContactoDAO.findByPersona(personaRol.getIdPersona().getIdPersona(), 0, 100);
-        } catch (Exception e) {
-            return List.of();
-        }
+        return textos.getOrDefault(personaRol.getIdPersona().getIdPersona(), "");
     }
 
     public List<Procedimiento> getProcedimientos() {

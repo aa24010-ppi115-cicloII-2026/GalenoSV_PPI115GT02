@@ -4,7 +4,10 @@ import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.PersonaRol;
 
@@ -106,8 +109,55 @@ public class PersonaRolDAO extends DefaultDAO<PersonaRol> {
                 .setParameter("clinica", idClinica).getResultList();
     }
 
-    public List<PersonaRol> findPersonasAtendiblesByClinica(UUID idClinica) {
-        return findActivosByClinica(idClinica);
+    /**
+     * Personas con un rol activo en la clinica (activa) que cumplen lo escrito en el buscador:
+     * nombre y apellido, numero de documento, nombre del rol o medio de contacto, sin distinguir
+     * mayusculas. Los filtros vacios no se aplican. Filtra en la base y trae como maximo {@code max}.
+     *
+     * @param max cuantas devolver como maximo
+     * @return ordenadas por apellido, nombre y rol; vacia si falta la clinica o el cupo
+     */
+    public List<PersonaRol> buscarAtendibles(UUID idClinica, String nombre, String documento,
+            String rol, String medio, int max) {
+        Map<String, String> patrones = new LinkedHashMap<>();
+        agregarPatron(patrones, "nombre", nombre);
+        agregarPatron(patrones, "documento", documento);
+        agregarPatron(patrones, "rol", rol);
+        agregarPatron(patrones, "medio", medio);
+        if (idClinica == null || max <= 0) {
+            return List.of();
+        }
+        StringBuilder jpql = new StringBuilder("SELECT p FROM PersonaRol p JOIN FETCH p.idPersona pe "
+                + "JOIN FETCH p.idRol r JOIN FETCH p.idClinica c "
+                + "WHERE c.idClinica = :clinica AND c.activo = TRUE AND r.activo = TRUE");
+        if (patrones.containsKey("nombre")) {
+            jpql.append(" AND LOWER(CONCAT(pe.nombres, ' ', pe.apellidos)) LIKE :nombre ESCAPE '!'");
+        }
+        if (patrones.containsKey("documento")) {
+            jpql.append(" AND EXISTS (SELECT d FROM Documento d WHERE d.idPersona = pe"
+                    + " AND LOWER(d.valor) LIKE :documento ESCAPE '!')");
+        }
+        if (patrones.containsKey("rol")) {
+            jpql.append(" AND LOWER(r.nombre) LIKE :rol ESCAPE '!'");
+        }
+        if (patrones.containsKey("medio")) {
+            jpql.append(" AND EXISTS (SELECT m FROM MedioContacto m WHERE m.idPersona = pe"
+                    + " AND LOWER(m.valor) LIKE :medio ESCAPE '!')");
+        }
+        jpql.append(" ORDER BY pe.apellidos, pe.nombres, r.nombre");
+        TypedQuery<PersonaRol> query = getEntityManager().createQuery(jpql.toString(), PersonaRol.class)
+                .setParameter("clinica", idClinica);
+        patrones.forEach(query::setParameter);
+        return query.setMaxResults(max).getResultList();
+    }
+
+    /** Patron "contiene" en minusculas; los comodines de LIKE que escriba el usuario cuentan como texto. */
+    private static void agregarPatron(Map<String, String> patrones, String parametro, String valor) {
+        if (valor != null && !valor.isBlank()) {
+            String texto = valor.trim().toLowerCase(Locale.ROOT)
+                    .replace("!", "!!").replace("%", "!%").replace("_", "!_");
+            patrones.put(parametro, "%" + texto + "%");
+        }
     }
 
     public List<PersonaRol> findResponsables(UUID idClinica, UUID idRol) {
@@ -128,9 +178,4 @@ public class PersonaRolDAO extends DefaultDAO<PersonaRol> {
                 .setParameter("id", id).getSingleResult();
     }
 
-    public List<PersonaRol> findPacientes() {
-        return getEntityManager().createQuery(
-                "SELECT p FROM PersonaRol p JOIN FETCH p.idPersona JOIN FETCH p.idRol JOIN FETCH p.idClinica WHERE LOWER(p.idRol.nombre) LIKE :rol OR LOWER(p.idRol.nombre) LIKE :cli ORDER BY p.idPersona.apellidos",
-                PersonaRol.class).setParameter("rol", "%paciente%").setParameter("cli", "%cliente%").getResultList();
-    }
 }

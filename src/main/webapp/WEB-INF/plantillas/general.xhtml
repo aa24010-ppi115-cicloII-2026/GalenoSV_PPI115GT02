@@ -72,7 +72,7 @@
         </p:sidebar>
 
         <main class="video-content">
-            <p:growl id="avisos" showDetail="true" life="4000"/>
+            <p:growl id="avisos" showDetail="true" skipDetailIfEqualsSummary="true" life="4000"/>
             <ui:insert name="contenido"><h:outputText value="#{msg['layout.sinContenido']}"/></ui:insert>
         </main>
         <footer class="video-footer"><h:outputText value="#{msg['layout.footer']}"/></footer>

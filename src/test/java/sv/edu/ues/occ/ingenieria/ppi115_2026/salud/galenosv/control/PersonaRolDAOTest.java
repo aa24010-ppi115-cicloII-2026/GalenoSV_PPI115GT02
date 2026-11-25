@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -238,26 +239,85 @@ public class PersonaRolDAOTest {
         verifyNoInteractions(em);
     }
 
-    /**
-     * Test of findPersonasAtendiblesByClinica method, of class PersonaRolDAO.
-     */
+    // buscarAtendibles: el dialogo "Buscar paciente" filtra en la base y nunca lista a todos.
+
     @Test
-    public void testFindPersonasAtendiblesByClinica() {
-        UUID idClinica = UUID.randomUUID();
-        List<PersonaRol> lista = List.of(mock(PersonaRol.class));
-        when(em.createQuery(anyString(), eq(PersonaRol.class))).thenReturn(query);
-        when(query.setParameter(anyString(), any())).thenReturn(query);
-        when(query.getResultList()).thenReturn(lista);
-
-        List<PersonaRol> result = dao.findPersonasAtendiblesByClinica(idClinica);
-
-        assertEquals(lista, result);
+    public void testBuscarAtendiblesSinClinicaOSinCupoNoConsulta() {
+        assertTrue(dao.buscarAtendibles(null, "ana", null, null, null, 50).isEmpty());
+        assertTrue(dao.buscarAtendibles(UUID.randomUUID(), "ana", null, null, null, 0).isEmpty());
+        verify(em, never()).createQuery(anyString(), eq(PersonaRol.class));
     }
 
     @Test
-    public void testFindPersonasAtendiblesByClinicaNulo() {
-        assertTrue(dao.findPersonasAtendiblesByClinica(null).isEmpty());
-        verifyNoInteractions(em);
+    public void testBuscarAtendiblesSinFiltrosListaLaClinicaConElTope() {
+        UUID idClinica = UUID.randomUUID();
+        prepararBusqueda();
+
+        dao.buscarAtendibles(idClinica, null, " ", "", null, 50);
+
+        String jpql = jpqlEjecutado();
+        assertTrue(jpql.contains("c.activo = TRUE AND r.activo = TRUE"));
+        assertFalse(jpql.contains("LIKE"));
+        assertFalse(jpql.contains("EXISTS"));
+        verify(query).setParameter("clinica", idClinica);
+        verify(query, times(1)).setParameter(anyString(), any());
+        verify(query).setMaxResults(50);
+    }
+
+    @Test
+    public void testBuscarAtendiblesFiltraEnLaBaseSoloConLoEscrito() {
+        UUID idClinica = UUID.randomUUID();
+        prepararBusqueda();
+
+        dao.buscarAtendibles(idClinica, " Ana ", "1234", null, null, 50);
+
+        String jpql = jpqlEjecutado();
+        assertTrue(jpql.contains("c.activo = TRUE AND r.activo = TRUE"));
+        assertTrue(jpql.contains("LIKE :nombre"));
+        assertTrue(jpql.contains("EXISTS (SELECT d FROM Documento d"));
+        assertFalse(jpql.contains(":rol"));
+        assertFalse(jpql.contains(":medio"));
+        verify(query).setParameter("clinica", idClinica);
+        verify(query).setParameter("nombre", "%ana%");
+        verify(query).setParameter("documento", "%1234%");
+        verify(query).setMaxResults(50);
+    }
+
+    @Test
+    public void testBuscarAtendiblesConRolYMedioDeContacto() {
+        prepararBusqueda();
+
+        dao.buscarAtendibles(UUID.randomUUID(), null, null, "Paciente", "7777", 20);
+
+        String jpql = jpqlEjecutado();
+        assertTrue(jpql.contains("LOWER(r.nombre) LIKE :rol"));
+        assertTrue(jpql.contains("EXISTS (SELECT m FROM MedioContacto m"));
+        assertFalse(jpql.contains(":nombre"));
+        verify(query).setParameter("rol", "%paciente%");
+        verify(query).setParameter("medio", "%7777%");
+    }
+
+    @Test
+    public void testBuscarAtendiblesTomaLosComodinesComoTexto() {
+        prepararBusqueda();
+
+        dao.buscarAtendibles(UUID.randomUUID(), "50%_a!", null, null, null, 50);
+
+        assertTrue(jpqlEjecutado().contains("ESCAPE '!'"));
+        verify(query).setParameter("nombre", "%50!%!_a!!%");
+    }
+
+    private void prepararBusqueda() {
+        when(em.createQuery(anyString(), eq(PersonaRol.class))).thenReturn(query);
+        when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(query.setMaxResults(anyInt())).thenReturn(query);
+        when(query.getResultList()).thenReturn(List.of());
+    }
+
+    private String jpqlEjecutado() {
+        ArgumentCaptor<String> jpql = ArgumentCaptor.forClass(String.class);
+        verify(em).createQuery(jpql.capture(), eq(PersonaRol.class));
+        return jpql.getValue();
     }
 
     /**
@@ -298,23 +358,6 @@ public class PersonaRolDAOTest {
 
         assertEquals(5L, dao.countByClinica(id));
         verify(longQuery).setParameter("id", id);
-    }
-
-    /**
-     * Test of findPacientes method, of class PersonaRolDAO.
-     */
-    @Test
-    public void testFindPacientes() {
-        List<PersonaRol> lista = List.of(mock(PersonaRol.class));
-        when(em.createQuery(anyString(), eq(PersonaRol.class))).thenReturn(query);
-        when(query.setParameter(anyString(), any())).thenReturn(query);
-        when(query.getResultList()).thenReturn(lista);
-
-        List<PersonaRol> result = dao.findPacientes();
-
-        verify(query).setParameter("rol", "%paciente%");
-        verify(query).setParameter("cli", "%cliente%");
-        assertEquals(lista, result);
     }
 
 }

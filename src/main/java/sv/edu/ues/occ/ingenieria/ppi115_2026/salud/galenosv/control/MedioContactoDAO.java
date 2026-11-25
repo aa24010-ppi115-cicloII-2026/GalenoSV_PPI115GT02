@@ -4,6 +4,7 @@ import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.MedioContacto;
@@ -16,6 +17,22 @@ public class MedioContactoDAO extends DefaultDAO<MedioContacto> {
 
     public MedioContactoDAO() {
         super(MedioContacto.class);
+    }
+
+    /**
+     * Registros de varias personas en una sola consulta y con su tipo, para mostrarlos en una
+     * lista sin consultar la base por cada fila.
+     *
+     * @param idsPersona personas de la lista; vacia o null no consulta
+     */
+    public List<MedioContacto> findByPersonas(Collection<UUID> idsPersona) {
+        if (idsPersona == null || idsPersona.isEmpty()) {
+            return List.of();
+        }
+        return getEntityManager().createQuery(
+                "SELECT m FROM MedioContacto m LEFT JOIN FETCH m.idTipoMedioContacto "
+                        + "WHERE m.idPersona.idPersona IN :ids ORDER BY m.fechaCreacion DESC", MedioContacto.class)
+                .setParameter("ids", idsPersona).getResultList();
     }
 
     public List<MedioContacto> findByPersona(UUID idPersona, int first, int pageSize) {

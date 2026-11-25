@@ -4,6 +4,7 @@ import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Documento;
@@ -18,20 +19,20 @@ public class DocumentoDAO extends DefaultDAO<Documento> {
         super(Documento.class);
     }
 
-    public List<Documento> buscarPorValor(String valor) {
-        try {
-            if (valor == null || valor.trim().isEmpty()) {
-                throw new IllegalArgumentException("valor no puede ser nulo");
-            }
-            String jpql = "SELECT d FROM Documento d WHERE d.valor = :valor";
-            TypedQuery<Documento> q = getEntityManager().createQuery(jpql, Documento.class);
-            q.setParameter("valor", valor.trim());
-            return q.getResultList();
-        } catch (IllegalArgumentException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new IllegalStateException("Error en buscarPorValor", ex);
+    /**
+     * Registros de varias personas en una sola consulta y con su tipo, para mostrarlos en una
+     * lista sin consultar la base por cada fila.
+     *
+     * @param idsPersona personas de la lista; vacia o null no consulta
+     */
+    public List<Documento> findByPersonas(Collection<UUID> idsPersona) {
+        if (idsPersona == null || idsPersona.isEmpty()) {
+            return List.of();
         }
+        return getEntityManager().createQuery(
+                "SELECT d FROM Documento d LEFT JOIN FETCH d.idTipoDocumento "
+                        + "WHERE d.idPersona.idPersona IN :ids ORDER BY d.valor", Documento.class)
+                .setParameter("ids", idsPersona).getResultList();
     }
 
     public List<Documento> findByPersona(UUID idPersona, int first, int pageSize) {

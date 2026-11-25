@@ -84,4 +84,13 @@ public class FechaBeanTest {
     public void testEsSerializable() {
         assertTrue(instance instanceof Serializable);
     }
+
+    /**
+     * Los calendarios llegan hasta el año en curso: no se quedan fijos en un año escrito a mano.
+     */
+    @Test
+    public void testAnioActualEsElDeElSalvador() {
+        assertEquals(java.time.LocalDate.now(java.time.ZoneId.of("America/El_Salvador")).getYear(),
+                instance.getAnioActual());
+    }
 }

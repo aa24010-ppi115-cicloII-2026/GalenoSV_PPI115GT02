@@ -9,7 +9,7 @@
     <ui:define name="encabezado">Cambiar de Rol</ui:define>
     <ui:define name="contenido">
         <h:form id="frmClinicaTrabajo">
-            <p:messages showDetail="true" closable="true"/>
+            <p:messages showDetail="true" skipDetailIfEqualsSummary="true" closable="true"/>
             <div class="video-compact">
                 <h:panelGrid columns="2" cellpadding="8" styleClass="video-form-grid">
                     <p:outputLabel for="clinica" value="Clínica"/>
@@ -40,7 +40,7 @@
                     </p:selectOneMenu>
                 </h:panelGrid>
                 <p:commandButton value="Aplicar" icon="pi pi-check"
-                                 action="#{clinicaTrabajoBean.aplicar}" process="@form" update="@form :avisos"
+                                 action="#{clinicaTrabajoBean.aplicar}" process="@form" update="@form"
                                  style="margin-left:153px"/>
             </div>
         </h:form>

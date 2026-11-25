@@ -258,6 +258,9 @@ body.app-body {
 .video-content .ui-datatable thead th { padding: 0.6rem 0.75rem; background: var(--superficie-suave); color: var(--texto-suave); }
 .video-content .ui-datatable .ui-datatable-data > tr > td { padding: 0.6rem 0.75rem; }
 .video-actions { display: flex; gap: 6px; margin: 0 0 12px; }
+/* Aviso de la busqueda de pacientes cuando llega al maximo de resultados. */
+.aviso-limite { display: block; margin: 0 0 8px; color: var(--texto-suave); font-size: 0.875rem; }
+.aviso-limite:empty { display: none; }
 .video-form-grid { width: auto; margin: 4px 0 12px; }
 .video-form-grid td { padding: 4px 7px 4px 0; vertical-align: top; }
 .video-form-grid td:first-child { min-width: 145px; text-align: right; }

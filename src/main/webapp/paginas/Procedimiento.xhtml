@@ -7,7 +7,7 @@
     <ui:define name="encabezado">Procedimientos</ui:define>
     <ui:define name="contenido">
         <h:form id="frmProcedimiento">
-            <p:messages id="mensajes" showDetail="true" closable="true"/>
+            <p:messages id="mensajes" showDetail="true" skipDetailIfEqualsSummary="true" closable="true"/>
 
             <h:panelGroup id="contenidoProcedimiento" layout="block">
                 <h:panelGroup rendered="#{procedimientoModel.estado eq 'NADA'}">
@@ -56,12 +56,12 @@
                                                  actionListener="#{procedimientoModel.btnGuardarHandler}"
                                                  rendered="#{procedimientoModel.estado eq 'CREAR'}"
                                                  process="@this idProcedimiento nombreProcedimiento activoProcedimiento observacionesProcedimiento"
-                                                 update=":frmProcedimiento:contenidoProcedimiento :frmProcedimiento:mensajes :avisos"/>
+                                                 update=":frmProcedimiento:contenidoProcedimiento :frmProcedimiento:mensajes"/>
                                 <p:commandButton value="Guardar Procedimiento" icon="pi pi-save"
                                                  actionListener="#{procedimientoModel.btnModificarHandler}"
                                                  rendered="#{procedimientoModel.estado eq 'MODIFICAR'}"
                                                  process="@this idProcedimiento nombreProcedimiento activoProcedimiento observacionesProcedimiento"
-                                                 update=":frmProcedimiento:contenidoProcedimiento :frmProcedimiento:mensajes :avisos"/>
+                                                 update=":frmProcedimiento:contenidoProcedimiento :frmProcedimiento:mensajes"/>
                                 <p:commandButton value="Eliminar" icon="pi pi-trash"
                                                  actionListener="#{procedimientoModel.btnEliminarHandler}"
                                                  rendered="#{procedimientoModel.estado eq 'MODIFICAR'}"
@@ -96,7 +96,7 @@
                                                          value="Eliminar seleccionado" icon="pi pi-trash"
                                                          actionListener="#{procedimientoModel.eliminarPasoSeleccionado}"
                                                          process="@this"
-                                                         update="panelPasos :frmProcedimiento:mensajes :avisos"
+                                                         update="panelPasos :frmProcedimiento:mensajes"
                                                          disabled="#{empty procedimientoModel.pasoNodoSeleccionado}"
                                                          title="Eliminar paso seleccionado"
                                                          styleClass="ui-button-danger">
@@ -191,7 +191,7 @@
                                     <p:commandButton value="#{procedimientoModel.editandoPaso ? 'Modificar Paso' : 'Guardar Pasos'}"
                                                      icon="pi pi-save" styleClass="paso-compact"
                                                      actionListener="#{procedimientoModel.guardarPasoCompleto}"
-                                                     process="panelPasos" update=":frmProcedimiento:tabsProcedimiento:panelPasos :frmProcedimiento:mensajes :avisos"/>
+                                                     process="panelPasos" update=":frmProcedimiento:tabsProcedimiento:panelPasos :frmProcedimiento:mensajes"/>
                                     </div>
                                 </h:panelGroup>
                             </h:panelGroup>
