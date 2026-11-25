@@ -40,25 +40,27 @@ export function tipoDocumentoElegido(datos, id) {
 }
 
 /**
- * Ayuda para escribir el número: las indicaciones del catálogo o su formato, y un ejemplo para el DUI.
+ * Ayuda para escribir el número: las indicaciones del catálogo y un ejemplo para el DUI.
+ * La expresión regular nunca se muestra; si el tipo no trae indicaciones, no hay ayuda.
  * @param {object|null} tipo
  * @returns {{texto: string, ejemplo: string}}
  */
 export function indicacionesDocumento(tipo) {
   return {
-    texto: tipo?.indicaciones || (tipo?.expresionRegular ? `Formato: ${tipo.expresionRegular}` : ""),
+    texto: tipo?.indicaciones || "",
     ejemplo: tipo?.nombre === "DUI" ? "Ej. 00000000-0" : "",
   };
 }
 
 /**
- * Mensaje de error cuando el número no tiene el formato del tipo de documento.
+ * Mensaje de error cuando el número no tiene el formato del tipo de documento: la causa y, si el
+ * catálogo las trae, sus indicaciones. La expresión regular nunca se muestra.
  * @param {object|null} tipo
  * @returns {string}
  */
 export function mensajeFormatoDocumento(tipo) {
-  const detalle = tipo?.indicaciones || tipo?.expresionRegular || "el formato del documento";
-  return `El número${tipo?.nombre ? ` de ${tipo.nombre}` : ""} no tiene el formato esperado: ${detalle}.`;
+  const base = `El número${tipo?.nombre ? ` de ${tipo.nombre}` : ""} no tiene el formato esperado`;
+  return tipo?.indicaciones ? `${base}: ${tipo.indicaciones}.` : `${base}.`;
 }
 
 /**

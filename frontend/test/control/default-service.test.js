@@ -63,7 +63,9 @@ describe("default-service.js", () => {
 
       expect(error).to.be.instanceOf(DefaultError);
       expect(error.status).to.equal(422);
-      expect(error.message).to.equal("Ya existe un registro con ese nombre (nombre)");
+      // El campo queda en el error para quien lo necesite, pero no en el texto que se muestra.
+      expect(error.parametro).to.equal("nombre");
+      expect(error.message).to.equal("Ya existe un registro con ese nombre");
     });
 
     it("se rechaza sin estado y conserva el error original si el servidor no responde", async () => {
@@ -166,13 +168,38 @@ describe("default-service.js", () => {
       expect(error.message).to.equal("Registro referenciado");
     });
 
-    it("arma un mensaje legible cuando el error no viene en JSON", async () => {
+    it("explica la causa sin el código HTTP cuando el error no viene en JSON", async () => {
       fetchFalso.resolves(new Response("sin json", { status: 400, statusText: "Bad Request" }));
 
       const error = await capturarError(roles.eliminar("xyz"));
 
       expect(error.status).to.equal(400);
-      expect(error.message).to.equal("Error 400 Bad Request");
+      expect(error.message).to.equal("Revise los datos ingresados.");
+    });
+
+    it("explica cada tipo de falla sin el código cuando la API no manda su mensaje", async () => {
+      const casos = [
+        [404, "No se encontró el registro solicitado."],
+        [409, "La operación no se puede completar porque hay registros relacionados."],
+        [422, "Revise los datos ingresados."],
+        [500, "El servidor no pudo completar la operación. Intente de nuevo en unos minutos."],
+        [503, "El servidor no pudo completar la operación. Intente de nuevo en unos minutos."],
+      ];
+      for (const [estado, texto] of casos) {
+        fetchFalso.resolves(respuestaJson({}, estado));
+        const error = await capturarError(roles.eliminar("xyz"));
+        expect(error.status).to.equal(estado);
+        expect(error.message, `estado ${estado}`).to.equal(texto);
+        expect(error.message).not.to.contain(String(estado));
+      }
+    });
+
+    it("no muestra el texto técnico que otros componentes ponen en message", async () => {
+      fetchFalso.resolves(respuestaJson({ message: "RESTEASY003210: Could not find resource" }, 404));
+
+      const error = await capturarError(roles.eliminar("xyz"));
+
+      expect(error.message).to.equal("No se encontró el registro solicitado.");
     });
   });
 });
