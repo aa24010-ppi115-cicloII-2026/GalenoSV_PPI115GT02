@@ -39,8 +39,7 @@ button.enlace:hover { background: none; color: var(--acento-fuerte, #0b6155); }
 .error[role="alert"]::before { content: ""; flex: none; width: 1.1rem; height: 1.1rem; margin-top: 0.08rem; background: currentColor; -webkit-mask: var(--icono-alerta) center / contain no-repeat; mask: var(--icono-alerta) center / contain no-repeat; }
 .rejilla { display: grid; gap: 0.85rem; }
 .rejilla.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.rejilla.tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .fila { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
 .separador { flex: 1; }
 .vacio { border: 0.0625rem dashed var(--borde-fuerte, #b5c3d1); border-radius: var(--radio-grande, 0.875rem); padding: 1.5rem; text-align: center; color: var(--texto-suave, #4d6378); background: color-mix(in srgb, var(--superficie, #fff) 55%, transparent); }
-@media (max-width: 45rem) { .rejilla.dos, .rejilla.tres { grid-template-columns: 1fr; } }
+@media (max-width: 45rem) { .rejilla.dos { grid-template-columns: 1fr; } }

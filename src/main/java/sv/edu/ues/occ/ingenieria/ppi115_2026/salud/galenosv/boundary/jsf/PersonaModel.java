@@ -332,20 +332,6 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
         }
     }
 
-    public void eliminarRol(PersonaRol pr) {
-        if (pr == null) return;
-        try {
-            personaRolDAO.eliminar(pr);
-            if (this.registro.getPersonaRolList() != null) {
-                this.registro.getPersonaRolList().remove(pr);
-            }
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Rol removido"));
-            cancelarEdicionRol();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", MensajeError.de(e)));
-        }
-    }
-
     public List<PersonaRol> getRolesDePersona() {
         return this.registro != null && this.registro.getPersonaRolList() != null ? this.registro.getPersonaRolList() : new ArrayList<>();
     }
@@ -468,20 +454,6 @@ public class PersonaModel extends AbstractModel<Persona> implements Serializable
 
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Medio de contacto agregado"));
             prepararNuevoMedioContacto();
-        } catch (Exception e) {
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", MensajeError.de(e)));
-        }
-    }
-
-    public void eliminarMedioContacto(MedioContacto mc) {
-        if (mc == null) return;
-        try {
-            medioContactoDAO.eliminar(mc);
-            if (this.registro.getMedioContactoList() != null) {
-                this.registro.getMedioContactoList().remove(mc);
-            }
-            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Medio de contacto eliminado"));
-            cancelarEdicionMedio();
         } catch (Exception e) {
             getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", MensajeError.de(e)));
         }

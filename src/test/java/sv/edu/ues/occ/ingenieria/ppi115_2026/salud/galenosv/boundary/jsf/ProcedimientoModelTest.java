@@ -1671,29 +1671,4 @@ public class ProcedimientoModelTest {
         assertSame(examenAutocompleteSeleccionado, instance.getExamenAutocompleteSeleccionado());
     }
 
-    /**
-     * Test of getIdPasoSeleccionadoSecuencia method, of class
-     * ProcedimientoModel.
-     */
-    @Test
-    public void testGetIdPasoSeleccionadoSecuencia() {
-        String esperado = UUID.randomUUID().toString();
-        instance.setIdPasoSeleccionadoSecuencia(esperado);
-
-        assertEquals(esperado, instance.getIdPasoSeleccionadoSecuencia());
-    }
-
-    /**
-     * Test of setIdPasoSeleccionadoSecuencia method, of class
-     * ProcedimientoModel.
-     */
-    @Test
-    public void testSetIdPasoSeleccionadoSecuencia() {
-        String idPasoSeleccionadoSecuencia = UUID.randomUUID().toString();
-
-        instance.setIdPasoSeleccionadoSecuencia(idPasoSeleccionadoSecuencia);
-
-        assertEquals(idPasoSeleccionadoSecuencia, instance.getIdPasoSeleccionadoSecuencia());
-    }
-
 }

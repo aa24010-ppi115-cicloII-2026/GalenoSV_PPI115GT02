@@ -1,7 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.UUID;
@@ -33,9 +32,6 @@ public class TipoMedioContactoDAOTest {
 
     @Mock
     TypedQuery<Long> longQuery;
-
-    @Mock
-    Query nativeQuery;
 
     TipoMedioContactoDAO dao;
 
@@ -110,63 +106,6 @@ public class TipoMedioContactoDAOTest {
     @Test
     public void testGetEntityManager() {
         assertSame(em, dao.getEntityManager());
-    }
-
-    /**
-     * Test of buscarPorNombreNativo method, of class TipoMedioContactoDAO.
-     */
-    @Test
-    public void testBuscarPorNombreNativo() {
-        List<TipoMedioContacto> lista = List.of(mock(TipoMedioContacto.class));
-        when(em.createNativeQuery(anyString(), eq(TipoMedioContacto.class))).thenReturn(nativeQuery);
-        when(nativeQuery.setParameter(anyString(), any())).thenReturn(nativeQuery);
-        when(nativeQuery.getResultList()).thenReturn(lista);
-
-        List<TipoMedioContacto> result = dao.buscarPorNombreNativo("Telefono");
-
-        verify(nativeQuery).setParameter("nombre", "Telefono");
-        assertEquals(lista, result);
-    }
-
-    @Test
-    public void testBuscarPorNombreNativoInvalido() {
-        assertThrows(IllegalArgumentException.class, () -> dao.buscarPorNombreNativo(null));
-        assertThrows(IllegalArgumentException.class, () -> dao.buscarPorNombreNativo("   "));
-        verifyNoInteractions(em);
-    }
-
-    /**
-     * Test of buscarPrimeroPorNombre method, of class TipoMedioContactoDAO.
-     */
-    @Test
-    public void testBuscarPrimeroPorNombre() {
-        TipoMedioContacto encontrado = mock(TipoMedioContacto.class);
-        when(em.createNativeQuery(anyString(), eq(TipoMedioContacto.class))).thenReturn(nativeQuery);
-        when(nativeQuery.setParameter(anyString(), any())).thenReturn(nativeQuery);
-        when(nativeQuery.setMaxResults(anyInt())).thenReturn(nativeQuery);
-        when(nativeQuery.getResultList()).thenReturn(List.of(encontrado));
-
-        TipoMedioContacto result = dao.buscarPrimeroPorNombre("Telefono");
-
-        verify(nativeQuery).setMaxResults(1);
-        assertSame(encontrado, result);
-    }
-
-    @Test
-    public void testBuscarPrimeroPorNombreVacio() {
-        when(em.createNativeQuery(anyString(), eq(TipoMedioContacto.class))).thenReturn(nativeQuery);
-        when(nativeQuery.setParameter(anyString(), any())).thenReturn(nativeQuery);
-        when(nativeQuery.setMaxResults(anyInt())).thenReturn(nativeQuery);
-        when(nativeQuery.getResultList()).thenReturn(List.of());
-
-        assertNull(dao.buscarPrimeroPorNombre("Telefono"));
-    }
-
-    @Test
-    public void testBuscarPrimeroPorNombreInvalido() {
-        assertThrows(IllegalArgumentException.class, () -> dao.buscarPrimeroPorNombre(null));
-        assertThrows(IllegalArgumentException.class, () -> dao.buscarPrimeroPorNombre("   "));
-        verifyNoInteractions(em);
     }
 
 }

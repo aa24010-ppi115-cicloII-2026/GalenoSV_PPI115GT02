@@ -73,7 +73,6 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     private TreeNode<ProcedimientoPaso> pasoNodoSeleccionado;
 
     private String idPasoAnteriorSeleccionadoSecuencia;
-    private String idPasoSeleccionadoSecuencia;
     private Rol rolAutocompleteSeleccionado;
     private Examen examenAutocompleteSeleccionado;
     private boolean dependenciaBloqueada;
@@ -458,7 +457,6 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
             }
 
             if (!editandoPaso && yaHayPasos) {
-                idPasoSeleccionadoSecuencia = nuevoPaso.getIdProcedimientoPaso().toString();
                 validarReferenciaSecuencia(nuevoPaso);
                 ProcedimientoPasoSecuencia secuencia = new ProcedimientoPasoSecuencia();
                 secuencia.setIdProcedimientoPasoSecuencia(UUID.randomUUID());
@@ -792,7 +790,5 @@ public class ProcedimientoModel extends AbstractModel<Procedimiento> implements 
     public void setRolAutocompleteSeleccionado(Rol rolAutocompleteSeleccionado) { this.rolAutocompleteSeleccionado = rolAutocompleteSeleccionado; }
     public Examen getExamenAutocompleteSeleccionado() { return examenAutocompleteSeleccionado; }
     public void setExamenAutocompleteSeleccionado(Examen examenAutocompleteSeleccionado) { this.examenAutocompleteSeleccionado = examenAutocompleteSeleccionado; }
-    public String getIdPasoSeleccionadoSecuencia() { return idPasoSeleccionadoSecuencia; }
-    public void setIdPasoSeleccionadoSecuencia(String idPasoSeleccionadoSecuencia) { this.idPasoSeleccionadoSecuencia = idPasoSeleccionadoSecuencia; }
 
 }

@@ -608,43 +608,6 @@ public class PersonaModelTest {
     }
 
     /**
-     * Test of eliminarRol method, of class PersonaModel.
-     */
-    @Test
-    public void testEliminarRol() {
-        Persona persona = personaValida();
-        PersonaRol pr = new PersonaRol(UUID.randomUUID());
-        persona.setPersonaRolList(new ArrayList<>(List.of(pr)));
-        instance.setRegistro(persona);
-
-        instance.eliminarRol(pr);
-
-        verify(personaRolDAO).eliminar(pr);
-        assertFalse(persona.getPersonaRolList().contains(pr));
-        assertFalse(instance.isEditandoRol());
-        verify(instance.facesContext).addMessage(any(), any());
-    }
-
-    @Test
-    public void testEliminarRolNulo() {
-        assertDoesNotThrow(() -> instance.eliminarRol(null));
-        verify(personaRolDAO, never()).eliminar(any());
-    }
-
-    @Test
-    public void testEliminarRolConError() {
-        Persona persona = personaValida();
-        PersonaRol pr = new PersonaRol(UUID.randomUUID());
-        persona.setPersonaRolList(new ArrayList<>(List.of(pr)));
-        instance.setRegistro(persona);
-        doThrow(new RuntimeException("fallo")).when(personaRolDAO).eliminar(pr);
-
-        assertDoesNotThrow(() -> instance.eliminarRol(pr));
-        assertTrue(persona.getPersonaRolList().contains(pr));
-        verify(instance.facesContext).addMessage(any(), any());
-    }
-
-    /**
      * Test of getRolesDePersona method, of class PersonaModel.
      */
     @Test
@@ -891,43 +854,6 @@ public class PersonaModelTest {
         instance.agregarMedioContacto();
 
         verify(medioContactoDAO, never()).crear(any());
-    }
-
-    /**
-     * Test of eliminarMedioContacto method, of class PersonaModel.
-     */
-    @Test
-    public void testEliminarMedioContacto() {
-        Persona persona = personaValida();
-        MedioContacto mc = new MedioContacto(UUID.randomUUID());
-        persona.setMedioContactoList(new ArrayList<>(List.of(mc)));
-        instance.setRegistro(persona);
-
-        instance.eliminarMedioContacto(mc);
-
-        verify(medioContactoDAO).eliminar(mc);
-        assertFalse(persona.getMedioContactoList().contains(mc));
-        assertFalse(instance.isEditandoMedio());
-        verify(instance.facesContext).addMessage(any(), any());
-    }
-
-    @Test
-    public void testEliminarMedioContactoNulo() {
-        assertDoesNotThrow(() -> instance.eliminarMedioContacto(null));
-        verify(medioContactoDAO, never()).eliminar(any());
-    }
-
-    @Test
-    public void testEliminarMedioContactoConError() {
-        Persona persona = personaValida();
-        MedioContacto mc = new MedioContacto(UUID.randomUUID());
-        persona.setMedioContactoList(new ArrayList<>(List.of(mc)));
-        instance.setRegistro(persona);
-        doThrow(new RuntimeException("fallo")).when(medioContactoDAO).eliminar(mc);
-
-        assertDoesNotThrow(() -> instance.eliminarMedioContacto(mc));
-        assertTrue(persona.getMedioContactoList().contains(mc));
-        verify(instance.facesContext).addMessage(any(), any());
     }
 
     /**
