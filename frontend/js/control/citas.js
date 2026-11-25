@@ -7,7 +7,13 @@ import { normalizarTexto } from "../comun/texto.js";
 import { leerObservaciones } from "../entity/observaciones.js";
 import { buscarPorId, filasDonde, mismoId } from "./tablas.js";
 import { documentoDePersona } from "./documentos.js";
-import { edadDe, rolesDePersona } from "./personas.js";
+import { edadDe, esRolPaciente, rolesDePersona } from "./personas.js";
+
+/** Total de pasos y cuántos están completados; se usa en la agenda y en el registro de atención. */
+export function conteoDePasos(pasos) {
+  const completados = pasos.filter(({ estado }) => estado === "completado").length;
+  return { total: pasos.length, completados };
+}
 
 /**
  * Estado general de una cita según su fecha de fin y sus pasos.
@@ -17,9 +23,9 @@ import { edadDe, rolesDePersona } from "./personas.js";
 export function estadoDeCita(cita) {
   if (cita.consulta?.fechaFin) return { clave: "completada", texto: "Completada" };
   const pasos = cita.procedimientos.flatMap(({ pasos: lista }) => lista);
-  if (pasos.length === 0) return { clave: "sin-pasos", texto: "Sin pasos" };
-  const completados = pasos.filter(({ estado }) => estado === "completado").length;
-  if (completados === pasos.length) return { clave: "completada", texto: "Completada" };
+  const { total, completados } = conteoDePasos(pasos);
+  if (total === 0) return { clave: "sin-pasos", texto: "Sin pasos" };
+  if (completados === total) return { clave: "completada", texto: "Completada" };
   if (completados > 0 || pasos.some(({ registro }) => registro)) return { clave: "proceso", texto: "En proceso" };
   return { clave: "programada", texto: "Programada" };
 }
@@ -67,9 +73,9 @@ export function pasosDeProcedimiento(datos, idProcedimiento) {
   const visitar = (id) => {
     if (id === null || id === undefined || visitados.some((visitado) => mismoId(visitado, id))) return;
     visitados.push(id);
-    const paso = pasos.find((item) => String(item.idProcedimientoPaso) === String(id));
+    const paso = pasos.find((item) => mismoId(item.idProcedimientoPaso, id));
     if (paso) ordenados.push(paso);
-    visitar(siguiente.find((item) => String(item.actual) === String(id))?.siguiente);
+    visitar(siguiente.find((item) => mismoId(item.actual, id))?.siguiente);
   };
   for (const paso of pasos) {
     if (!conPredecesor.some((id) => mismoId(id, paso.idProcedimientoPaso))) visitar(paso.idProcedimientoPaso);
@@ -185,10 +191,7 @@ export function resumenCita(datos, consulta) {
  */
 export function citasDePaciente(datos, { idPersona, idClinica = null, desde = null, hasta = null }) {
   const asignaciones = rolesDePersona(datos, idPersona).filter(
-    ({ personaRol, rol }) =>
-      normalizarTexto(rol?.nombre) === "paciente" &&
-      rol?.activo !== false &&
-      (!idClinica || String(personaRol.idClinica) === String(idClinica))
+    ({ personaRol, rol }) => esRolPaciente(rol) && (!idClinica || mismoId(personaRol.idClinica, idClinica))
   );
   const ids = asignaciones.map(({ personaRol }) => personaRol.idPersonaRol);
   return filasDonde(datos.consultas, "idPersonaRol", ids)
@@ -210,8 +213,8 @@ export function citasDeEmpleado(datos, { idClinica, idRol, desde = null, hasta =
       if (!dentroDeRango(consulta.fechaInicio, desde, hasta)) return false;
       const asignacion = buscarPorId(datos, "personasRol", consulta.idPersonaRol);
       if (!asignacion) return false;
-      if (idClinica && String(asignacion.idClinica) !== String(idClinica)) return false;
-      if (idPaciente && String(asignacion.idPersona) !== String(idPaciente)) return false;
+      if (idClinica && !mismoId(asignacion.idClinica, idClinica)) return false;
+      if (idPaciente && !mismoId(asignacion.idPersona, idPaciente)) return false;
       return true;
     })
     .map((consulta) => resumenCita(datos, consulta))
@@ -261,7 +264,7 @@ export function examenesAsignables(datos, idProcedimiento, idPaso = null) {
     const tipos = filasDonde(datos.examenesTipoExamen, "idExamen", examen.idExamen)
       .map((vinculo) => buscarPorId(datos, "tiposExamen", vinculo.idTipoExamen)?.nombre)
       .filter(Boolean);
-    const existente = unicos.findIndex((item) => String(item.examen.idExamen) === String(examen.idExamen));
+    const existente = unicos.findIndex((item) => mismoId(item.examen.idExamen, examen.idExamen));
     const item = { examen, tipos };
     if (existente < 0) unicos.push(item);
     else unicos[existente] = item;

@@ -6,6 +6,7 @@
 import { servicios } from "./servicios.js";
 import { listarPendientes } from "./pendientes.js";
 import { FUENTES, CAMPO_ID, CLAVE_DE_RUTA } from "../entity/recursos.js";
+import { mismoId } from "./tablas.js";
 
 /**
  * Muestra sobre los datos del servidor los cambios guardados sin conexión, para que la pantalla
@@ -21,10 +22,10 @@ export function aplicarPendientes(datos, pendientes) {
     const campo = CAMPO_ID[clave];
     if (tablas[clave] === datos[clave]) tablas[clave] = [...(datos[clave] ?? [])];
     const lista = tablas[clave];
-    const indice = lista.findIndex((item) => String(item[campo]) === id);
+    const indice = lista.findIndex((item) => mismoId(item[campo], id));
     // Un alta sin id del cliente no se puede referenciar todavía; se verá al sincronizar.
     if (metodo === "POST" && cuerpo?.[campo]) {
-      const existente = lista.findIndex((item) => String(item[campo]) === String(cuerpo[campo]));
+      const existente = lista.findIndex((item) => mismoId(item[campo], cuerpo[campo]));
       if (existente >= 0) lista[existente] = { ...lista[existente], ...cuerpo };
       else lista.push({ ...cuerpo });
     }

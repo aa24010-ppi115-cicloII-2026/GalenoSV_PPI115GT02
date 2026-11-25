@@ -47,14 +47,9 @@ public class MedioContactoDAO extends DefaultDAO<MedioContacto> {
         if (idPersona == null || valor == null || valor.isBlank()) {
             return false;
         }
-        String jpql = "SELECT COUNT(m) FROM MedioContacto m WHERE m.idPersona.idPersona = :per AND m.valor = :val" + (excluirId == null ? "" : " AND m.idMedioContacto <> :excluir");
-        var q = getEntityManager().createQuery(jpql, Long.class);
-        q.setParameter("per", idPersona);
-        q.setParameter("val", valor.trim());
-        if (excluirId != null) {
-            q.setParameter("excluir", excluirId);
-        }
-        return q.getSingleResult() > 0;
+        return existeConFiltros("m", "idMedioContacto", excluirId,
+                new Filtro("idPersona.idPersona", "per", idPersona),
+                new Filtro("valor", "val", valor.trim()));
     }
 
 

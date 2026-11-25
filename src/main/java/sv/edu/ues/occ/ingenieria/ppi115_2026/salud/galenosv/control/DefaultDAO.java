@@ -10,7 +10,10 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
 import java.io.Serializable;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  *
@@ -168,14 +171,73 @@ public abstract class DefaultDAO<T> implements DAOInterface<T>, Serializable {
         }
     }
 
+    protected record Filtro(String campo, String parametro, Object valor) {
+    }
+
+    protected boolean existe(String jpql, Map<String, Object> parametros) {
+        TypedQuery<Long> q = getEntityManager().createQuery(jpql, Long.class);
+        parametros.forEach(q::setParameter);
+        return q.getSingleResult() > 0;
+    }
+
+    protected boolean existeTexto(String campo, String idCampo, String parametroValor,
+            String valor, UUID excluirId) {
+        if (valor == null || valor.isBlank()) {
+            return false;
+        }
+        String jpql = "SELECT COUNT(e) FROM " + entityClass.getSimpleName()
+                + " e WHERE LOWER(e." + campo + ") = LOWER(:" + parametroValor + ")"
+                + (excluirId == null ? "" : " AND e." + idCampo + " <> :excluir");
+        Map<String, Object> parametros = new LinkedHashMap<>();
+        parametros.put(parametroValor, valor.trim());
+        if (excluirId != null) {
+            parametros.put("excluir", excluirId);
+        }
+        return existe(jpql, parametros);
+    }
+
+    protected boolean existeTextoIgual(String alias, String campo, String idCampo,
+            String parametroValor, String valor, UUID excluirId) {
+        if (valor == null || valor.isBlank()) {
+            return false;
+        }
+        Map<String, Object> parametros = new LinkedHashMap<>();
+        parametros.put(parametroValor, valor.trim());
+        if (excluirId != null) {
+            parametros.put("excluir", excluirId);
+        }
+        String jpql = "SELECT COUNT(" + alias + ") FROM " + entityClass.getSimpleName()
+                + " " + alias + " WHERE " + alias + "." + campo + " = :" + parametroValor
+                + (excluirId == null ? "" : " AND " + alias + "." + idCampo + " <> :excluir");
+        return existe(jpql, parametros);
+    }
+
+    protected boolean existeConFiltros(String alias, String idCampo, UUID excluirId, Filtro... filtros) {
+        StringBuilder jpql = new StringBuilder("SELECT COUNT(" + alias + ") FROM ")
+                .append(entityClass.getSimpleName()).append(" ").append(alias).append(" WHERE ");
+        Map<String, Object> parametros = new LinkedHashMap<>();
+        for (int i = 0; i < filtros.length; i++) {
+            Filtro filtro = filtros[i];
+            if (i > 0) {
+                jpql.append(" AND ");
+            }
+            jpql.append(alias).append(".").append(filtro.campo()).append(" = :").append(filtro.parametro());
+            parametros.put(filtro.parametro(), filtro.valor());
+        }
+        if (excluirId != null) {
+            jpql.append(" AND ").append(alias).append(".").append(idCampo).append(" <> :excluir");
+            parametros.put("excluir", excluirId);
+        }
+        return existe(jpql.toString(), parametros);
+    }
+
     private boolean esViolacionLlaveForanea(Throwable ex) {
         while (ex != null) {
             String nombre = ex.getClass().getSimpleName();
             String mensaje = String.valueOf(ex.getMessage());
             if (nombre.contains("ConstraintViolation") || nombre.contains("RollbackException")
-                    || mensaje.contains("violates foreign key") || mensaje.contains("viola la llave foranea")
-                    || mensaje.contains("foreign key") || mensaje.contains("FK_")
-                    || mensaje.contains("fk_")) {
+                    || mensaje.contains("viola la llave foranea") || mensaje.contains("foreign key")
+                    || mensaje.contains("FK_") || mensaje.contains("fk_")) {
                 return true;
             }
             ex = ex.getCause();

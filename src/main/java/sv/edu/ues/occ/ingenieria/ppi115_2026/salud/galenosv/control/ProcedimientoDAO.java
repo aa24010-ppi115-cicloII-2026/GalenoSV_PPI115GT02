@@ -26,16 +26,7 @@ public class ProcedimientoDAO extends DefaultDAO<Procedimiento> {
 
 
     public boolean existeNombre(String nombre, java.util.UUID excluirId) {
-        if (nombre == null || nombre.isBlank()) {
-            return false;
-        }
-        String jpql = "SELECT COUNT(e) FROM Procedimiento e WHERE LOWER(e.nombre) = LOWER(:nom)" + (excluirId == null ? "" : " AND e.idProcedimiento <> :excluir");
-        var q = getEntityManager().createQuery(jpql, Long.class);
-        q.setParameter("nom", nombre.trim());
-        if (excluirId != null) {
-            q.setParameter("excluir", excluirId);
-        }
-        return q.getSingleResult() > 0;
+        return existeTexto("nombre", "idProcedimiento", "nom", nombre, excluirId);
     }
 
     public List<Procedimiento> findActivos() {

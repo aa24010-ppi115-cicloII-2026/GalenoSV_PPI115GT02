@@ -1,7 +1,8 @@
 import { Vista, fragmento } from "./base.js";
-import { html, normalizarTexto, nombreCompleto } from "../comun/texto.js";
+import { cantidad, html, normalizarTexto, nombreCompleto } from "../comun/texto.js";
 import { fechaHora, fechaCorta } from "../comun/fechas.js";
-import { examenesAsignables, textoOrden } from "../control/citas.js";
+import { conteoDePasos, examenesAsignables, textoOrden } from "../control/citas.js";
+import { mismoId } from "../control/tablas.js";
 import { leerObservaciones } from "../entity/observaciones.js";
 import { motivoDe, pasosParaPresentacion } from "./presentacion.js";
 import { CODIGOS_CIE10 } from "../entity/cie10.js";
@@ -59,6 +60,26 @@ export default class PresentacionConsulta extends Vista {
     this.pintarElegidos(idCp);
   }
 
+  campoDe(idCp, campo) {
+    return this.q(`[data-cp="${idCp}"] [data-campo="${campo}"]`);
+  }
+
+  pasoActual(pasos) {
+    return pasos.find(({ estado }) => estado === "actual") ?? null;
+  }
+
+  pasoPorId(pasos, idPaso) {
+    return pasos.find(({ paso }) => mismoId(paso.idProcedimientoPaso, idPaso)) ?? null;
+  }
+
+  limpiarCamposSegunCapacidad(valores, capacidades) {
+    if (!capacidades.clinico) {
+      valores.diagnostico = "";
+      valores.plan = "";
+    }
+    return valores;
+  }
+
   pintarAviso(mensaje, reintentar = false) {
     this.render(html`
       <div class="vacio aviso-carga" role="alert">
@@ -76,8 +97,8 @@ export default class PresentacionConsulta extends Vista {
     this._examenes = new Map();
     this._elegidos = new Map();
     const pasos = procedimientos.flatMap(({ pasos: lista }) => lista);
-    const completados = pasos.filter(({ estado }) => estado === "completado").length;
-    const todoCompleto = pasos.length > 0 && completados === pasos.length;
+    const { total, completados } = conteoDePasos(pasos);
+    const todoCompleto = total > 0 && completados === total;
     const finalizada = Boolean(consulta.fechaFin);
     const estadoGeneral = finalizada ? "Finalizada" : todoCompleto ? "Completada" : "En proceso";
     const datosConsulta = [
@@ -129,13 +150,13 @@ export default class PresentacionConsulta extends Vista {
   }
 
   pintarProcedimiento({ consultaProcedimiento: cp, procedimiento, pasos }) {
-    const completados = pasos.filter(({ estado }) => estado === "completado").length;
-    const finalizado = pasos.length > 0 && completados === pasos.length;
-    const actual = pasos.find(({ estado }) => estado === "actual") ?? null;
+    const { total, completados } = conteoDePasos(pasos);
+    const finalizado = total > 0 && completados === total;
+    const actual = this.pasoActual(pasos);
     const hayRegistros = pasos.some(({ registro }) => registro);
     // Se retrocede al paso anterior si el actual no es el primero, o al último si todos están completos.
     const puedeRetroceder = finalizado ? hayRegistros : (actual?.indice ?? 0) > 0;
-    const esUltimo = actual ? actual.indice === pasos.length - 1 : false;
+    const esUltimo = actual ? actual.indice === total - 1 : false;
     const notas = this.notasDelFormulario(cp, actual);
     return html`
       <article class="tarjeta proc" data-cp="${cp.idConsultaProcedimiento}">
@@ -145,7 +166,7 @@ export default class PresentacionConsulta extends Vista {
           ${finalizado && html`<span class="estado-pill completada">Completado</span>`}
         </div>
         <linea-pasos data-cp="${cp.idConsultaProcedimiento}"></linea-pasos>
-        ${finalizado ? this.panelFinalizado(cp, puedeRetroceder) : this.panelPaso(cp, actual, puedeRetroceder, esUltimo, pasos.length, notas)}
+        ${finalizado ? this.panelFinalizado(cp, puedeRetroceder) : this.panelPaso(cp, actual, puedeRetroceder, esUltimo, total, notas)}
       </article>
     `;
   }
@@ -291,7 +312,7 @@ export default class PresentacionConsulta extends Vista {
 
   /** Exámenes del paso: buscador para elegirlos, indicaciones y las órdenes ya registradas. */
   bloqueExamenes(idCp, registro, examenes, ordenes) {
-    const cuantas = ordenes.length ? ` · ${ordenes.length} ${ordenes.length === 1 ? "orden" : "órdenes"}` : "";
+    const cuantas = ordenes.length ? ` · ${cantidad(ordenes.length, "orden", "órdenes")}` : "";
     let asignacion;
     if (!registro) asignacion = html`<p class="aviso">Inicie el paso para poder asignar exámenes.</p>`;
     else if (examenes.length === 0) asignacion = html`<p class="aviso">No hay exámenes configurados para este procedimiento.</p>`;
@@ -323,7 +344,7 @@ export default class PresentacionConsulta extends Vista {
   /** Orden de examen del paso en curso: se selecciona para eliminarla si se registró por error y aún no tiene resultado. */
   pintarOrden(orden) {
     const tieneResultado = this._datos.examenesResultado.some(
-      (resultado) => String(resultado.idOrdenExamen) === String(orden.idOrdenExamen)
+      (resultado) => mismoId(resultado.idOrdenExamen, orden.idOrdenExamen)
     );
     return html`
       <li>
@@ -349,7 +370,7 @@ export default class PresentacionConsulta extends Vista {
     const elegidos = this.elegidosDe(idCp);
     // En el orden en que se eligieron.
     const items = elegidos
-      .map((id) => examenes.find(({ examen }) => String(examen.idExamen) === id))
+      .map((id) => examenes.find(({ examen }) => mismoId(examen.idExamen, id)))
       .filter(Boolean)
       .map(
         ({ examen }) =>
@@ -378,23 +399,23 @@ export default class PresentacionConsulta extends Vista {
   aplicarBorradores(borradores) {
     for (const { id: idCp, valores } of borradores) {
       for (const [campo, valor] of Object.entries(valores)) {
-        const elemento = this.q(`[data-cp="${idCp}"] [data-campo="${campo}"]`);
+        const elemento = this.campoDe(idCp, campo);
         if (elemento && valor) elemento.value = valor;
       }
     }
   }
 
   buscarProcedimiento(idCp) {
-    return this._cita.procedimientos.find(
-      ({ consultaProcedimiento }) => String(consultaProcedimiento.idConsultaProcedimiento) === String(idCp)
+    return this._cita.procedimientos.find(({ consultaProcedimiento }) =>
+      mismoId(consultaProcedimiento.idConsultaProcedimiento, idCp)
     );
   }
 
   leerNotas(idCp) {
     return {
-      notas: this.q(`[data-cp="${idCp}"] [data-campo="notas"]`)?.value ?? "",
-      diagnostico: this.q(`[data-cp="${idCp}"] [data-campo="diagnostico"]`)?.value ?? "",
-      plan: this.q(`[data-cp="${idCp}"] [data-campo="plan"]`)?.value ?? "",
+      notas: this.campoDe(idCp, "notas")?.value ?? "",
+      diagnostico: this.campoDe(idCp, "diagnostico")?.value ?? "",
+      plan: this.campoDe(idCp, "plan")?.value ?? "",
     };
   }
 

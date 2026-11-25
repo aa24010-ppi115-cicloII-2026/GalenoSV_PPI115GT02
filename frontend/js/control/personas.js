@@ -1,7 +1,7 @@
 /** Personas y sus asignaciones: quién es paciente o empleado, en qué clínicas y su edad. */
 
 import { nombreCompleto, normalizarTexto } from "../comun/texto.js";
-import { buscarPorId, filasDonde } from "./tablas.js";
+import { buscarPorId, filasDonde, mismoId } from "./tablas.js";
 import { documentoDe } from "./documentos.js";
 
 /**
@@ -31,6 +31,11 @@ export function rolesDePersona(datos, idPersona) {
     }));
 }
 
+/** Un rol activo de paciente, con el nombre normalizado como viene de la API. */
+export function esRolPaciente(rol) {
+  return normalizarTexto(rol?.nombre) === "paciente" && rol?.activo !== false;
+}
+
 /**
  * Clínicas donde la persona está registrada como paciente, sin repetir.
  * @param {object} datos tablas de la API
@@ -39,12 +44,10 @@ export function rolesDePersona(datos, idPersona) {
  */
 export function clinicasDePaciente(datos, idPersona) {
   const asignaciones = rolesDePersona(datos, idPersona);
-  const pacientes = asignaciones.filter(
-    ({ rol }) => normalizarTexto(rol?.nombre) === "paciente" && rol?.activo !== false
-  );
+  const pacientes = asignaciones.filter(({ rol }) => esRolPaciente(rol));
   const unicas = [];
   for (const { clinica } of pacientes) {
-    if (clinica && !unicas.some((item) => String(item.idClinica) === String(clinica.idClinica))) unicas.push(clinica);
+    if (clinica && !unicas.some((item) => mismoId(item.idClinica, clinica.idClinica))) unicas.push(clinica);
   }
   return unicas;
 }
@@ -57,7 +60,7 @@ export function clinicasDePaciente(datos, idPersona) {
  */
 export function empleadoDePersona(datos, idPersona) {
   return rolesDePersona(datos, idPersona).filter(
-    ({ rol }) => rol && normalizarTexto(rol.nombre) !== "paciente" && rol.activo !== false
+    ({ rol }) => rol && !esRolPaciente(rol) && rol.activo !== false
   );
 }
 
@@ -89,9 +92,9 @@ export function pacientesDeClinica(datos, idClinica) {
   const vistos = [];
   const idsVistos = new Set();
   for (const personaRol of datos.personasRol) {
-    if (String(personaRol.idClinica) !== String(idClinica)) continue;
+    if (!mismoId(personaRol.idClinica, idClinica)) continue;
     const rol = buscarPorId(datos, "roles", personaRol.idRol);
-    if (normalizarTexto(rol?.nombre) !== "paciente" || rol?.activo === false) continue;
+    if (!esRolPaciente(rol)) continue;
     const persona = buscarPorId(datos, "personas", personaRol.idPersona);
     if (persona && !idsVistos.has(String(persona.idPersona))) {
       idsVistos.add(String(persona.idPersona));

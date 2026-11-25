@@ -91,14 +91,9 @@ public class ExamenTipoExamenDAO extends DefaultDAO<ExamenTipoExamen> {
         if (idExamen == null || idTipo == null) {
             return false;
         }
-        String jpql = "SELECT COUNT(e) FROM ExamenTipoExamen e WHERE e.idExamen.idExamen = :exa AND e.idTipoExamen.idTipoExamen = :tip" + (excluirId == null ? "" : " AND e.idExamenTipoExamen <> :excluir");
-        var q = getEntityManager().createQuery(jpql, Long.class);
-        q.setParameter("exa", idExamen);
-        q.setParameter("tip", idTipo);
-        if (excluirId != null) {
-            q.setParameter("excluir", excluirId);
-        }
-        return q.getSingleResult() > 0;
+        return existeConFiltros("e", "idExamenTipoExamen", excluirId,
+                new Filtro("idExamen.idExamen", "exa", idExamen),
+                new Filtro("idTipoExamen.idTipoExamen", "tip", idTipo));
     }
 
 

@@ -31,6 +31,15 @@ public class RestUtilTest {
     }
 
     @Test
+    void rangoAplicaLosValoresPorDefectoYRechazaLosFueraDelContrato() {
+        assertEquals(new RestUtil.Rango(0, 20), RestUtil.rango(null, null));
+        assertEquals(new RestUtil.Rango(5, 10), RestUtil.rango(5, 10));
+        assertNull(RestUtil.rango(-1, 10));
+        assertNull(RestUtil.rango(0, 0));
+        assertNull(RestUtil.rango(0, 101));
+    }
+
+    @Test
     void fechaAceptaConZonaSinZonaOSoloElDiaYNombraElCampoInvalido() {
         assertEquals(OffsetDateTime.parse("2026-11-12T08:00-06:00"), RestUtil.fecha("2026-11-12T08:00-06:00", "fechaInicio"));
         assertEquals(OffsetDateTime.parse("2026-11-12T08:00Z"), RestUtil.fecha("2026-11-12T08:00", "fechaInicio"));
@@ -42,6 +51,14 @@ public class RestUtilTest {
     }
 
     @Test
+    void rangoAceptaLosLimitesDelContratoYRechazaCombinacionesInvalidas() {
+        assertEquals(new RestUtil.Rango(0, 100), RestUtil.rango(0, 100));
+        assertEquals(new RestUtil.Rango(100, 1), RestUtil.rango(100, 1));
+        assertNull(RestUtil.rango(null, 101));
+        assertNull(RestUtil.rango(0, -1));
+    }
+
+    @Test
     void esConflictoReconoceLaLlaveForaneaAunqueVengaEnvueltaEnOtraExcepcion() {
         RuntimeException envuelta = new RuntimeException("Error al confirmar",
                 new SQLException("ERROR: update or delete on table violates foreign key constraint", "23503"));
@@ -49,4 +66,14 @@ public class RestUtilTest {
         assertFalse(RestUtil.esConflicto(new IllegalStateException("Sin conexion")));
         assertFalse(RestUtil.esConflicto(null));
     }
+
+    @Test
+    void esConflictoCubreLasVariantesDelContratoSinConfundirOtrosErrores() {
+        assertTrue(RestUtil.esConflicto(new RuntimeException("ERROR: FK_CONSULTA")));
+        assertTrue(RestUtil.esConflicto(new RuntimeException("El registro tiene relacionados")));
+        assertTrue(RestUtil.esConflicto(new SQLException("23503")));
+        assertTrue(RestUtil.esConflicto(new java.sql.SQLIntegrityConstraintViolationException("otra")));
+        assertFalse(RestUtil.esConflicto(new RuntimeException("Error de red", new IllegalStateException("timeout"))));
+    }
+
 }

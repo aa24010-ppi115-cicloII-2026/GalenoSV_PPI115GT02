@@ -41,11 +41,12 @@ public class PersonaResource {
     /** Lista registros paginados; X-Total-Count evita una peticion extra de conteo. */
     @GET
     public Response listar(@QueryParam("first") Integer first, @QueryParam("max") Integer max) {
-        int inicio = first == null ? 0 : first;
-        int limite = max == null ? 20 : max;
-        if (inicio < 0 || limite < 1 || limite > 100) {
+        RestUtil.Rango rango = RestUtil.rango(first, max);
+        if (rango == null) {
             return RestUtil.error(422, "first/max", "first debe ser >= 0 y max entre 1 y 100");
         }
+        int inicio = rango.inicio();
+        int limite = rango.limite();
         try {
             List<PersonaDTO> datos = dao.findRange(inicio, limite).stream().map(this::aDTO).toList();
             return Response.ok(datos).header("X-Total-Count", dao.count()).build();

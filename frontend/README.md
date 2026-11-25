@@ -75,10 +75,11 @@ consulta la API REST existente.
 
 ```bash
 mvn clean package
-mvn liberty:dev            # o bien: <LIBERTY>/bin/server start GalenoSv
+mvn liberty:dev            # en esta máquina: -DinstallDirectory=/home/duran/wlp
+                           # o bien: <LIBERTY>/bin/server start miServidor
 ```
 
-La API queda disponible en `http://localhost:9080/GalenoSV-1.0-SNAPSHOT/api`.
+El default de `installDirectory` del `pom.xml` se conserva para el equipo de presentación; se sobrescribe solo con `-D`. La API queda disponible en `http://localhost:9080/GalenoSV-1.0-SNAPSHOT/api`.
 
 ### 3.3 Frontend
 

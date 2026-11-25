@@ -124,29 +124,7 @@ public abstract class AbstractModel<T> implements Serializable {
     }
 
     public void btnGuardarHandler(ActionEvent actionEvent) {
-        if (this.registro != null) {
-            try {
-                if (esNombreVacio(this.registro)) {
-                    getFacesContext().addMessage(null,
-                            new FacesMessage(FacesMessage.SEVERITY_WARN, "Atencion", "El nombre no puede estar vacio"));
-                    return;
-                }
-
-                validarUnicidad(this.registro, false);
-
-                getDao().crear(this.registro);
-                this.registro = null;
-                this.estado = ESTADO_CRUD.NADA;
-                this.modelo = null;
-                inicializarRegistros();
-
-                getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito", "Registro guardado"));
-            } catch (Exception e) {
-                getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al guardar", MensajeError.de(e)));
-            }
-        }
+        guardar(false);
     }
 
     public void btnEliminarHandler(ActionEvent actionEvent) {
@@ -168,27 +146,39 @@ public abstract class AbstractModel<T> implements Serializable {
     }
 
     public void btnModificarHandler(ActionEvent actionEvent) {
-        if (this.registro != null) {
-            try {
-                if (esNombreVacio(this.registro)) {
-                    getFacesContext().addMessage(null,
-                            new FacesMessage(FacesMessage.SEVERITY_WARN, "Atencion", "El nombre no puede estar vacio"));
-                    return;
-                }
+        guardar(true);
+    }
 
-                validarUnicidad(this.registro, true);
-
-                getDao().modificar(this.registro);
-                this.registro = null;
-                this.estado = ESTADO_CRUD.NADA;
-                inicializarRegistros();
-
+    private void guardar(boolean esModificacion) {
+        if (this.registro == null) {
+            return;
+        }
+        try {
+            if (esNombreVacio(this.registro)) {
                 getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito", "Registro modificado"));
-            } catch (Exception e) {
-                getFacesContext().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al modificar", MensajeError.de(e)));
+                        new FacesMessage(FacesMessage.SEVERITY_WARN, "Atencion", "El nombre no puede estar vacio"));
+                return;
             }
+
+            validarUnicidad(this.registro, esModificacion);
+
+            if (esModificacion) {
+                getDao().modificar(this.registro);
+            } else {
+                getDao().crear(this.registro);
+            }
+            this.registro = null;
+            this.estado = ESTADO_CRUD.NADA;
+            if (!esModificacion) {
+                this.modelo = null;
+            }
+            inicializarRegistros();
+
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito",
+                    esModificacion ? "Registro modificado" : "Registro guardado"));
+        } catch (Exception e) {
+            getFacesContext().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                    esModificacion ? "Error al modificar" : "Error al guardar", MensajeError.de(e)));
         }
     }
 
@@ -209,7 +199,8 @@ public abstract class AbstractModel<T> implements Serializable {
     protected void validarEliminacion(T registro) {
     }
 
-    protected boolean esNombreVacio(T registro) {        if (registro == null) {
+    protected boolean esNombreVacio(T registro) {
+        if (registro == null) {
             return true;
         }
         try {

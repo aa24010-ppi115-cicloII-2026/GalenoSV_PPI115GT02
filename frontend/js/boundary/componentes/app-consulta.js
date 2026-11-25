@@ -3,7 +3,8 @@ import { cantidad, html } from "../../comun/texto.js";
 import { ahoraISO } from "../../comun/fechas.js";
 import { leerSesion } from "../../control/sesion.js";
 import { cargarTodo, recargarTablas } from "../../control/repositorio.js";
-import { consultaCompleta, textoOrden } from "../../control/citas.js";
+import { consultaCompleta, conteoDePasos, textoOrden } from "../../control/citas.js";
+import { mismoId } from "../../control/tablas.js";
 import { serializarObservaciones } from "../../entity/observaciones.js";
 import { servicios } from "../../control/servicios.js";
 import { confirmar } from "./ui-confirmar.js";
@@ -98,17 +99,13 @@ export default class AppConsulta extends PresentacionConsulta {
   guardarNotas(idCp) {
     const item = this.buscarProcedimiento(idCp);
     if (!item) return Promise.resolve(null);
-    const actual = item.pasos.find(({ estado }) => estado === "actual");
+    const actual = this.pasoActual(item.pasos);
     if (!actual || !this.personaRolPara(actual.paso)) {
       this.notificar("Este paso está en espera y corresponde a otro rol.", "error");
       return Promise.resolve(null);
     }
     const cap = this.capacidadesDePaso(actual.rol);
-    const valores = this.leerNotas(idCp);
-    if (!cap.clinico) {
-      valores.diagnostico = "";
-      valores.plan = "";
-    }
+    const valores = this.limpiarCamposSegunCapacidad(this.leerNotas(idCp), cap);
     return this.persistirNotas(item, valores)
       .then(() => {
         this.notificar(
@@ -126,7 +123,7 @@ export default class AppConsulta extends PresentacionConsulta {
   iniciarPaso(idCp, idPaso) {
     const item = this.buscarProcedimiento(idCp);
     if (!item) return Promise.resolve();
-    const paso = item.pasos.find(({ paso }) => String(paso.idProcedimientoPaso) === String(idPaso))?.paso;
+    const paso = this.pasoPorId(item.pasos, idPaso)?.paso;
     const personaRol = this.personaRolPara(paso);
     if (!personaRol) {
       this.notificar("Su sesión no tiene un rol compatible con esta clínica y este paso.", "error");
@@ -156,7 +153,7 @@ export default class AppConsulta extends PresentacionConsulta {
   completarPaso(idCp, idPaso) {
     const item = this.buscarProcedimiento(idCp);
     if (!item) return Promise.resolve();
-    const actual = item.pasos.find(({ paso }) => String(paso.idProcedimientoPaso) === String(idPaso));
+    const actual = this.pasoPorId(item.pasos, idPaso);
     if (!this.personaRolPara(actual?.paso)) {
       this.notificar("Su sesión no tiene el rol responsable de este paso.", "error");
       return Promise.resolve();
@@ -167,10 +164,7 @@ export default class AppConsulta extends PresentacionConsulta {
       this.notificar("Elija el diagnóstico CIE-10 de la lista antes de completar el paso.", "error");
       return Promise.resolve();
     }
-    if (!cap.clinico) {
-      notas.diagnostico = "";
-      notas.plan = "";
-    }
+    this.limpiarCamposSegunCapacidad(notas, cap);
     if (!actual?.registro) {
       this.notificar("Inicie el paso antes de completarlo.", "error");
       return Promise.resolve();
@@ -208,8 +202,9 @@ export default class AppConsulta extends PresentacionConsulta {
     const item = this.buscarProcedimiento(idCp);
     if (!item) return Promise.resolve();
     const pasos = item.pasos;
-    const indiceActual = pasos.findIndex(({ estado }) => estado === "actual");
-    const pasoOperable = indiceActual === -1 ? pasos.at(-1) : pasos[indiceActual];
+    const actual = this.pasoActual(pasos);
+    const indiceActual = pasos.indexOf(actual);
+    const pasoOperable = actual ?? pasos.at(-1);
     if (!this.personaRolPara(pasoOperable?.paso)) {
       this.notificar("Solo el rol responsable del paso actual puede devolverlo.", "error");
       return Promise.resolve();
@@ -249,14 +244,15 @@ export default class AppConsulta extends PresentacionConsulta {
 
   finalizarConsulta() {
     const consulta = this._cita.consulta;
-    const sinCompletar = this._cita.procedimientos
-      .flatMap(({ pasos }) => pasos)
-      .filter(({ estado }) => estado !== "completado").length;
+    const { total, completados } = conteoDePasos(
+      this._cita.procedimientos.flatMap(({ pasos }) => pasos)
+    );
+    const sinCompletar = total - completados;
     return confirmar({
       titulo: "¿Finalizar la consulta?",
       mensaje:
         sinCompletar > 0
-          ? `Quedan ${sinCompletar} ${sinCompletar === 1 ? "paso" : "pasos"} sin completar. Si finaliza, se registrará la fecha y hora de cierre de todos modos.`
+          ? `Quedan ${cantidad(sinCompletar, "paso", "pasos")} sin completar. Si finaliza, se registrará la fecha y hora de cierre de todos modos.`
           : "Se registrará la fecha y hora de cierre de la consulta.",
       aceptar: "Finalizar",
       peligro: sinCompletar > 0,
@@ -283,7 +279,7 @@ export default class AppConsulta extends PresentacionConsulta {
   asignarExamenes(idCp) {
     const item = this.buscarProcedimiento(idCp);
     if (!item) return Promise.resolve();
-    const actual = item.pasos.find(({ estado }) => estado === "actual");
+    const actual = this.pasoActual(item.pasos);
     if (!actual?.registro) {
       this.notificar("Inicie el paso antes de asignar exámenes.", "error");
       return Promise.resolve();
@@ -293,12 +289,12 @@ export default class AppConsulta extends PresentacionConsulta {
       return Promise.resolve();
     }
     const seleccionados = this.elegidosDe(idCp);
-    const indicaciones = this.q(`[data-cp="${idCp}"] [data-campo="indicaciones"]`)?.value.trim() ?? "";
+    const indicaciones = this.campoDe(idCp, "indicaciones")?.value.trim() ?? "";
     // Las órdenes se crean una tras otra, en el orden en que se eligieron.
     const crearOrdenes = seleccionados.reduce(
       (anterior, idExamen) =>
         anterior.then(() => {
-          const examen = this.examenesDe(idCp).find((item) => String(item.examen.idExamen) === idExamen)?.examen;
+          const examen = this.examenesDe(idCp).find((item) => mismoId(item.examen.idExamen, idExamen))?.examen;
           return servicios.ordenesExamen.crear({
             idOrdenExamen: crypto.randomUUID(),
             fechaCreacion: ahoraISO(),
@@ -324,13 +320,13 @@ export default class AppConsulta extends PresentacionConsulta {
 
   eliminarOrdenes(idCp) {
     const item = this.buscarProcedimiento(idCp);
-    const actual = item?.pasos.find(({ estado }) => estado === "actual");
+    const actual = this.pasoActual(item?.pasos ?? []);
     if (!item || !actual || !this.personaRolPara(actual.paso) || !this.capacidadesDePaso(actual.rol).examenes) {
       this.notificar("Solo el odontólogo puede modificar los exámenes de este paso.", "error");
       return Promise.resolve();
     }
     const ids = this.qa(`[data-cp="${idCp}"] .ordenes input:checked`).map((casilla) => casilla.value);
-    const ordenes = this._datos.ordenesExamen.filter((orden) => ids.includes(String(orden.idOrdenExamen)));
+    const ordenes = this._datos.ordenesExamen.filter((orden) => ids.some((id) => mismoId(id, orden.idOrdenExamen)));
     if (ordenes.length === 0) return Promise.resolve();
     const nombres = ordenes.map((orden) => `«${textoOrden(orden)}»`).join(", ");
     return confirmar({

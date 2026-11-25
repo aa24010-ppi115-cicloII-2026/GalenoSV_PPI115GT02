@@ -24,6 +24,17 @@ public final class RestUtil {
         }
     }
 
+    /** Rango de paginación ya validado para los recursos REST. */
+    public record Rango(int inicio, int limite) {
+    }
+
+    /** Devuelve el rango pedido, o null cuando los parámetros no respetan el contrato. */
+    public static Rango rango(Integer first, Integer max) {
+        int inicio = first == null ? 0 : first;
+        int limite = max == null ? 20 : max;
+        return inicio < 0 || limite < 1 || limite > 100 ? null : new Rango(inicio, limite);
+    }
+
     /** Convierte un UUID del cuerpo y nombra el campo cuando el formato es erroneo. */
     public static UUID uuid(String valor, String parametro) {
         if (valor == null || valor.isBlank()) {
@@ -72,9 +83,8 @@ public final class RestUtil {
             String nombre = ex.getClass().getSimpleName();
             String mensaje = String.valueOf(ex.getMessage());
             if (nombre.contains("ConstraintViolation") || nombre.contains("RollbackException")
-                    || nombre.contains("IntegrityConstraintViolation")
-                    || mensaje.contains("violates foreign key") || mensaje.contains("llave for")
-                    || mensaje.contains("foreign key") || mensaje.contains("FK_") || mensaje.contains("fk_")
+                    || mensaje.contains("llave for") || mensaje.contains("foreign key")
+                    || mensaje.contains("FK_") || mensaje.contains("fk_")
                     || mensaje.contains("23503") || mensaje.contains("relacionados")) {
                 return true;
             }

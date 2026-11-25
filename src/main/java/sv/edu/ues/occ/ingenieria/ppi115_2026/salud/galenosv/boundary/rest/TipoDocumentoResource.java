@@ -41,16 +41,17 @@ public class TipoDocumentoResource {
     /** Lista registros paginados; X-Total-Count permite paginar sin una segunda peticion. */
     @GET
     public Response listar(@QueryParam("first") Integer first, @QueryParam("max") Integer max) {
-        int inicio = first == null ? 0 : first;
-        int limite = max == null ? 20 : max;
-        if (inicio < 0 || limite < 1 || limite > 100) {
-            return error(422, "first/max", "first debe ser >= 0 y max entre 1 y 100");
+        RestUtil.Rango rango = RestUtil.rango(first, max);
+        if (rango == null) {
+            return RestUtil.error(422, "first/max", "first debe ser >= 0 y max entre 1 y 100");
         }
+        int inicio = rango.inicio();
+        int limite = rango.limite();
         try {
             List<TipoDocumentoDTO> datos = dao.findRange(inicio, limite).stream().map(this::aDTO).toList();
             return Response.ok(datos).header("X-Total-Count", dao.count()).build();
         } catch (RuntimeException ex) {
-            return error(500, "", "No se pudo consultar el catalogo");
+            return RestUtil.error(500, "", "No se pudo consultar el catalogo");
         }
     }
 
@@ -58,14 +59,14 @@ public class TipoDocumentoResource {
     @GET
     @Path("/{id}")
     public Response buscar(@PathParam("id") String id) {
-        UUID uuid = parsearId(id);
-        if (uuid == null) return error(422, "id", "El UUID no es valido");
+        UUID uuid = RestUtil.parsearId(id);
+        if (uuid == null) return RestUtil.error(422, "id", "El UUID no es valido");
         try {
             TipoDocumento tipo = dao.find(uuid);
-            return tipo == null ? error(404, "id", "No existe el tipo de documento")
+            return tipo == null ? RestUtil.error(404, "id", "No existe el tipo de documento")
                     : Response.ok(aDTO(tipo)).build();
         } catch (RuntimeException ex) {
-            return error(500, "", "No se pudo consultar el tipo de documento");
+            return RestUtil.error(500, "", "No se pudo consultar el tipo de documento");
         }
     }
 
@@ -73,10 +74,10 @@ public class TipoDocumentoResource {
     @POST
     public Response crear(TipoDocumentoDTO datos) {
         String problema = validar(datos);
-        if (problema != null) return error(422, problema, "Revise los datos enviados");
+        if (problema != null) return RestUtil.error(422, problema, "Revise los datos enviados");
         try {
             if (dao.existeNombre(datos.getNombre(), null)) {
-                return error(422, "nombre", "Ya existe un tipo con ese nombre");
+                return RestUtil.error(422, "nombre", "Ya existe un tipo con ese nombre");
             }
             TipoDocumento tipo = new TipoDocumento(UUID.randomUUID());
             copiar(datos, tipo);
@@ -84,7 +85,7 @@ public class TipoDocumentoResource {
             URI location = uriInfo.getAbsolutePathBuilder().path(tipo.getIdTipoDocumento().toString()).build();
             return Response.created(location).build();
         } catch (RuntimeException ex) {
-            return error(500, "", "No se pudo crear el tipo de documento");
+            return RestUtil.error(500, "", "No se pudo crear el tipo de documento");
         }
     }
 
@@ -92,21 +93,21 @@ public class TipoDocumentoResource {
     @PUT
     @Path("/{id}")
     public Response modificar(@PathParam("id") String id, TipoDocumentoDTO datos) {
-        UUID uuid = parsearId(id);
-        if (uuid == null) return error(422, "id", "El UUID no es valido");
+        UUID uuid = RestUtil.parsearId(id);
+        if (uuid == null) return RestUtil.error(422, "id", "El UUID no es valido");
         String problema = validar(datos);
-        if (problema != null) return error(422, problema, "Revise los datos enviados");
+        if (problema != null) return RestUtil.error(422, problema, "Revise los datos enviados");
         try {
             TipoDocumento tipo = dao.find(uuid);
-            if (tipo == null) return error(404, "id", "No existe el tipo de documento");
+            if (tipo == null) return RestUtil.error(404, "id", "No existe el tipo de documento");
             if (dao.existeNombre(datos.getNombre(), uuid)) {
-                return error(422, "nombre", "Ya existe un tipo con ese nombre");
+                return RestUtil.error(422, "nombre", "Ya existe un tipo con ese nombre");
             }
             copiar(datos, tipo);
             dao.modificar(tipo);
             return Response.noContent().build();
         } catch (RuntimeException ex) {
-            return error(500, "", "No se pudo modificar el tipo de documento");
+            return RestUtil.error(500, "", "No se pudo modificar el tipo de documento");
         }
     }
 
@@ -114,17 +115,17 @@ public class TipoDocumentoResource {
     @DELETE
     @Path("/{id}")
     public Response eliminar(@PathParam("id") String id) {
-        UUID uuid = parsearId(id);
-        if (uuid == null) return error(422, "id", "El UUID no es valido");
+        UUID uuid = RestUtil.parsearId(id);
+        if (uuid == null) return RestUtil.error(422, "id", "El UUID no es valido");
         try {
             TipoDocumento tipo = dao.find(uuid);
-            if (tipo == null) return error(404, "id", "No existe el tipo de documento");
+            if (tipo == null) return RestUtil.error(404, "id", "No existe el tipo de documento");
             dao.eliminar(tipo);
             return Response.noContent().build();
         } catch (IllegalStateException ex) {
-            return error(409, "id", "El tipo esta relacionado con documentos y no se puede eliminar");
+            return RestUtil.error(409, "id", "El tipo esta relacionado con documentos y no se puede eliminar");
         } catch (RuntimeException ex) {
-            return error(500, "", "No se pudo eliminar el tipo de documento");
+            return RestUtil.error(500, "", "No se pudo eliminar el tipo de documento");
         }
     }
 
@@ -150,15 +151,5 @@ public class TipoDocumentoResource {
         if (datos.getNombre() == null || datos.getNombre().isBlank() || datos.getNombre().trim().length() > 155) return "nombre";
         if (datos.getActivo() == null) return "activo";
         return null;
-    }
-
-    private UUID parsearId(String id) {
-        try { return UUID.fromString(id); } catch (IllegalArgumentException | NullPointerException ex) { return null; }
-    }
-
-    private Response error(int estado, String parametro, String mensaje) {
-        Response.ResponseBuilder respuesta = Response.status(estado).entity(java.util.Map.of("mensaje", mensaje));
-        if (parametro != null && !parametro.isBlank()) respuesta.header("X-Parametro-Error", parametro);
-        return respuesta.build();
     }
 }

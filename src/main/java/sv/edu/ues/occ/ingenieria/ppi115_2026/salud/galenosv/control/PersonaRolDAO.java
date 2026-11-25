@@ -51,15 +51,10 @@ public class PersonaRolDAO extends DefaultDAO<PersonaRol> {
         if (idPersona == null || idRol == null || idClinica == null) {
             return false;
         }
-        String jpql = "SELECT COUNT(p) FROM PersonaRol p WHERE p.idPersona.idPersona = :per AND p.idRol.idRol = :rol AND p.idClinica.idClinica = :cli" + (excluirId == null ? "" : " AND p.idPersonaRol <> :excluir");
-        var q = getEntityManager().createQuery(jpql, Long.class);
-        q.setParameter("per", idPersona);
-        q.setParameter("rol", idRol);
-        q.setParameter("cli", idClinica);
-        if (excluirId != null) {
-            q.setParameter("excluir", excluirId);
-        }
-        return q.getSingleResult() > 0;
+        return existeConFiltros("p", "idPersonaRol", excluirId,
+                new Filtro("idPersona.idPersona", "per", idPersona),
+                new Filtro("idRol.idRol", "rol", idRol),
+                new Filtro("idClinica.idClinica", "cli", idClinica));
     }
 
 

@@ -10,6 +10,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jakartaee>11.0.0</jakartaee>
+        <installDirectory>/home/mrxto/openliberty/wlp</installDirectory>
     </properties>
     
     <dependencies>
@@ -87,7 +88,7 @@
                 <artifactId>liberty-maven-plugin</artifactId>
                 <version>3.10.2</version>
                 <configuration>
-                    <installDirectory>/home/mrxto/openliberty/wlp</installDirectory>
+                    <installDirectory>${installDirectory}</installDirectory>
                     <serverName>miServidor</serverName>
                 </configuration>
             </plugin>
