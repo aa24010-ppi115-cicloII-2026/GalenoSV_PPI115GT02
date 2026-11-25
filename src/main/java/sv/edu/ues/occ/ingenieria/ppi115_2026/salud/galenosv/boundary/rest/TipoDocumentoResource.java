@@ -4,7 +4,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -18,28 +17,34 @@ import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.TipoDocumentoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoDocumento;
 
-/** Expone operaciones REST del catalogo de tipos de documento. */
+/**
+ * Expone operaciones REST del catalogo de tipos de documento. Listar, buscar y eliminar
+ * se redefinen porque sus mensajes nombran el catalogo y porque un IllegalStateException
+ * al eliminar siempre es 409 (el tipo esta en uso por documentos).
+ */
 @Path("/tipos-documento")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class TipoDocumentoResource {
+public class TipoDocumentoResource extends DefaultResource<TipoDocumento, TipoDocumentoDTO> {
 
     @Inject
     private TipoDocumentoDAO dao;
 
+    @Override
+    protected DefaultDAO<TipoDocumento> dao() {
+        return dao;
+    }
+
     @Context
     private UriInfo uriInfo;
 
-    @OPTIONS
-    public Response opciones() {
-        return Response.noContent().build();
-    }
-
     /** Lista registros paginados; X-Total-Count permite paginar sin una segunda peticion. */
     @GET
+    @Override
     public Response listar(@QueryParam("first") Integer first, @QueryParam("max") Integer max) {
         RestUtil.Rango rango = RestUtil.rango(first, max);
         if (rango == null) {
@@ -58,6 +63,7 @@ public class TipoDocumentoResource {
     /** Busca un tipo por UUID. */
     @GET
     @Path("/{id}")
+    @Override
     public Response buscar(@PathParam("id") String id) {
         UUID uuid = RestUtil.parsearId(id);
         if (uuid == null) return RestUtil.error(422, "id", "El UUID no es valido");
@@ -114,6 +120,7 @@ public class TipoDocumentoResource {
     /** Elimina el tipo identificado en la ruta. */
     @DELETE
     @Path("/{id}")
+    @Override
     public Response eliminar(@PathParam("id") String id) {
         UUID uuid = RestUtil.parsearId(id);
         if (uuid == null) return RestUtil.error(422, "id", "El UUID no es valido");
@@ -129,7 +136,8 @@ public class TipoDocumentoResource {
         }
     }
 
-    private TipoDocumentoDTO aDTO(TipoDocumento tipo) {
+    @Override
+    protected TipoDocumentoDTO aDTO(TipoDocumento tipo) {
         TipoDocumentoDTO dto = new TipoDocumentoDTO();
         dto.setIdTipoDocumento(tipo.getIdTipoDocumento().toString());
         dto.setNombre(tipo.getNombre());
